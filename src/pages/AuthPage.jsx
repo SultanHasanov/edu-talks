@@ -24,6 +24,7 @@ import {
 } from "@mui/icons-material";
 import BackButtonIcon from "../ui/BackButtonIcon";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const AuthPage = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -42,6 +43,7 @@ const AuthPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+   const { login, logout, isAuthenticated, username } = useAuth();
   const navigate = useNavigate();
 
   const handleTabChange = (event, newValue) => {
@@ -63,7 +65,7 @@ const AuthPage = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleLogin = async (e) => {
+const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError("");
     
@@ -91,9 +93,8 @@ const AuthPage = () => {
         throw new Error(data.message || "Ошибка авторизации");
       }
 
-      // Если авторизация успешна
-      setIsLoggedIn(true);
-      setCurrentUser(formData.username);
+      // Сохраняем токен и роль из ответа сервера
+      login(data.access_token, data.role, data.username, data.full_name);
       navigate("/");
       
     } catch (error) {
@@ -152,16 +153,8 @@ const AuthPage = () => {
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentUser("");
-    setFormData({
-      username: "",
-      email: "",
-      password: "",
-      full_name: "",
-      phone: "",
-      address: ""
-    });
+   logout()
+    navigate("/");
   };
 
   if (isLoggedIn) {
