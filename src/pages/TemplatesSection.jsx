@@ -137,7 +137,7 @@ const TemplatesSection = () => {
         <Typography
           variant="body1"
           color="text.secondary"
-          sx={{ mb: 2, alignSelf: "flex-start" }}
+          sx={{ mb: 2, alignSelf: "center" }}
         >
           Нажмите на шаблон, чтобы использовать его
         </Typography>

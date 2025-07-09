@@ -35,7 +35,7 @@ const AuthPage = () => {
     password: "",
     full_name: "",
     phone: "",
-    address: ""
+    address: "",
   });
   const [authError, setAuthError] = useState("");
   const [regError, setRegError] = useState("");
@@ -43,7 +43,7 @@ const AuthPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-   const { login, logout, isAuthenticated, username } = useAuth();
+  const { login, logout, isAuthenticated, username } = useAuth();
   const navigate = useNavigate();
 
   const handleTabChange = (event, newValue) => {
@@ -65,10 +65,10 @@ const AuthPage = () => {
     setShowPassword(!showPassword);
   };
 
-const handleLogin = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError("");
-    
+
     if (!formData.username || !formData.password) {
       setAuthError("Пожалуйста, заполните все поля");
       return;
@@ -83,7 +83,7 @@ const handleLogin = async (e) => {
         },
         body: JSON.stringify({
           username: formData.username,
-          password: formData.password
+          password: formData.password,
         }),
       });
 
@@ -96,7 +96,6 @@ const handleLogin = async (e) => {
       // Сохраняем токен и роль из ответа сервера
       login(data.access_token, data.role, data.username, data.full_name);
       navigate("/");
-      
     } catch (error) {
       setAuthError(error.message || "Неверный логин или пароль");
     } finally {
@@ -109,8 +108,14 @@ const handleLogin = async (e) => {
     setRegError("");
     setRegSuccess(false);
 
-    if (!formData.email || !formData.username || !formData.password || 
-        !formData.full_name || !formData.phone || !formData.address) {
+    if (
+      !formData.email ||
+      !formData.username ||
+      !formData.password ||
+      !formData.full_name ||
+      !formData.phone ||
+      !formData.address
+    ) {
       setRegError("Пожалуйста, заполните все поля");
       return;
     }
@@ -131,19 +136,20 @@ const handleLogin = async (e) => {
       });
 
       const data = await response.json();
+      console.log(data)
 
+      setRegSuccess(true);
       if (!response.ok) {
         throw new Error(data.message || "Ошибка регистрации");
       }
 
-      setRegSuccess(true);
       setFormData({
         username: "",
         email: "",
         password: "",
         full_name: "",
         phone: "",
-        address: ""
+        address: "",
       });
     } catch (error) {
       setRegError(error.message || "Произошла ошибка при регистрации");
@@ -153,7 +159,7 @@ const handleLogin = async (e) => {
   };
 
   const handleLogout = () => {
-   logout()
+    logout();
     navigate("/");
   };
 

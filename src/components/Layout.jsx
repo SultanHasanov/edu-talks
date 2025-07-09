@@ -14,6 +14,15 @@ import {
   ListItemText,
   Divider,
   Button,
+  Tabs,
+  Tab,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -25,14 +34,31 @@ import {
   Help,
   KeyboardArrowDown,
   Login as LoginIcon,
+  Menu as MenuIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Layout = ({ children }) => {
   const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const { full_name, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  const tabLabels = ["Рекомендации", "Шаблоны", "Сценарии", "Правовая база"];
+  const tabRoutes = ["/recomm", "/templates", "/scripts", "/legal"];
+
+  const currentTabIndex = tabRoutes.findIndex((route) =>
+    location.pathname.startsWith(route)
+  );
+
+  const handleTabChange = (event, newValue) => {
+    navigate(tabRoutes[newValue]);
+  };
 
   const handleUserMenuOpen = (event) => {
     setUserMenuAnchor(event.currentTarget);
@@ -55,6 +81,7 @@ const Layout = ({ children }) => {
   const handleLogoutClick = async () => {
     try {
       await logout();
+      navigate("/auth");
       handleUserMenuClose();
     } catch (error) {
       console.error("Ошибка при выходе:", error);
@@ -63,6 +90,19 @@ const Layout = ({ children }) => {
 
   const handleLoginClick = () => {
     navigate("/auth");
+  };
+
+  const handleMobileMenuToggle = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const handleMobileMenuClose = () => {
+    setMobileMenuOpen(false);
+  };
+
+  const handleMobileTabClick = (index) => {
+    navigate(tabRoutes[index]);
+    handleMobileMenuClose();
   };
 
   return (
@@ -297,6 +337,143 @@ const Layout = ({ children }) => {
           </Toolbar>
         </Container>
       </AppBar>
+
+      {/* Navigation Tabs */}
+      {!isMobile && (
+        <Box
+          sx={{
+            backgroundColor: "#fff",
+            // borderBottom: '1px solid #f0f0f0'
+          }}
+        >
+          <Container maxWidth="xl">
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: 3,
+              }}
+            >
+              <Tabs
+                value={currentTabIndex === -1 ? 0 : currentTabIndex}
+                onChange={handleTabChange}
+                sx={{
+                  margin: '0 auto', 
+
+                  "& .MuiTab-root": {
+                    fontSize: "15px",
+                    textTransform: "none",
+                    minWidth: "auto",
+                    px: 2,
+                    color: "#6b7280",
+                  },
+                  "& .MuiTabs-indicator": {
+                    backgroundColor: "#7c3aed",
+                  },
+                  "& .Mui-selected": {
+                    color: "#7c3aed !important",
+                  },
+                }}
+              >
+                {tabLabels.map((label, index) => (
+                  <Tab key={index} label={label} />
+                ))}
+              </Tabs>
+            </Box>
+          </Container>
+        </Box>
+      )}
+
+      {/* Mobile Menu Button */}
+      {isMobile && (
+        <Box
+          sx={{
+            backgroundColor: "#fff",
+            // borderBottom: '1px solid #f0f0f0'
+          }}
+        >
+          <Container maxWidth="xl">
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                px: 3,
+                py: 1,
+              }}
+            >
+              <IconButton
+                onClick={handleMobileMenuToggle}
+                sx={{
+                  color: "#6b7280",
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Box>
+          </Container>
+        </Box>
+      )}
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="right"
+        open={mobileMenuOpen}
+        onClose={handleMobileMenuClose}
+        PaperProps={{
+          sx: {
+            width: 280,
+            backgroundColor: "#fff",
+          },
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Typography variant="h6" sx={{ color: "#1f2937" }}>
+              Навигация
+            </Typography>
+            <IconButton onClick={handleMobileMenuClose}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          <List>
+            {tabLabels.map((label, index) => (
+              <ListItem key={index} disablePadding>
+                <ListItemButton
+                  onClick={() => handleMobileTabClick(index)}
+                  selected={currentTabIndex === index}
+                  sx={{
+                    
+                    "&.Mui-selected": {
+                      backgroundColor: "#f3f4f6",
+                      color: "#7c3aed",
+                      "&:hover": {
+                        backgroundColor: "#f3f4f6",
+                      },
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary={label}
+                    primaryTypographyProps={{
+                      fontSize: "15px",
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
 
       {/* Main Content */}
       <Box component="main">

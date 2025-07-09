@@ -174,7 +174,7 @@ const Profile = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       {/* Уведомления */}
       {error && (
         <Snackbar open autoHideDuration={6000} onClose={() => setError(null)}>
