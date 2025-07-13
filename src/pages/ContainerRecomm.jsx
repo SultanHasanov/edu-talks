@@ -1,20 +1,32 @@
-import { Typography, Box, Container } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import {
+  Typography,
+  Box,
+  Container,
+  CircularProgress,
+  Alert,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 const ContainerRecomm = () => {
   const navigate = useNavigate();
+  const [serverNews, setServerNews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Данные блоков с изображениями
+  // Данные блоков с изображениями (локальные)
   const blocks = [
     {
       id: "1",
       title: "Как написать содержательный раздел ООП под ФОП",
       date: "Сегодня",
       type: "РЕКОМЕНДАЦИЯ",
-      content: "Полное руководство по созданию раздела основной образовательной программы...",
+      content:
+        "Полное руководство по созданию раздела основной образовательной программы...",
       color: "#93c5fd",
       icon: "recommendation",
-      image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+      image:
+        "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     },
     {
       id: "2",
@@ -24,7 +36,8 @@ const ContainerRecomm = () => {
       content: "Образец положения о локальных нормативных актах...",
       color: "#86efac",
       icon: "document",
-      image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+      image:
+        "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     },
     {
       id: "3",
@@ -34,7 +47,8 @@ const ContainerRecomm = () => {
       content: "Актуальные правила приема учащихся...",
       color: "#fca5a5",
       icon: "instruction",
-      image: "https://images.unsplash.com/photo-1588072432836-e10032774350?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+      image:
+        "https://images.unsplash.com/photo-1588072432836-e10032774350?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     },
     {
       id: "4",
@@ -44,7 +58,8 @@ const ContainerRecomm = () => {
       content: "Готовый шаблон справки об обучении...",
       color: "#d8b4fe",
       icon: "template",
-      image: "https://images.unsplash.com/photo-1561164517-686f490ee86d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+      image:
+        "https://images.unsplash.com/photo-1561164517-686f490ee86d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     },
     {
       id: "5",
@@ -54,7 +69,8 @@ const ContainerRecomm = () => {
       content: "Пошаговая инструкция по документальному оформлению...",
       color: "#93c5fd",
       icon: "recommendation",
-      image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+      image:
+        "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     },
     {
       id: "6",
@@ -64,9 +80,45 @@ const ContainerRecomm = () => {
       content: "Обзор всех планируемых изменений...",
       color: "#fcd34d",
       icon: "changes",
-      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
-    }
+      image:
+        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
+    },
   ];
+
+  // Получение новостей с сервера
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const response = await fetch("http://85.143.175.100:8080/news");
+        if (!response.ok) {
+          throw new Error(`Ошибка HTTP: ${response.status}`);
+        }
+        const data = await response.json();
+        setServerNews(data.data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNews();
+  }, []);
+
+  // Преобразование новостей с сервера в формат блоков
+  const serverBlocks = serverNews.map((newsItem, index) => ({
+    id: newsItem.id,
+    title: newsItem.title,
+    date: new Date().toLocaleDateString(), // или используйте дату из newsItem, если она есть
+    type: "НОВОСТЬ",
+    content: newsItem.content,
+    color: "#7dd3fc",
+    icon: "news",
+    image: "https://charodeikibg.ru/_si/0/78235036.jpg",
+  }));
+
+  // Объединение локальных и серверных новостей
+  const allBlocks = [...serverBlocks, ...blocks];
 
   const handleBlockClick = (id) => {
     navigate(`/recomm/${id}`);
@@ -142,6 +194,25 @@ const ContainerRecomm = () => {
     </Box>
   );
 
+  if (loading) {
+    return (
+      <Container
+        maxWidth="xl"
+        sx={{ py: 3, display: "flex", justifyContent: "center" }}
+      >
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="xl" sx={{ py: 3 }}>
+        <Alert severity="error">Ошибка при загрузке новостей: {error}</Alert>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
       <Box>
@@ -152,26 +223,36 @@ const ContainerRecomm = () => {
           Актуальное
         </Typography>
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: 3,
-            mb: 4,
-          }}
-        >
-          {blocks.slice(0, 3).map((block, index) => renderBlock(block, index))}
-        </Box>
+        {allBlocks.length === 0 ? (
+          <Typography>Нет доступных новостей</Typography>
+        ) : (
+          <>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                gap: 3,
+                mb: 4,
+              }}
+            >
+              {allBlocks
+                .slice(0, 3)
+                .map((block, index) => renderBlock(block, index))}
+            </Box>
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: 3,
-          }}
-        >
-          {blocks.slice(3).map((block, index) => renderBlock(block, index + 3))}
-        </Box>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                gap: 3,
+              }}
+            >
+              {allBlocks
+                .slice(3)
+                .map((block, index) => renderBlock(block, index + 3))}
+            </Box>
+          </>
+        )}
       </Box>
     </Container>
   );

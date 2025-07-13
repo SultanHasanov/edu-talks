@@ -74,7 +74,8 @@ const Layout = ({ children }) => {
   };
 
   const handleSettingsClick = () => {
-    console.log("Переход в настройки");
+        navigate("/setting");
+
     handleUserMenuClose();
   };
 

@@ -123,33 +123,6 @@ const App = () => {
               <CloseIcon />
             </IconButton>
           </Box>
-
-          <List>
-            {tabLabels.map((label, index) => (
-              <ListItem key={index} disablePadding>
-                <ListItemButton
-                  onClick={() => handleMobileTabClick(index)}
-                  selected={tabValue === index}
-                  sx={{
-                    "&.Mui-selected": {
-                      backgroundColor: "#f3f4f6",
-                      color: "#7c3aed",
-                      "&:hover": {
-                        backgroundColor: "#f3f4f6",
-                      },
-                    },
-                  }}
-                >
-                  <ListItemText
-                    primary={label}
-                    primaryTypographyProps={{
-                      fontSize: "15px",
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
         </Box>
       </Drawer>
     </Box>

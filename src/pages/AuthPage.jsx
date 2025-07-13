@@ -40,10 +40,10 @@ const AuthPage = () => {
   const [authError, setAuthError] = useState("");
   const [regError, setRegError] = useState("");
   const [regSuccess, setRegSuccess] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState("");
+ 
   const [isLoading, setIsLoading] = useState(false);
   const { login, logout, isAuthenticated, username } = useAuth();
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
   const handleTabChange = (event, newValue) => {
@@ -87,15 +87,23 @@ const AuthPage = () => {
         }),
       });
 
-      const data = await response.json();
+      // Читаем тело ответа безопасно
+      let data;
+      const contentType = response.headers.get("Content-Type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = { message: text };
+      }
 
       if (!response.ok) {
         throw new Error(data.message || "Ошибка авторизации");
       }
 
-      // Сохраняем токен и роль из ответа сервера
-      login(data.access_token, data.role, data.username, data.full_name);
-      navigate("/");
+      console.log(data)
+      login(data.data.access_token, data.data.role, data.data.username, data.data.full_name);
+      navigate("/recomm");
     } catch (error) {
       setAuthError(error.message || "Неверный логин или пароль");
     } finally {
@@ -135,14 +143,24 @@ const AuthPage = () => {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-      console.log(data)
+      // Сначала читаем ответ (вне зависимости от успешности)
+      let data;
+      const contentType = response.headers.get("Content-Type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = { message: text };
+      }
 
-      setRegSuccess(true);
+      // Теперь безопасно проверяем статус
       if (!response.ok) {
         throw new Error(data.message || "Ошибка регистрации");
       }
 
+      // Успешная регистрация
+      setRegSuccess(true);
+      setSuccessMessage(data.message || "Регистрация прошла успешно");
       setFormData({
         username: "",
         email: "",
@@ -163,7 +181,7 @@ const AuthPage = () => {
     navigate("/");
   };
 
-  if (isLoggedIn) {
+   if (isAuthenticated) {
     return (
       <Container maxWidth="sm" sx={{ mt: 8 }}>
         <BackButtonIcon />
@@ -171,7 +189,7 @@ const AuthPage = () => {
           <Box textAlign="center" mb={3}>
             <PersonIcon sx={{ fontSize: 60, color: "primary.main" }} />
             <Typography variant="h5" component="h1" gutterBottom>
-              Добро пожаловать, {currentUser}!
+              Добро пожаловать, {username}!
             </Typography>
             <Typography color="text.secondary" mb={3}>
               Вы успешно авторизованы в системе.
@@ -289,9 +307,9 @@ const AuthPage = () => {
                 </Alert>
               )}
 
-              {regSuccess && (
+              {successMessage && (
                 <Alert severity="success" sx={{ mb: 3 }}>
-                  Регистрация прошла успешно! Теперь вы можете войти.
+                  {successMessage}
                 </Alert>
               )}
 

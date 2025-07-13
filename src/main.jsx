@@ -11,6 +11,7 @@ import TemplatesSection from "./pages/TemplatesSection.jsx";
 import ScriptSection from "./pages/ScriptSection.jsx";
 import LegalSection from "./pages/legalSection.jsx";
 import BlockDetails from "./components/BlockDetails.jsx";
+import Setting from "./pages/Setting.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -21,10 +22,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/recomm" element={<ContainerRecomm />} />
-           <Route path="/recomm/:id" element={<BlockDetails />} />
+          <Route path="/recomm/:id" element={<BlockDetails />} />
           <Route path="/templates" element={<TemplatesSection />} />
           <Route path="/scripts" element={<ScriptSection />} />
-          <Route path="/legal" element={<LegalSection/>} />
+          <Route path="/legal" element={<LegalSection />} />
+          <Route path="/setting" element={<Setting />} />
         </Route>
       </Routes>
     </AuthProvider>

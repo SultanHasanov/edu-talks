@@ -1,10 +1,14 @@
-import { Typography, Box, Container, Chip } from "@mui/material";
+import { Typography, Box, Container, Chip, Alert, CircularProgress } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import BackButtonIcon from "../ui/BackButtonIcon";
+import { useEffect, useState } from "react";
 
 const BlockDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [serverNews, setServerNews] = useState([]);
 
    const blocks = [
     {
@@ -119,7 +123,71 @@ const BlockDetails = () => {
     },
   ];
 
-  const block = blocks.find((b) => b.id === id) || blocks[0];
+   useEffect(() => {
+    if (id && id.startsWith("server-")) {
+      const fetchNewsDetails = async () => {
+        setLoading(true);
+        try {
+          const response = await fetch('http://85.143.175.100:8080/news');
+          if (!response.ok) {
+            throw new Error(`Ошибка HTTP: ${response.status}`);
+          }
+          const data = await response.json();
+          setServerNews(data);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchNewsDetails();
+    }
+  }, [id]);
+
+  const serverBlocks = serverNews?.map((newsItem, index) => ({
+    id: `server-${index}`,
+    title: newsItem.title,
+    type: "НОВОСТЬ",
+    content: `<p>${newsItem.content}</p>`,
+    date: new Date().toLocaleDateString(),
+    image: "https://charodeikibg.ru/_si/0/78235036.jpg",
+    color: "#7dd3fc"
+  }));
+
+  // Объединение локальных и серверных блоков
+  const allBlocks = [...blocks, ...serverBlocks];
+  const block = allBlocks.find((b) => b.id === id);
+
+  if (loading) {
+    return (
+      <Container maxWidth="xl" sx={{ py: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+ if (error) {
+    return (
+      <Container maxWidth="xl" sx={{ py: 3 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Ошибка при загрузке новости: {error}
+        </Alert>
+        <BackButtonIcon />
+      </Container>
+    );
+  }
+
+  if (!block) {
+    return (
+      <Container maxWidth="xl" sx={{ py: 3 }}>
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          Новость не найдена
+        </Alert>
+        <BackButtonIcon />
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
