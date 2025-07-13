@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import FileUploadSection from "../components/FileUploadSection";
 
 const TemplatesSection = () => {
-  const access_token = localStorage.getItem("access_token");
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -23,7 +22,7 @@ const TemplatesSection = () => {
           Шаблоны документов
         </Typography>
 
-        <FileUploadSection access_token={access_token} />
+        <FileUploadSection  />
       </Box>
     </Container>
   );

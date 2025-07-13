@@ -102,8 +102,8 @@ const AuthPage = () => {
       }
 
       console.log(data)
-      login(data.data.access_token, data.data.role, data.data.username, data.data.full_name);
-      navigate("/recomm");
+      login(data.data.access_token, data.data.refresh_token, data.data.role, data.data.username, data.data.full_name);
+      navigate("/");
     } catch (error) {
       setAuthError(error.message || "Неверный логин или пароль");
     } finally {

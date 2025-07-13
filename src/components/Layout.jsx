@@ -50,12 +50,12 @@ const Layout = ({ children }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const tabLabels = ["Рекомендации", "Шаблоны", "Сценарии", "Правовая база"];
-  const tabRoutes = ["/recomm", "/templates", "/scripts", "/legal"];
-
-  const currentTabIndex = tabRoutes.findIndex((route) =>
-    location.pathname.startsWith(route)
-  );
-
+  const tabRoutes = ["/", "/templates", "/scripts", "/legal"];
+ const currentTabIndex = tabRoutes.findIndex(route => 
+  location.pathname === route || location.pathname.startsWith(route + '/')
+);
+// Теперь может быть -1, но это не помешает переключению
+  console.log(currentTabIndex);
   const handleTabChange = (event, newValue) => {
     navigate(tabRoutes[newValue]);
   };
@@ -74,7 +74,7 @@ const Layout = ({ children }) => {
   };
 
   const handleSettingsClick = () => {
-        navigate("/setting");
+    navigate("/setting");
 
     handleUserMenuClose();
   };
@@ -357,10 +357,10 @@ const Layout = ({ children }) => {
               }}
             >
               <Tabs
-                value={currentTabIndex === -1 ? 0 : currentTabIndex}
+                value={currentTabIndex}
                 onChange={handleTabChange}
                 sx={{
-                  margin: '0 auto', 
+                  margin: "0 auto",
 
                   "& .MuiTab-root": {
                     fontSize: "15px",
@@ -453,7 +453,6 @@ const Layout = ({ children }) => {
                   onClick={() => handleMobileTabClick(index)}
                   selected={currentTabIndex === index}
                   sx={{
-                    
                     "&.Mui-selected": {
                       backgroundColor: "#f3f4f6",
                       color: "#7c3aed",

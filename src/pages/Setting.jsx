@@ -46,15 +46,14 @@ import {
   Settings as SettingsIcon,
   MoreHoriz as MoreIcon,
 } from "@mui/icons-material";
-import { useAuth } from "../context/AuthContext";
 import UsersTable from "../components/UsersTable";
 import UserEditDialog from "../components/UserEditDialog";
 import AddNewsForm from "../components/AddNewsForm";
 import FileUploadSection from "../components/FileUploadSection";
+import { useAuth } from "../context/AuthContext";
 
 const Setting = () => {
-  const { role, username, email, phone, address, full_name, access_token } =
-    useAuth();
+  const { role, username, email, phone, address, full_name } = useAuth();
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -68,6 +67,12 @@ const Setting = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoading, setUserLoading] = useState(false);
   const [userError, setUserError] = useState(null);
+  const access_token = localStorage.getItem("access_token");
+
+  if (!access_token) {
+    console.warn("Токен отсутствует, пропускаем загрузку пользователей");
+    return;
+  }
 
   const isAdmin = role === "admin";
 
@@ -231,213 +236,226 @@ const Setting = () => {
   ];
 
   const tabs = isAdmin ? adminTabs : userTabs;
-  
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       {/* Уведомления */}
       {error && (
         <Snackbar open autoHideDuration={6000} onClose={() => setError(null)}>
-          <Alert severity="error" >
-            {error}
-          </Alert>
+          <Alert severity="error">{error}</Alert>
         </Snackbar>
       )}
       {success && (
         <Snackbar open autoHideDuration={6000} onClose={() => setSuccess(null)}>
-          <Alert severity="success" >
-            {success}
-          </Alert>
+          <Alert severity="success">{success}</Alert>
         </Snackbar>
       )}
 
       {/* Правая колонка - основное содержимое профиля */}
-        <Paper elevation={3} sx={{ borderRadius: 2, mb: 3,  width: '100%'  }}>
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              "& .MuiTab-root": {
-                textTransform: "none",
-                fontSize: "14px",
-                py: 2,
-                minWidth: "unset",
-                minHeight: "unset",
-              },
-            }}
-          >
-            {tabs.map((tab, index) => (
-              <Tab
-                key={index}
-                label={tab.label}
-                icon={tab.icon}
-                iconPosition="start"
-              />
-            ))}
-          </Tabs>
+      <Paper elevation={3} sx={{ borderRadius: 2, mb: 3, width: "100%" }}>
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontSize: "14px",
+              py: 2,
+              minWidth: "unset",
+              minHeight: "unset",
+            },
+          }}
+        >
+          {tabs.map((tab, index) => (
+            <Tab
+              key={index}
+              label={tab.label}
+              icon={tab.icon}
+              iconPosition="start"
+            />
+          ))}
+        </Tabs>
 
-          <Divider />
+        <Divider />
 
-          <Box sx={{ p: 3 }}>
-            {isAdmin ? (
-              <>
-                {/* Статистика */}
-                {tabValue === 0 && (
-                  <>
-                    <Typography variant="h6" gutterBottom>
-                      Статистика системы
-                    </Typography>
-                    <Grid container spacing={2} sx={{ mb: 3 }}>
-                      <Grid item xs={12} sm={4}>
-                        <Card>
-                          <CardContent>
-                            <Typography
-                              variant="subtitle2"
-                              color="text.secondary"
-                            >
-                              Всего пользователей
-                            </Typography>
-                            <Typography variant="h4">{users.length}</Typography>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Card>
-                          <CardContent>
-                            <Typography
-                              variant="subtitle2"
-                              color="text.secondary"
-                            >
-                              Администраторов
-                            </Typography>
-                            <Typography variant="h4">
-                              {users.filter((u) => u.role === "admin").length}
-                            </Typography>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Card>
-                          <CardContent>
-                            <Typography
-                              variant="subtitle2"
-                              color="text.secondary"
-                            >
-                              Обычных пользователей
-                            </Typography>
-                            <Typography variant="h4">
-                              {users.filter((u) => u.role === "user").length}
-                            </Typography>
-                          </CardContent>
-                        </Card>
-                      </Grid>
+        <Box sx={{ p: 3 }}>
+          {isAdmin ? (
+            <>
+              {/* Статистика */}
+              {tabValue === 0 && (
+                <>
+                  <Typography variant="h6" gutterBottom>
+                    Статистика системы
+                  </Typography>
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12} sm={4}>
+                      <Card>
+                        <CardContent>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Всего пользователей
+                          </Typography>
+                          <Typography variant="h4">{users.length}</Typography>
+                        </CardContent>
+                      </Card>
                     </Grid>
-                  </>
-                )}
+                    <Grid item xs={12} sm={4}>
+                      <Card>
+                        <CardContent>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Администраторов
+                          </Typography>
+                          <Typography variant="h4">
+                            {users.filter((u) => u.role === "admin").length}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Card>
+                        <CardContent>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Обычных пользователей
+                          </Typography>
+                          <Typography variant="h4">
+                            {users.filter((u) => u.role === "user").length}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>{" "}
+                    <Grid item xs={12} sm={4}>
+                      <Card style={{ textAlign: "center" }}>
+                        <CardContent>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Оформили подписки
+                          </Typography>
+                          <Typography variant="h4">
+                            {
+                              users.filter((u) => u.HasSubscription === true)
+                                .length
+                            }
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </Grid>
+                </>
+              )}
 
-                {/* Пользователи */}
-                {tabValue === 1 && (
-                  <UsersTable
-                    users={users}
-                    loading={loading}
-                    onRefresh={fetchUsers}
-                    onEditUser={handleEditUser}
-                    onDeleteUser={handleDeleteUser}
-                    onCreateUser={handleCreateUser}
-                  />
-                )}
+              {/* Пользователи */}
+              {tabValue === 1 && (
+                <UsersTable
+                  users={users}
+                  loading={loading}
+                  onRefresh={fetchUsers}
+                  onEditUser={handleEditUser}
+                  onDeleteUser={handleDeleteUser}
+                  onCreateUser={handleCreateUser}
+                />
+              )}
 
-                {/* Файлы */}
-                {tabValue === 2 && (
-                  <>
-                    <Typography variant="h6" gutterBottom>
-                      Управление файлами
-                    </Typography>
-                    <FileUploadSection />
-                    {/* Здесь можно добавить список файлов и управление ими */}
-                  </>
-                )}
+              {/* Файлы */}
+              {tabValue === 2 && (
+                <>
+                  <Typography variant="h6" gutterBottom>
+                    Управление файлами
+                  </Typography>
+                  <FileUploadSection />
+                  {/* Здесь можно добавить список файлов и управление ими */}
+                </>
+              )}
 
-                {/* Новости */}
-                {tabValue === 3 && (
-                  <>
-                    <Typography variant="h6" gutterBottom>
-                      Управление новостями
-                    </Typography>
-                    <AddNewsForm />
-                    {/* Здесь можно добавить список новостей и управление ими */}
-                  </>
-                )}
+              {/* Новости */}
+              {tabValue === 3 && (
+                <>
+                  <Typography variant="h6" gutterBottom>
+                    Управление новостями
+                  </Typography>
+                  <AddNewsForm />
+                  {/* Здесь можно добавить список новостей и управление ими */}
+                </>
+              )}
 
-                {/* Настройки */}
-                {tabValue === 4 && (
-                  <>
-                    <Typography variant="h6" gutterBottom>
-                      Настройки системы
-                    </Typography>
-                    <Card>
-                      <CardContent>
-                        <Typography variant="body2" color="text.secondary">
-                          Здесь будут системные настройки...
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </>
-                )}
-              </>
-            ) : (
-              <>
-                {/* Обычный пользователь */}
-                {tabValue === 0 && (
-                  <>
-                    <Typography variant="h6" gutterBottom>
-                      Моя активность
-                    </Typography>
-                    <Card>
-                      <CardContent>
-                        <Typography variant="body2" color="text.secondary">
-                          Здесь будет информация о вашей активности...
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </>
-                )}
+              {/* Настройки */}
+              {tabValue === 4 && (
+                <>
+                  <Typography variant="h6" gutterBottom>
+                    Настройки системы
+                  </Typography>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="body2" color="text.secondary">
+                        Здесь будут системные настройки...
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Обычный пользователь */}
+              {tabValue === 0 && (
+                <>
+                  <Typography variant="h6" gutterBottom>
+                    Моя активность
+                  </Typography>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="body2" color="text.secondary">
+                        Здесь будет информация о вашей активности...
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
 
-                {tabValue === 1 && (
-                  <>
-                    <Typography variant="h6" gutterBottom>
-                      Настройки профиля
-                    </Typography>
-                    <Card>
-                      <CardContent>
-                        <Typography variant="body2" color="text.secondary">
-                          Здесь будут дополнительные настройки вашего профиля...
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </>
-                )}
+              {tabValue === 1 && (
+                <>
+                  <Typography variant="h6" gutterBottom>
+                    Настройки профиля
+                  </Typography>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="body2" color="text.secondary">
+                        Здесь будут дополнительные настройки вашего профиля...
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
 
-                {tabValue === 2 && (
-                  <>
-                    <Typography variant="h6" gutterBottom>
-                      Дополнительная информация
-                    </Typography>
-                    <Card>
-                      <CardContent>
-                        <Typography variant="body2" color="text.secondary">
-                          Дополнительные возможности вашего профиля
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </>
-                )}
-              </>
-            )}
-          </Box>
-        </Paper>
+              {tabValue === 2 && (
+                <>
+                  <Typography variant="h6" gutterBottom>
+                    Дополнительная информация
+                  </Typography>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="body2" color="text.secondary">
+                        Дополнительные возможности вашего профиля
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+            </>
+          )}
+        </Box>
+      </Paper>
 
       {/* Диалог редактирования пользователя */}
       <UserEditDialog

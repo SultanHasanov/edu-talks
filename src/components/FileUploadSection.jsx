@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -22,16 +22,23 @@ import {
   Modal,
   Alert,
   Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import {
   Close as CloseIcon,
   CloudUpload as CloudUploadIcon,
   Download as DownloadIcon,
   InsertDriveFile as FileIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
-const FileUploadSection = ({ access_token }) => {
+const FileUploadSection = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -45,16 +52,61 @@ const FileUploadSection = ({ access_token }) => {
   });
   const [selectedFileDetails, setSelectedFileDetails] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const access_token = localStorage.getItem("access_token");
+  const { authFetch } = useAuth();
+  const [previewUrl, setPreviewUrl] = useState(null);
 
-  const handleOpenDetails = (file) => {
+  const handleOpenDetails = async (file) => {
     setSelectedFileDetails(file);
     setDetailsModalOpen(true);
+
+    try {
+      const response = await axios.get(
+        `http://85.143.175.100:8080/api/files/${file.id}`,
+        {
+          responseType: "blob",
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+
+      let fileType = response.headers["content-type"];
+
+      if (!fileType || fileType === "application/octet-stream") {
+        const name = file.filename.toLowerCase();
+        if (name.endsWith(".pdf")) fileType = "application/pdf";
+        else if (name.endsWith(".jpg") || name.endsWith(".jpeg")) fileType = "image/jpeg";
+        else if (name.endsWith(".png")) fileType = "image/png";
+        else if (name.endsWith(".gif")) fileType = "image/gif";
+        else if (name.endsWith(".webp")) fileType = "image/webp";
+        else fileType = "application/octet-stream";
+      }
+
+      const blob = new Blob([response.data], { type: fileType });
+
+      if (fileType.includes("pdf") || fileType.includes("image")) {
+        const objectUrl = URL.createObjectURL(blob);
+        setPreviewUrl(objectUrl);
+      } else {
+        setPreviewUrl(null);
+      }
+    } catch (err) {
+      console.error("Ошибка при загрузке превью:", err);
+      setPreviewUrl(null);
+    }
   };
 
   const handleCloseDetails = () => {
     setDetailsModalOpen(false);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
   };
 
   const showSnackbar = (message, severity) => {
@@ -92,13 +144,10 @@ const FileUploadSection = ({ access_token }) => {
   const fetchFiles = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://85.143.175.100:8080/api/files", {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
-      setFiles(response?.data.data);
-      console.log(response.data);
+      const response = await authFetch("http://85.143.175.100:8080/api/files");
+      const data = await response.json();
+      setFiles(data?.data);
+      console.log(response.data.data);
     } catch (error) {
       console.error("Error fetching files:", error);
     } finally {
@@ -106,14 +155,16 @@ const FileUploadSection = ({ access_token }) => {
     }
   };
 
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      return;
-    }
+    if (!selectedFile) return;
 
     const formData = new FormData();
     formData.append("file", selectedFile);
@@ -124,22 +175,18 @@ const FileUploadSection = ({ access_token }) => {
       setLoading(true);
       setUploadProgress(0);
 
-      await axios.post(
+      const response = await authFetch(
         "http://85.143.175.100:8080/api/admin/files/upload",
-        formData,
         {
+          method: "POST",
+          body: formData,
           headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${access_token}`,
-          },
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            setUploadProgress(percentCompleted);
+            // ⚠️ НЕ указываем Content-Type вручную — browser сам выставит boundary для multipart
           },
         }
       );
+
+      if (!response.ok) throw new Error("Upload failed");
 
       showSnackbar("Файл успешно загружен", "success");
       fetchFiles();
@@ -147,8 +194,8 @@ const FileUploadSection = ({ access_token }) => {
       setDescription("");
       setIsPublic(false);
       document.getElementById("file-input").value = "";
-    } catch (error) {
-      console.error("Error uploading file:", error);
+    } catch (err) {
+      console.error("Ошибка загрузки:", err);
       showSnackbar("Ошибка при загрузке файла", "error");
     } finally {
       setLoading(false);
@@ -158,19 +205,16 @@ const FileUploadSection = ({ access_token }) => {
 
   const handleDownload = async (fileId, fileName) => {
     try {
-      const response = await axios.get(
+      const response = await authFetch(
         `http://85.143.175.100:8080/api/files/${fileId}`,
         {
-          responseType: "blob",
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-          validateStatus: () => true,
+          method: "GET",
         }
       );
 
       if (response.status === 200) {
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
         link.setAttribute("download", fileName);
@@ -178,12 +222,50 @@ const FileUploadSection = ({ access_token }) => {
         link.click();
         document.body.removeChild(link);
       } else {
-        const errorText = await new Response(response.data).text();
+        const errorText = await response.text();
         showSnackbar(errorText || "Ошибка загрузки файла", "error");
       }
     } catch (error) {
-      console.error("Ошибка при загрузке файла:", error);
+      console.error("Ошибка при загрузке:", error);
       showSnackbar("Произошла ошибка при загрузке", "error");
+    }
+  };
+
+  // Функция для открытия модального окна подтверждения удаления
+  const handleOpenDeleteModal = (file) => {
+    setFileToDelete(file);
+    setDeleteModalOpen(true);
+  };
+
+  // Функция для закрытия модального окна подтверждения удаления
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setFileToDelete(null);
+  };
+
+  // Функция для удаления файла
+  const handleDeleteFile = async () => {
+    if (!fileToDelete) return;
+
+    try {
+      setLoading(true);
+      const response = await authFetch(
+        `http://85.143.175.100:8080/api/admin/files/${fileToDelete.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) throw new Error("Delete failed");
+
+      showSnackbar("Файл успешно удален", "success");
+      fetchFiles();
+    } catch (err) {
+      console.error("Ошибка удаления:", err);
+      showSnackbar("Ошибка при удалении файла", "error");
+    } finally {
+      setLoading(false);
+      handleCloseDeleteModal();
     }
   };
 
@@ -276,7 +358,7 @@ const FileUploadSection = ({ access_token }) => {
       </Paper>
 
       {/* Список файлов */}
-      <Paper elevation={3} sx={{ p: 3, mb: 3, width: "100%", maxWidth: 800 }}>
+      <Paper elevation={3} sx={{ p: 3, mb: 3,  }}>
         <Typography variant="h6" gutterBottom>
           Доступные файлы
         </Typography>
@@ -324,9 +406,16 @@ const FileUploadSection = ({ access_token }) => {
                         variant="contained"
                         startIcon={<DownloadIcon />}
                         onClick={() => handleDownload(file.id, file.filename)}
+                        sx={{ mr: 1 }}
                       >
                         Скачать
                       </Button>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleOpenDeleteModal(file)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -363,6 +452,37 @@ const FileUploadSection = ({ access_token }) => {
 
           {selectedFileDetails && (
             <Box>
+              {previewUrl && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                    Превью:
+                  </Typography>
+                  {previewUrl.endsWith(".pdf") ||
+                  selectedFileDetails.filename
+                    .toLowerCase()
+                    .includes(".pdf") ? (
+                    <iframe
+                      src={previewUrl}
+                      title="Превью PDF"
+                      width="100%"
+                      height="400px"
+                      style={{ border: "1px solid #ccc", borderRadius: 6 }}
+                    />
+                  ) : (
+                    <img
+                      src={previewUrl}
+                      alt="Превью изображения"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: 400,
+                        borderRadius: 4,
+                        border: "1px solid #ccc",
+                      }}
+                    />
+                  )}
+                </Box>
+              )}
+
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                   Название:
@@ -413,14 +533,49 @@ const FileUploadSection = ({ access_token }) => {
                     );
                     handleCloseDetails();
                   }}
+                  sx={{ mr: 2 }}
                 >
                   Скачать файл
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => {
+                    handleOpenDeleteModal(selectedFileDetails);
+                    handleCloseDetails();
+                  }}
+                >
+                  Удалить файл
                 </Button>
               </Box>
             </Box>
           )}
         </Box>
       </Modal>
+
+      {/* Модальное окно подтверждения удаления */}
+      <Dialog
+        open={deleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          Подтверждение удаления
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Вы уверены, что хотите удалить файл "{fileToDelete?.filename}"? Это действие нельзя отменить.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteModal}>Отмена</Button>
+          <Button onClick={handleDeleteFile} color="error" autoFocus>
+            Удалить
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Уведомления */}
       <Snackbar

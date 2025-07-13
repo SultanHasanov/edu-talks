@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -8,6 +8,10 @@ import {
   Container,
   CircularProgress,
   Alert,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
 } from "@mui/material";
 
 const AddNewsForm = () => {
@@ -18,7 +22,37 @@ const AddNewsForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [news, setNews] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState("");
   const access_token = localStorage.getItem("access_token");
+
+  // Функция для загрузки новостей
+  const fetchNews = async () => {
+    try {
+      setNewsLoading(true);
+      setNewsError("");
+      const response = await fetch("http://85.143.175.100:8080/news");
+      
+      if (!response.ok) {
+        throw new Error(`Ошибка: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setNews(data?.data);
+    } catch (err) {
+      setNewsError(
+        err instanceof Error ? err.message : "Произошла ошибка при загрузке новостей"
+      );
+    } finally {
+      setNewsLoading(false);
+    }
+  };
+
+  // Загружаем новости при монтировании компонента
+  useEffect(() => {
+    fetchNews();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,6 +84,8 @@ const AddNewsForm = () => {
 
       setSuccess(true);
       setFormData({ title: "", content: "" });
+      // Обновляем список новостей после добавления
+      await fetchNews();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Произошла неизвестная ошибка"
@@ -115,6 +151,37 @@ const AddNewsForm = () => {
             </Button>
           </Box>
         </Box>
+      </Paper>
+
+      {/* Секция для отображения списка новостей */}
+      <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
+        <Typography variant="h4" component="h2" gutterBottom>
+          Список новостей
+        </Typography>
+
+        {newsLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <CircularProgress />
+          </Box>
+        ) : newsError ? (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {newsError}
+          </Alert>
+        ) : (
+          <List>
+            {news?.map((item, index) => (
+              <React.Fragment key={item.id || index}>
+                <ListItem>
+                  <ListItemText
+                    primary={item.title}
+                    secondary={item.content}
+                  />
+                </ListItem>
+                {index < news.length - 1 && <Divider />}
+              </React.Fragment>
+            ))}
+          </List>
+        )}
       </Paper>
     </Container>
   );

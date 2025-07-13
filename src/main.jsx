@@ -18,10 +18,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <AuthProvider>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<App />} />
+          {/* <Route path="/" element={<App />} /> */}
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/recomm" element={<ContainerRecomm />} />
+          <Route path="/" element={<ContainerRecomm />} />
           <Route path="/recomm/:id" element={<BlockDetails />} />
           <Route path="/templates" element={<TemplatesSection />} />
           <Route path="/scripts" element={<ScriptSection />} />
