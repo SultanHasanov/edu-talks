@@ -1,132 +1,71 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Typography,
   Box,
   Container,
   CircularProgress,
   Alert,
+  Chip,
 } from "@mui/material";
+import { Pagination, Select, Space } from "antd";
+import "antd/dist/reset.css"; // обязательно импортировать AntD стили
 import { useNavigate } from "react-router-dom";
+const { Option } = Select;
+const API_BASE_URL = "http://85.143.175.100:8080";
 
 const ContainerRecomm = () => {
   const navigate = useNavigate();
   const [serverNews, setServerNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+  const [total, setTotal] = useState(0);
 
-  // Данные блоков с изображениями (локальные)
-  const blocks = [
-    {
-      id: "1",
-      title: "Как написать содержательный раздел ООП под ФОП",
-      date: "Сегодня",
-      type: "РЕКОМЕНДАЦИЯ",
-      content:
-        "Полное руководство по созданию раздела основной образовательной программы...",
-      color: "#93c5fd",
-      icon: "recommendation",
-      image:
-        "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      id: "2",
-      title: "Положение о локальных актах",
-      date: "Сегодня",
-      type: "ДОКУМЕНТ",
-      content: "Образец положения о локальных нормативных актах...",
-      color: "#86efac",
-      icon: "document",
-      image:
-        "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      id: "3",
-      title: "Правила приема в школу",
-      date: "Вчера",
-      type: "ИНСТРУКЦИЯ",
-      content: "Актуальные правила приема учащихся...",
-      color: "#fca5a5",
-      icon: "instruction",
-      image:
-        "https://images.unsplash.com/photo-1588072432836-e10032774350?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      id: "4",
-      title: "Справка об обучении для сдающих ЕГЭ",
-      date: "2 дня назад",
-      type: "ОБРАЗЕЦ",
-      content: "Готовый шаблон справки об обучении...",
-      color: "#d8b4fe",
-      icon: "template",
-      image:
-        "https://images.unsplash.com/photo-1561164517-686f490ee86d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      id: "5",
-      title: "Как оформить отношения с учеником, который не сдал ЕГЭ",
-      date: "3 дня назад",
-      type: "РЕКОМЕНДАЦИЯ",
-      content: "Пошаговая инструкция по документальному оформлению...",
-      color: "#93c5fd",
-      icon: "recommendation",
-      image:
-        "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      id: "6",
-      title: "Изменения в учебных планах с 1 сентября 2025 года",
-      date: "Неделю назад",
-      type: "ИЗМЕНЕНИЯ",
-      content: "Обзор всех планируемых изменений...",
-      color: "#fcd34d",
-      icon: "changes",
-      image:
-        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80",
-    },
-  ];
-
-  // Получение новостей с сервера
   useEffect(() => {
     const fetchNews = async () => {
+      setLoading(true);
+      setError(null);
+
       try {
-        const response = await fetch("http://85.143.175.100:8080/news");
+        const response = await fetch(
+          `${API_BASE_URL}/news?page=${page}&page_size=${pageSize}`
+        );
         if (!response.ok) {
           throw new Error(`Ошибка HTTP: ${response.status}`);
         }
-        const data = await response.json();
-        setServerNews(data.data);
+        const result = await response.json();
+        setServerNews(result.data.data || []);
+        setTotal(result.data.total || 0);
       } catch (err) {
         setError(err.message);
+        console.error("Ошибка при загрузке новостей:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchNews();
-  }, []);
+  }, [page, pageSize]);
 
-  // Преобразование новостей с сервера в формат блоков
-  const serverBlocks = serverNews.map((newsItem, index) => ({
-    id: newsItem.id,
-    title: newsItem.title,
-    date: new Date().toLocaleDateString(), // или используйте дату из newsItem, если она есть
-    type: "НОВОСТЬ",
-    content: newsItem.content,
-    color: "#7dd3fc",
-    icon: "news",
-    image: "https://charodeikibg.ru/_si/0/78235036.jpg",
-  }));
-
-  // Объединение локальных и серверных новостей
-  const allBlocks = [...serverBlocks, ...blocks];
+  const blocks = useMemo(() => {
+    return serverNews.map((newsItem) => ({
+      id: newsItem.id,
+      title: newsItem.title,
+      date: new Date(newsItem.created_at).toLocaleDateString(),
+      type: "НОВОСТЬ",
+      content: newsItem.content,
+      color: "#7dd3fc",
+      image: newsItem.image_url,
+    }));
+  }, [serverNews]);
 
   const handleBlockClick = (id) => {
     navigate(`/recomm/${id}`);
   };
 
-  const renderBlock = (block, index) => (
+  const BlockCard = ({ block }) => (
     <Box
-      key={index}
       onClick={() => handleBlockClick(block.id)}
       sx={{
         backgroundColor: "#fff",
@@ -134,11 +73,14 @@ const ContainerRecomm = () => {
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         overflow: "hidden",
         cursor: "pointer",
-        transition: "transform 0.2s ease-in-out",
+        transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
         "&:hover": {
           transform: "translateY(-2px)",
           boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
         },
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <Box
@@ -160,30 +102,24 @@ const ContainerRecomm = () => {
           },
         }}
       >
-        {block.type && (
-          <Box
-            sx={{
-              position: "absolute",
-              top: 16,
-              left: 16,
-              backgroundColor: block.color,
-              color: "white",
-              px: 2,
-              py: 0.5,
-              borderRadius: 1,
-              fontSize: "12px",
-              fontWeight: 600,
-              zIndex: 1,
-            }}
-          >
-            <Typography style={{ fontWeight: 600 }}>{block.type}</Typography>
-          </Box>
-        )}
+        <Chip
+          label={block.type}
+          sx={{
+            position: "absolute",
+            top: 16,
+            left: 16,
+            backgroundColor: block.color,
+            color: "white",
+            fontWeight: 600,
+            zIndex: 1,
+          }}
+        />
       </Box>
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: 3, flexGrow: 1 }}>
         <Typography
           variant="h6"
-          sx={{ mb: 2, fontWeight: 600, color: "#1f2937" }}
+          component="h3"
+          sx={{ mb: 1, fontWeight: 600, color: "#1f2937" }}
         >
           {block.title}
         </Typography>
@@ -198,7 +134,13 @@ const ContainerRecomm = () => {
     return (
       <Container
         maxWidth="xl"
-        sx={{ py: 3, display: "flex", justifyContent: "center" }}
+        sx={{
+          py: 3,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "300px",
+        }}
       >
         <CircularProgress />
       </Container>
@@ -208,52 +150,95 @@ const ContainerRecomm = () => {
   if (error) {
     return (
       <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Alert severity="error">Ошибка при загрузке новостей: {error}</Alert>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Ошибка при загрузке новостей: {error}
+        </Alert>
       </Container>
     );
   }
 
+const getNewsWordForm = (count) => {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+
+  if (mod100 >= 11 && mod100 <= 14) return "новостей";
+  if (mod10 === 1) return "новость";
+  if (mod10 >= 2 && mod10 <= 4) return "новости";
+  return "новостей";
+};
+
+
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Box>
-        <Typography
-          variant="h4"
-          sx={{ mb: 4, fontWeight: 600, color: "#1f2937" }}
-        >
-          Актуальное
-        </Typography>
+      <Typography
+        variant="h4"
+        component="h1"
+        sx={{ mb: 4, fontWeight: 600, color: "#1f2937" }}
+      >
+        Актуальное
+      </Typography>
 
-        {allBlocks.length === 0 ? (
-          <Typography>Нет доступных новостей</Typography>
-        ) : (
-          <>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                gap: 3,
-                mb: 4,
-              }}
-            >
-              {allBlocks
-                .slice(0, 3)
-                .map((block, index) => renderBlock(block, index))}
-            </Box>
+      {blocks.length === 0 ? (
+        <Alert severity="info">Нет доступных новостей</Alert>
+      ) : (
+        <>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, 1fr)",
+                lg: "repeat(3, 1fr)",
+              },
+              gap: 3,
+              mb: 5,
+            }}
+          >
+            {blocks.map((block) => (
+              <BlockCard key={block.id} block={block} />
+            ))}
+          </Box>
 
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                gap: 3,
-              }}
-            >
-              {allBlocks
-                .slice(3)
-                .map((block, index) => renderBlock(block, index + 3))}
-            </Box>
-          </>
-        )}
-      </Box>
+          {/* AntD Pagination снизу */}
+           <div
+            style={{
+              marginTop: 32,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 16,
+            }}
+          >
+            <Space align="center">
+              <span>На странице</span>
+              <Select
+                value={pageSize}
+                onChange={(value) => {
+                  setPage(1);
+                  setPageSize(value);
+                }}
+                style={{ width: 80 }}
+              >
+                {[3, 6, 9, 12, 15].map((size) => (
+                  <Option key={size} value={size}>
+                    {size}
+                  </Option>
+                ))}
+              </Select>
+              <span>{getNewsWordForm(pageSize)}</span>
+            </Space>
+
+            <Pagination
+              current={page}
+              pageSize={pageSize}
+              total={total}
+              onChange={(newPage) => setPage(newPage)}
+              showSizeChanger={false}
+            />
+          </div>
+        </>
+      )}
     </Container>
   );
 };

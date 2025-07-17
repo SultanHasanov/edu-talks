@@ -144,9 +144,9 @@ const FileUploadSection = () => {
   const fetchFiles = async () => {
     try {
       setLoading(true);
-      const response = await authFetch("http://85.143.175.100:8080/api/files");
+      const response = await authFetch("http://85.143.175.100:8080/api/admin/files");
       const data = await response.json();
-      setFiles(data?.data);
+      setFiles(data.data);
       console.log(response.data.data);
     } catch (error) {
       console.error("Error fetching files:", error);

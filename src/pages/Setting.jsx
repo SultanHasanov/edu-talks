@@ -51,9 +51,11 @@ import UserEditDialog from "../components/UserEditDialog";
 import AddNewsForm from "../components/AddNewsForm";
 import FileUploadSection from "../components/FileUploadSection";
 import { useAuth } from "../context/AuthContext";
+import { fetchWithAuth } from "../utils/fetchWithAuth";
+import NotificationSender from "../components/NotificationSender";
 
 const Setting = () => {
-  const { role, username, email, phone, address, full_name } = useAuth();
+  const { role, access_token, email, phone, address, full_name, authFetch  } = useAuth();
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -67,12 +69,9 @@ const Setting = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoading, setUserLoading] = useState(false);
   const [userError, setUserError] = useState(null);
-  const access_token = localStorage.getItem("access_token");
+  // const access_token = localStorage.getItem("access_token");
 
-  if (!access_token) {
-    console.warn("Токен отсутствует, пропускаем загрузку пользователей");
-    return;
-  }
+ 
 
   const isAdmin = role === "admin";
 
@@ -95,7 +94,7 @@ const Setting = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(
+      const response = await authFetch(
         "http://85.143.175.100:8080/api/admin/users",
         {
           headers: {
@@ -109,8 +108,9 @@ const Setting = () => {
       }
 
       const data = await response.json();
-      setUsers(data.data);
+      setUsers(data.data.data);
     } catch (err) {
+      console.log(err)
       setError(err.message);
     } finally {
       setLoading(false);
@@ -225,7 +225,7 @@ const Setting = () => {
     { label: "Пользователи", icon: <UsersIcon /> },
     { label: "Файлы", icon: <FilesIcon /> },
     { label: "Новости", icon: <NewsIcon /> },
-    { label: "Настройки", icon: <SettingsIcon /> },
+    { label: "Рассылка", icon: <EmailIcon /> },
   ];
 
   // Вкладки для обычного пользователя
@@ -392,16 +392,7 @@ const Setting = () => {
               {/* Настройки */}
               {tabValue === 4 && (
                 <>
-                  <Typography variant="h6" gutterBottom>
-                    Настройки системы
-                  </Typography>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="body2" color="text.secondary">
-                        Здесь будут системные настройки...
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                  <NotificationSender/>
                 </>
               )}
             </>
