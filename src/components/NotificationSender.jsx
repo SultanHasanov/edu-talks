@@ -1,31 +1,26 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Card,
-  CardContent,
-  LinearProgress,
-  Snackbar,
-  Alert,
-} from "@mui/material";
-import SendIcon from "@mui/icons-material/Send";
+import { 
+  Card, 
+  Form, 
+  Input, 
+  Button, 
+  Typography, 
+  message as antdMessage,
+  Spin,
+  Alert
+} from "antd";
+import { SendOutlined } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 
+const { Title, Text } = Typography;
+const { TextArea } = Input;
+
 const NotificationSender = () => {
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
+  const [form] = Form.useForm();
   const [isLoading, setIsLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
   const { access_token } = useAuth();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (values) => {
     setIsLoading(true);
 
     try {
@@ -38,8 +33,8 @@ const NotificationSender = () => {
             Authorization: `Bearer ${access_token}`,
           },
           body: JSON.stringify({
-            subject,
-            message,
+            subject: values.subject,
+            message: values.message,
           }),
         }
       );
@@ -48,95 +43,95 @@ const NotificationSender = () => {
         throw new Error(`Ошибка: ${response.status}`);
       }
 
-      setSnackbar({
-        open: true,
-        message: "Рассылка успешно отправлена!",
-        severity: "success",
-      });
-
-      // Очищаем форму после успешной отправки
-      setSubject("");
-      setMessage("");
+      antdMessage.success("Рассылка успешно отправлена!");
+      form.resetFields();
     } catch (error) {
       console.error("Ошибка при отправке:", error);
-      setSnackbar({
-        open: true,
-        message: `Ошибка при отправке: ${error.message}`,
-        severity: "error",
-      });
+      antdMessage.error(`Ошибка при отправке: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCloseSnackbar = () => {
-    setSnackbar((prev) => ({ ...prev, open: false }));
-  };
-
   return (
-    <Box sx={{ maxWidth: 600, mx: "auto", mt: 4 }}>
-      <Card>
-        <CardContent>
-          <Typography variant="h5" component="h2" gutterBottom>
+    <div style={{ 
+      maxWidth: 600, 
+      margin: "0 auto", 
+      backgroundColor: "#f5f5f5",
+    }}>
+      <Card
+        title={
+          <Title level={3} style={{ margin: 0 }}>
             Отправка рассылки пользователям
-          </Typography>
-
-          {isLoading && <LinearProgress />}
-
-          <form onSubmit={handleSubmit}>
-            <TextField
+          </Title>
+        }
+        bordered={false}
+        style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)" }}
+      >
+        <Spin spinning={isLoading} tip="Отправка...">
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            disabled={isLoading}
+          >
+            <Form.Item
+              name="subject"
               label="Тема сообщения"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-            />
-
-            <TextField
-              label="Текст сообщения"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              multiline
-              rows={4}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              required
-            />
-
-            <Box sx={{ mt: 2 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                startIcon={<SendIcon />}
-                disabled={isLoading}
-                fullWidth
+              rules={[
+                { required: true, message: "Пожалуйста, введите тему сообщения" }
+              ]}
+            >
+              <Input 
+                placeholder="Введите тему сообщения" 
                 size="large"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="message"
+              label="Текст сообщения"
+              rules={[
+                { required: true, message: "Пожалуйста, введите текст сообщения" }
+              ]}
+            >
+              <TextArea 
+                rows={6} 
+                placeholder="Введите текст сообщения для рассылки"
+                showCount 
+                maxLength={1000}
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                icon={<SendOutlined />}
+                size="large"
+                block
+                loading={isLoading}
+                style={{ 
+                  backgroundColor: "#1890ff",
+                  height: 48,
+                  fontSize: 16
+                }}
               >
                 Отправить рассылку
               </Button>
-            </Box>
-          </form>
-        </CardContent>
-      </Card>
+            </Form.Item>
+          </Form>
+        </Spin>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-      >
         <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+          message="Информация о рассылке"
+          description="Сообщение будет отправлено всем зарегистрированным пользователям системы. Пожалуйста, проверьте текст перед отправкой."
+          type="info"
+          showIcon
+          style={{ marginTop: 24 }}
+        />
+      </Card>
+    </div>
   );
 };
 

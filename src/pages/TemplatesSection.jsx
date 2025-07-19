@@ -14,13 +14,7 @@ const TemplatesSection = () => {
           alignItems: "center",
         }}
       >
-        <Typography
-          variant="h4"
-          gutterBottom
-          sx={{ mb: 3, alignSelf: "flex-start" }}
-        >
-          Шаблоны документов
-        </Typography>
+       
 
         <FileUploadSection  />
       </Box>

@@ -1,8 +1,24 @@
-import { Typography, Box, Container, Chip, Alert, CircularProgress } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import BackButtonIcon from "../ui/BackButtonIcon";
 import { useEffect, useState, useMemo } from "react";
+import { 
+  Card, 
+  Typography, 
+  Tag, 
+  Alert, 
+  Spin,
+  Divider,
+  Button,
+  Badge
+} from "antd";
+import { 
+  ArrowLeftOutlined, 
+  CalendarOutlined,
+  FireOutlined 
+} from '@ant-design/icons';
+import "antd/dist/reset.css";
 
+const { Title, Text, Paragraph } = Typography;
+const { Ribbon } = Badge;
 const API_BASE_URL = "http://85.143.175.100:8080";
 
 const BlockDetails = () => {
@@ -45,129 +61,163 @@ const BlockDetails = () => {
     return {
       id: newsItem.id,
       title: newsItem.title,
-      type: "НОВОСТЬ",
-      content: `<p>${newsItem.content}</p>`,
+      type: newsItem.sticker,
+      content: newsItem.content,
       date: newsItem.created_at,
       image: newsItem.image_url,
-      color: "#7dd3fc"
+      color: newsItem.color,
     };
   }, [newsItem]);
 
   if (loading) {
     return (
-      <Container maxWidth="xl" sx={{ py: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-        <CircularProgress />
-      </Container>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '80vh' 
+      }}>
+        <Spin size="large" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          Ошибка при загрузке новости: {error}
-        </Alert>
-        <BackButtonIcon onClick={() => navigate(-1)} />
-      </Container>
+      <div style={{ padding: 24 }}>
+        <Alert 
+          message={`Ошибка при загрузке новости: ${error}`} 
+          type="error" 
+          showIcon
+          style={{ marginBottom: 24 }}
+        />
+        <Button 
+          icon={<ArrowLeftOutlined />} 
+          onClick={() => navigate(-1)}
+          type="primary"
+        >
+          Назад
+        </Button>
+      </div>
     );
   }
 
   if (!block) {
     return (
-      <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Alert severity="warning" sx={{ mb: 3 }}>
-          Новость не найдена
-        </Alert>
-        <BackButtonIcon onClick={() => navigate(-1)} />
-      </Container>
+      <div style={{ padding: 24 }}>
+        <Alert 
+          message="Новость не найдена" 
+          type="warning" 
+          showIcon
+          style={{ marginBottom: 24 }}
+        />
+        <Button 
+          icon={<ArrowLeftOutlined />} 
+          onClick={() => navigate(-1)}
+          type="primary"
+        >
+          Назад
+        </Button>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      <BackButtonIcon onClick={() => navigate(-1)} />
+    <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+      <Button 
+        icon={<ArrowLeftOutlined />} 
+        onClick={() => navigate(-1)}
+        style={{ marginBottom: 24 }}
+      >
+        Назад
+      </Button>
       
-      <Box sx={{ 
-        backgroundColor: "#fff", 
-        borderRadius: 2,
-        overflow: "hidden",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.08)"
-      }}>
-        {/* Баннер с изображением */}
-        <Box sx={{
-          height: 300,
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(${block.image})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          display: "flex",
-          alignItems: "flex-end",
-          p: 3
-        }}>
-          <Box>
-            <Chip 
-              label={block.type} 
-              sx={{ 
-                backgroundColor: block.color, 
-                color: "white",
-                fontWeight: "bold",
-                mb: 2
-              }} 
-            />
-            <Typography 
-              variant="h3" 
-              component="h1"
-              sx={{ 
-                color: "white", 
-                fontWeight: 700,
-                textShadow: "1px 1px 3px rgba(0,0,0,0.5)"
-              }}
-            >
-              {block.title}
-            </Typography>
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                color: "rgba(255,255,255,0.9)",
-                textShadow: "1px 1px 2px rgba(0,0,0,0.5)"
-              }}
-            >
-              Опубликовано: {new Date(block.date).toLocaleDateString()}
-            </Typography>
-          </Box>
-        </Box>
+      <Ribbon
+        text={block.type}
+        color={block.color}
+        placement="start"
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          textTransform: 'uppercase'
+        }}
+      >
+        <Card
+          bordered={false}
+          style={{
+            borderRadius: 12,
+            overflow: 'hidden',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+          }}
+          cover={
+            <div style={{ 
+              height: 400,
+              position: 'relative',
+              background: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(${block.image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              display: 'flex',
+              alignItems: 'flex-end',
+              padding: 24
+            }}>
+              <div>
+                <Title 
+                  level={1} 
+                  style={{ 
+                    color: 'white', 
+                    marginBottom: 8,
+                    textShadow: '1px 1px 3px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  {block.title}
+                </Title>
+                <Text 
+                  style={{ 
+                    color: 'rgba(255,255,255,0.9)',
+                    textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <CalendarOutlined style={{ marginRight: 8 }} />
+                  Опубликовано: {new Date(block.date).toLocaleDateString()}
+                </Text>
+              </div>
+            </div>
+          }
+        >
+          <div style={{ padding: '24px 0' }}>
+            {block.content.split('\n').map((paragraph, i) => (
+              <Paragraph 
+                key={i} 
+                style={{ 
+                  fontSize: 16,
+                  lineHeight: 1.8,
+                  marginBottom: 16
+                }}
+              >
+                {paragraph}
+              </Paragraph>
+            ))}
+          </div>
 
-        {/* Контент */}
-        <Box sx={{ p: 4 }}>
-          <Box 
-            sx={{
-              "& h3": {
-                fontSize: "1.5rem",
-                fontWeight: 600,
-                color: "#1f2937",
-                mt: 4,
-                mb: 2
-              },
-              "& p": {
-                fontSize: "1.1rem",
-                lineHeight: 1.6,
-                mb: 2,
-                color: "#4b5563"
-              },
-              "& ul, & ol": {
-                pl: 3,
-                mb: 2
-              },
-              "& li": {
-                mb: 1,
-                fontSize: "1.1rem",
-                color: "#4b5563"
-              }
-            }}
-            dangerouslySetInnerHTML={{ __html: block.content }} 
-          />
-        </Box>
-      </Box>
-    </Container>
+          <Divider />
+
+          <div style={{ textAlign: 'center' }}>
+            <Tag 
+              icon={<FireOutlined />} 
+              color="red"
+              style={{ 
+                fontSize: 14,
+                padding: '8px 16px'
+              }}
+            >
+              Актуальная новость
+            </Tag>
+          </div>
+        </Card>
+      </Ribbon>
+    </div>
   );
 };
 

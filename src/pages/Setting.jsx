@@ -1,51 +1,41 @@
 import React, { useState, useEffect } from "react";
 import {
-  Box,
-  Container,
-  Typography,
-  Avatar,
-  Paper,
-  Tabs,
-  Tab,
-  Divider,
-  Button,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  TextField,
-  Chip,
-  Grid,
   Card,
-  CardContent,
-  CardHeader,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
+  Tabs,
+  Typography,
+  Row,
+  Col,
+  Statistic,
+  Button,
+  Space,
+  Spin,
+  message,
+  Modal,
+  Avatar,
+  Divider,
+  Tag,
   Alert,
-  Snackbar,
-} from "@mui/material";
+} from "antd";
 import {
-  Person as PersonIcon,
-  Edit as EditIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  Home as HomeIcon,
-  AdminPanelSettings as AdminIcon,
-  LockReset as PasswordIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  Delete as DeleteIcon,
-  People as UsersIcon,
-  InsertDriveFile as FilesIcon,
-  Article as NewsIcon,
-  Equalizer as StatsIcon,
-  Settings as SettingsIcon,
-  MoreHoriz as MoreIcon,
-} from "@mui/icons-material";
+  UserOutlined,
+  EditOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  HomeOutlined,
+  SafetyOutlined,
+  LockOutlined,
+  SaveOutlined,
+  DeleteOutlined,
+  TeamOutlined,
+  FileOutlined,
+  NotificationOutlined,
+  BarChartOutlined,
+  SettingOutlined,
+  EllipsisOutlined,
+  CrownOutlined,
+  UserAddOutlined,
+  BellOutlined,
+} from "@ant-design/icons";
 import UsersTable from "../components/UsersTable";
 import UserEditDialog from "../components/UserEditDialog";
 import AddNewsForm from "../components/AddNewsForm";
@@ -54,23 +44,23 @@ import { useAuth } from "../context/AuthContext";
 import { fetchWithAuth } from "../utils/fetchWithAuth";
 import NotificationSender from "../components/NotificationSender";
 
-const Setting = () => {
-  const { role, access_token, email, phone, address, full_name, authFetch } =
-    useAuth();
-  const [tabValue, setTabValue] = useState(0);
-  const [editMode, setEditMode] = useState(false);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+const { Title, Text } = Typography;
+const { TabPane } = Tabs;
+const { confirm } = Modal;
 
+const Setting = () => {
+  const { role, email, phone, address, full_name } = useAuth();
+  const [activeTab, setActiveTab] = useState("1");
+  const [editMode, setEditMode] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [usersAll, setUsersAll] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [news, setNews] = useState(null);
+  const access_token = localStorage.getItem("access_token");
   // Состояния для управления редактированием пользователей
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoading, setUserLoading] = useState(false);
-  const [userError, setUserError] = useState(null);
-  const [news, setNews] = useState(null);
 
   const isAdmin = role === "admin";
 
@@ -84,18 +74,27 @@ const Setting = () => {
   // Загрузка пользователей для админа
   useEffect(() => {
     if (isAdmin) {
-      // Загружаем пользователей только когда активна вкладка "Пользователи"
       fetchUsers();
       fetchNews();
+      fetchUsersAll();
     }
-  }, [isAdmin, tabValue]);
+  }, [isAdmin, activeTab]);
 
-  const fetchUsers = async () => {
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+
+  // Добавляем состояние для инициализации
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Общая функция загрузки данных
+  const fetchUsers = async (page = 1, pageSize = 10) => {
     setLoading(true);
-    setError(null);
     try {
-      const response = await authFetch(
-        "http://85.143.175.100:8080/api/admin/users",
+      const response = await fetch(
+        `http://85.143.175.100:8080/api/admin/users?page=${page}&page_size=${pageSize}`,
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -109,20 +108,38 @@ const Setting = () => {
 
       const data = await response.json();
       setUsers(data.data.data);
+
+      // Обновляем пагинацию
+      const newPagination = {
+        current: data.data.page,
+        pageSize: data.data.page_size,
+        total: data.data.total,
+      };
+      setPagination(newPagination);
+
+      // Помечаем как инициализированное
+      if (!isInitialized) setIsInitialized(true);
+
+      return newPagination;
     } catch (err) {
       console.log(err);
-      setError(err.message);
+      message.error(err.message || "Ошибка загрузки пользователей");
+      return {
+        current: 1,
+        pageSize: 10,
+        total: 0,
+      };
     } finally {
       setLoading(false);
     }
   };
 
-   const fetchNews = async () => {
+  const fetchUsersAll = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const response = await authFetch(
-        "http://85.143.175.100:8080/news",
+      // Сначала получаем первую страницу, чтобы узнать общее количество пользователей
+      const firstPageResponse = await fetch(
+        `http://85.143.175.100:8080/api/admin/users?page=1&page_size=10`,
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -130,23 +147,78 @@ const Setting = () => {
         }
       );
 
-      if (!response.ok) {
+      if (!firstPageResponse.ok) {
         throw new Error("Ошибка загрузки пользователей");
+      }
+
+      const firstPageData = await firstPageResponse.json();
+      const totalUsers = firstPageData.data.total;
+
+      // Затем делаем запрос с page_size равным общему количеству пользователей
+      const allUsersResponse = await fetch(
+        `http://85.143.175.100:8080/api/admin/users?page=1&page_size=${totalUsers}`,
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+
+      if (!allUsersResponse.ok) {
+        throw new Error("Ошибка загрузки всех пользователей");
+      }
+
+      const allUsersData = await allUsersResponse.json();
+      setUsersAll(allUsersData.data.data);
+
+      // Обновляем пагинацию (теперь у нас одна страница со всеми пользователями)
+    } catch (err) {
+      console.log(err);
+      message.error(err.message || "Ошибка загрузки пользователей");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Первичная загрузка данных
+  useEffect(() => {
+    if (!isInitialized) {
+      fetchUsers(pagination.current, pagination.pageSize);
+    }
+  }, [isInitialized]);
+
+  // Обновленная функция обновления данных
+  const handleRefresh = async () => {
+    await fetchUsers(pagination.current, pagination.pageSize);
+  };
+
+  // Функция обработки изменения страницы
+  const handleTableChange = async (newPagination) => {
+    await fetchUsers(newPagination.current, newPagination.pageSize);
+  };
+
+  const fetchNews = async () => {
+    try {
+      const response = await fetch("http://85.143.175.100:8080/news", {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Ошибка загрузки новостей");
       }
 
       const data = await response.json();
       setNews(data.data.total);
     } catch (err) {
       console.log(err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      message.error("Ошибка загрузки новостей");
     }
   };
 
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
+  const handleTabChange = (key) => {
+    setActiveTab(key);
   };
 
   const handleEditClick = () => {
@@ -166,10 +238,10 @@ const Setting = () => {
   const handleSaveClick = async () => {
     try {
       // Здесь должна быть логика сохранения изменений через API
-      setSuccess("Изменения успешно сохранены");
+      message.success("Изменения успешно сохранены");
       setEditMode(false);
     } catch (err) {
-      setError("Ошибка при сохранении изменений");
+      message.error("Ошибка при сохранении изменений");
     }
   };
 
@@ -179,8 +251,18 @@ const Setting = () => {
   };
 
   const handleDeleteAccount = () => {
-    // Логика удаления аккаунта
-    setOpenDeleteDialog(false);
+    confirm({
+      title: "Подтверждение удаления",
+      content:
+        "Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить.",
+      okText: "Удалить",
+      okType: "danger",
+      cancelText: "Отмена",
+      onOk() {
+        // Логика удаления аккаунта
+        message.success("Аккаунт удален");
+      },
+    });
   };
 
   // Обработчики для управления пользователями
@@ -195,13 +277,21 @@ const Setting = () => {
   };
 
   const handleDeleteUser = (user) => {
-    // Логика удаления пользователя
-    console.log("Удалить пользователя:", user);
+    confirm({
+      title: "Удаление пользователя",
+      content: `Вы уверены, что хотите удалить пользователя ${user.full_name}?`,
+      okText: "Удалить",
+      okType: "danger",
+      cancelText: "Отмена",
+      onOk() {
+        console.log("Удалить пользователя:", user);
+        message.success("Пользователь удален");
+      },
+    });
   };
 
   const handleSaveUser = async (userData) => {
     setUserLoading(true);
-    setUserError(null);
 
     try {
       const url = userData.id
@@ -233,7 +323,7 @@ const Setting = () => {
         );
       }
 
-      setSuccess(
+      message.success(
         userData.id
           ? "Пользователь успешно обновлен"
           : "Пользователь успешно создан"
@@ -241,255 +331,305 @@ const Setting = () => {
       setEditDialogOpen(false);
       fetchUsers();
     } catch (err) {
-      setUserError(err.message);
+      message.error(err.message);
     } finally {
       setUserLoading(false);
     }
   };
 
-  // Вкладки для администратора
-  const adminTabs = [
-    { label: "Статистика", icon: <StatsIcon /> },
-    { label: "Пользователи", icon: <UsersIcon /> },
-    { label: "Файлы", icon: <FilesIcon /> },
-    { label: "Новости", icon: <NewsIcon /> },
-    { label: "Рассылка", icon: <EmailIcon /> },
-  ];
+  // Компонент статистики
+  const StatisticsContent = () => (
+    <div style={{ padding: "0 0 24px" }}>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Всего пользователей"
+              value={usersAll.length}
+              prefix={<TeamOutlined />}
+              valueStyle={{ color: "#3f8600" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Администраторов"
+              value={usersAll.filter((u) => u.role === "admin").length}
+              prefix={<CrownOutlined />}
+              valueStyle={{ color: "#cf1322" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Обычных пользователей"
+              value={users.filter((u) => u.role === "user").length}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: "#1890ff" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="С подпиской"
+              value={users.filter((u) => u.HasSubscription === true).length}
+              prefix={<SafetyOutlined />}
+              valueStyle={{ color: "#722ed1" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Новости"
+              value={news || 0}
+              prefix={<NotificationOutlined />}
+              valueStyle={{ color: "#fa8c16" }}
+            />
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
 
-  // Вкладки для обычного пользователя
-  const userTabs = [
-    { label: "Моя активность", icon: <StatsIcon /> },
-    { label: "Настройки", icon: <SettingsIcon /> },
-    { label: "Дополнительно", icon: <MoreIcon /> },
-  ];
+  // Компонент активности пользователя
+  const UserActivityContent = () => (
+    <div style={{ padding: "0 0 24px" }}>
+      <Title
+        level={4}
+        style={{
+          marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <BarChartOutlined style={{ color: "#1890ff" }} />
+        Моя активность
+      </Title>
+      <Card>
+        <div style={{ textAlign: "center", padding: "40px 20px" }}>
+          <BarChartOutlined
+            style={{ fontSize: 48, color: "#d9d9d9", marginBottom: 16 }}
+          />
+          <Text type="secondary">
+            Здесь будет информация о вашей активности в системе
+          </Text>
+        </div>
+      </Card>
+    </div>
+  );
 
-  const tabs = isAdmin ? adminTabs : userTabs;
+  // Компонент настроек профиля
+  const ProfileSettingsContent = () => (
+    <div style={{ padding: "0 0 24px" }}>
+      <Title
+        level={4}
+        style={{
+          marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <SettingOutlined style={{ color: "#1890ff" }} />
+        Настройки профиля
+      </Title>
+      <Card>
+        <div style={{ textAlign: "center", padding: "40px 20px" }}>
+          <SettingOutlined
+            style={{ fontSize: 48, color: "#d9d9d9", marginBottom: 16 }}
+          />
+          <Text type="secondary">
+            Здесь будут дополнительные настройки вашего профиля
+          </Text>
+        </div>
+      </Card>
+    </div>
+  );
+
+  // Компонент дополнительной информации
+  const AdditionalInfoContent = () => (
+    <div style={{ padding: "0 0 24px" }}>
+      <Title
+        level={4}
+        style={{
+          marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <EllipsisOutlined style={{ color: "#1890ff" }} />
+        Дополнительная информация
+      </Title>
+      <Card>
+        <div style={{ textAlign: "center", padding: "40px 20px" }}>
+          <EllipsisOutlined
+            style={{ fontSize: 48, color: "#d9d9d9", marginBottom: 16 }}
+          />
+          <Text type="secondary">
+            Дополнительные возможности вашего профиля
+          </Text>
+        </div>
+      </Card>
+    </div>
+  );
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      {/* Уведомления */}
-      {error && (
-        <Snackbar open autoHideDuration={6000} onClose={() => setError(null)}>
-          <Alert severity="error">{error}</Alert>
-        </Snackbar>
-      )}
-      {success && (
-        <Snackbar open autoHideDuration={6000} onClose={() => setSuccess(null)}>
-          <Alert severity="success">{success}</Alert>
-        </Snackbar>
-      )}
-
-      {/* Правая колонка - основное содержимое профиля */}
-      <Paper elevation={3} sx={{ borderRadius: 2, mb: 3, width: "100%" }}>
+    <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px" }}>
+      {/* Основная карточка с вкладками */}
+      <Card
+        style={{
+          borderRadius: 8,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        }}
+      >
         <Tabs
-          value={tabValue}
+          activeKey={activeTab}
           onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontSize: "14px",
-              py: 2,
-              minWidth: "unset",
-              minHeight: "unset",
-            },
-          }}
+          type="card"
+          size="large"
+          style={{ marginBottom: 0 }}
         >
-          {tabs.map((tab, index) => (
-            <Tab
-              key={index}
-              label={tab.label}
-              icon={tab.icon}
-              iconPosition="start"
-            />
-          ))}
-        </Tabs>
-
-        <Divider />
-
-        <Box sx={{ p: 3 }}>
           {isAdmin ? (
             <>
-              {/* Статистика */}
-              {tabValue === 0 && (
-                <>
-                  <Typography variant="h6" gutterBottom>
-                    Статистика системы
-                  </Typography>
-                  <Grid container spacing={2} sx={{ mb: 3 }}>
-                    <Grid item xs={12} sm={4}>
-                      <Card style={{ textAlign: "center" }}>
-                        <CardContent>
-                          <Typography
-                            variant="subtitle2"
-                            color="text.secondary"
-                          >
-                            Всего пользователей
-                          </Typography>
-                          <Typography variant="h4">{users.length}</Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <Card style={{ textAlign: "center" }}>
-                        <CardContent>
-                          <Typography
-                            variant="subtitle2"
-                            color="text.secondary"
-                          >
-                            Администраторов
-                          </Typography>
-                          <Typography variant="h4">
-                            {users.filter((u) => u.role === "admin").length}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <Card style={{ textAlign: "center" }}>
-                        <CardContent>
-                          <Typography
-                            variant="subtitle2"
-                            color="text.secondary"
-                          >
-                            Обычных пользователей
-                          </Typography>
-                          <Typography variant="h4">
-                            {users.filter((u) => u.role === "user").length}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>{" "}
-                    <Grid item xs={12} sm={4}>
-                      <Card style={{ textAlign: "center" }}>
-                        <CardContent>
-                          <Typography
-                            variant="subtitle2"
-                            color="text.secondary"
-                          >
-                            Оформили подписки
-                          </Typography>
-                          <Typography variant="h4">
-                            {
-                              users.filter((u) => u.HasSubscription === true)
-                                .length
-                            }
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={4}>
-                      <Card style={{ textAlign: "center" }}>
-                        <CardContent>
-                          <Typography
-                            variant="subtitle2"
-                            color="text.secondary"
-                          >
-                            Новости
-                          </Typography>
-                          <Typography variant="h4">
-                           {news}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  </Grid>
-                </>
-              )}
+              <TabPane
+                tab={
+                  <Space>
+                    <BarChartOutlined />
+                    Статистика
+                  </Space>
+                }
+                key="1"
+              >
+                <Spin spinning={loading}>
+                  <StatisticsContent />
+                </Spin>
+              </TabPane>
 
-              {/* Пользователи */}
-              {tabValue === 1 && (
-                <UsersTable
-                  users={users}
-                  loading={loading}
-                  onRefresh={fetchUsers}
-                  onEditUser={handleEditUser}
-                  onDeleteUser={handleDeleteUser}
-                  onCreateUser={handleCreateUser}
-                />
-              )}
+              <TabPane
+                tab={
+                  <Space>
+                    <TeamOutlined />
+                    Пользователи
+                  </Space>
+                }
+                key="2"
+              >
+                <div>
+                  <UsersTable
+                    users={users}
+                    loading={loading}
+                    onRefresh={handleRefresh}
+                    onEditUser={handleEditUser}
+                    onDeleteUser={handleDeleteUser}
+                    onCreateUser={handleCreateUser}
+                    pagination={pagination}
+                    onTableChange={handleTableChange}
+                  />
+                </div>
+              </TabPane>
 
-              {/* Файлы */}
-              {tabValue === 2 && (
-                <>
-                  <Typography variant="h6" gutterBottom>
+              <TabPane
+                tab={
+                  <Space>
+                    <FileOutlined />
+                    Файлы
+                  </Space>
+                }
+                key="3"
+              >
+                <div style={{ padding: "0 0 24px" }}>
+                  <Title
+                    level={4}
+                    style={{
+                      marginBottom: 24,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <FileOutlined style={{ color: "#1890ff" }} />
                     Управление файлами
-                  </Typography>
+                  </Title>
                   <FileUploadSection />
-                  {/* Здесь можно добавить список файлов и управление ими */}
-                </>
-              )}
+                </div>
+              </TabPane>
 
-              {/* Новости */}
-              {tabValue === 3 && (
-                <>
-                  <Typography variant="h6" gutterBottom>
-                    Управление новостями
-                  </Typography>
+              <TabPane
+                tab={
+                  <Space>
+                    <NotificationOutlined />
+                    Новости
+                  </Space>
+                }
+                key="4"
+              >
+                <div>
                   <AddNewsForm />
-                  {/* Здесь можно добавить список новостей и управление ими */}
-                </>
-              )}
+                </div>
+              </TabPane>
 
-              {/* Настройки */}
-              {tabValue === 4 && (
-                <>
+              <TabPane
+                tab={
+                  <Space>
+                    <BellOutlined />
+                    Рассылка
+                  </Space>
+                }
+                key="5"
+              >
+                <div >
+                 
                   <NotificationSender />
-                </>
-              )}
+                </div>
+              </TabPane>
             </>
           ) : (
             <>
-              {/* Обычный пользователь */}
-              {tabValue === 0 && (
-                <>
-                  <Typography variant="h6" gutterBottom>
+              <TabPane
+                tab={
+                  <Space>
+                    <BarChartOutlined />
                     Моя активность
-                  </Typography>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="body2" color="text.secondary">
-                        Здесь будет информация о вашей активности...
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </>
-              )}
+                  </Space>
+                }
+                key="1"
+              >
+                <UserActivityContent />
+              </TabPane>
 
-              {tabValue === 1 && (
-                <>
-                  <Typography variant="h6" gutterBottom>
-                    Настройки профиля
-                  </Typography>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="body2" color="text.secondary">
-                        Здесь будут дополнительные настройки вашего профиля...
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </>
-              )}
+              <TabPane
+                tab={
+                  <Space>
+                    <SettingOutlined />
+                    Настройки
+                  </Space>
+                }
+                key="2"
+              >
+                <ProfileSettingsContent />
+              </TabPane>
 
-              {tabValue === 2 && (
-                <>
-                  <Typography variant="h6" gutterBottom>
-                    Дополнительная информация
-                  </Typography>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="body2" color="text.secondary">
-                        Дополнительные возможности вашего профиля
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </>
-              )}
+              <TabPane
+                tab={
+                  <Space>
+                    <EllipsisOutlined />
+                    Дополнительно
+                  </Space>
+                }
+                key="3"
+              >
+                <AdditionalInfoContent />
+              </TabPane>
             </>
           )}
-        </Box>
-      </Paper>
+        </Tabs>
+      </Card>
 
       {/* Диалог редактирования пользователя */}
       <UserEditDialog
@@ -498,33 +638,8 @@ const Setting = () => {
         onClose={() => setEditDialogOpen(false)}
         onSave={handleSaveUser}
         loading={userLoading}
-        error={userError}
       />
-
-      {/* Диалог удаления аккаунта */}
-      <Dialog
-        open={openDeleteDialog}
-        onClose={() => setOpenDeleteDialog(false)}
-      >
-        <DialogTitle>Подтверждение удаления</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя
-            отменить.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)}>Отмена</Button>
-          <Button
-            onClick={handleDeleteAccount}
-            color="error"
-            variant="contained"
-          >
-            Удалить
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+    </div>
   );
 };
 

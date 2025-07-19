@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  Typography,
-  Box,
-  Container,
-  CircularProgress,
-  Alert,
-  Chip,
-} from "@mui/material";
-import { Pagination, Select, Space } from "antd";
-import "antd/dist/reset.css"; // обязательно импортировать AntD стили
+import { Box, Container, CircularProgress } from "@mui/material";
+import { Card, Pagination, Select, Space, Tag, Typography, Alert, Badge } from "antd";
+import { CalendarOutlined, FireOutlined } from '@ant-design/icons';
+import "antd/dist/reset.css";
 import { useNavigate } from "react-router-dom";
+
 const { Option } = Select;
+const { Meta } = Card;
+const { Title, Text } = Typography;
+const { Ribbon } = Badge;
 const API_BASE_URL = "http://85.143.175.100:8080";
 
 const ContainerRecomm = () => {
@@ -64,82 +62,90 @@ const ContainerRecomm = () => {
     navigate(`/recomm/${id}`);
   };
 
-  const BlockCard = ({ block }) => (
-    <Box
-      onClick={() => handleBlockClick(block.id)}
-      sx={{
-        backgroundColor: "#fff",
-        borderRadius: 2,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        overflow: "hidden",
-        cursor: "pointer",
-        transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-        "&:hover": {
-          transform: "translateY(-2px)",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-        },
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
+ const BlockCard = ({ block }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <Ribbon
+      text={block.type}
+      color={block.color}
+      style={{
+        fontSize: 14,
+        fontWeight: 600,
       }}
     >
-      <Box
-        sx={{
-          height: 200,
-          position: "relative",
-          overflow: "hidden",
-          backgroundImage: `url(${block.image})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.1)",
-          },
+      <div
+        style={{
+          transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+          transition: 'all 0.3s ease',
         }}
       >
-        <Chip
-          label={block.type}
-          sx={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            backgroundColor: block.color,
-            color: "white",
-            fontWeight: 600,
-            zIndex: 1,
+        <Card
+          hoverable
+          onClick={() => handleBlockClick(block.id)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: 12,
+            border: isHovered ? '1px solid #1890ff' : '1px solid #f0f0f0',
+            boxShadow: isHovered 
+              ? '0 6px 16px rgba(0, 0, 0, 0.12)' 
+              : '0 4px 12px rgba(0, 0, 0, 0.08)',
           }}
-        />
-      </Box>
-      <Box sx={{ p: 3, flexGrow: 1 }}>
-        <Typography
-          variant="h6"
-          component="h3"
-          sx={{ mb: 1, fontWeight: 600, color: "#1f2937" }}
+          cover={
+            <div
+              style={{
+                height: 180,
+                backgroundImage: `url(${block.image})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                // transform: isHovered ? 'scale(1.03)' : 'scale(1)',
+                transition: 'transform 0.3s',
+              }}
+            />
+          }
         >
-          {block.title}
-        </Typography>
-        <Typography variant="body2" sx={{ color: "#6b7280" }}>
-          {block.date}
-        </Typography>
-      </Box>
-    </Box>
+          <Meta
+            title={
+              <Title 
+                level={5} 
+                style={{ 
+                  marginBottom: 8,
+                  color: isHovered ? '#1890ff' : 'inherit',
+                }}
+              >
+                {block.title}
+              </Title>
+            }
+            description={
+              <Space>
+                <CalendarOutlined style={{ color: '#888' }} />
+                <Text type="secondary">{block.date}</Text>
+                {block.type.toLowerCase().includes('важно') && (
+                  <Tag icon={<FireOutlined />} color="red">
+                    Важно
+                  </Tag>
+                )}
+              </Space>
+            }
+          />
+        </Card>
+      </div>
+    </Ribbon>
   );
-
+};
   if (loading) {
     return (
       <Container
         maxWidth="xl"
-        sx={{
-          py: 3,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "300px",
+        style={{
+          padding: '24px 0',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '300px',
         }}
       >
         <CircularProgress />
@@ -149,69 +155,57 @@ const ContainerRecomm = () => {
 
   if (error) {
     return (
-      <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          Ошибка при загрузке новостей: {error}
-        </Alert>
+      <Container maxWidth="xl" style={{ padding: '24px 0' }}>
+        <Alert message={`Ошибка при загрузке новостей: ${error}`} type="error" showIcon />
       </Container>
     );
   }
 
-const getNewsWordForm = (count) => {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
+  const getNewsWordForm = (count) => {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
 
-  if (mod100 >= 11 && mod100 <= 14) return "новостей";
-  if (mod10 === 1) return "новость";
-  if (mod10 >= 2 && mod10 <= 4) return "новости";
-  return "новостей";
-};
-
+    if (mod100 >= 11 && mod100 <= 14) return "новостей";
+    if (mod10 === 1) return "новость";
+    if (mod10 >= 2 && mod10 <= 4) return "новости";
+    return "новостей";
+  };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{ mb: 4, fontWeight: 600, color: "#1f2937" }}
-      >
+    <Container maxWidth="xl" style={{ padding: '24px 0' }}>
+      <Title level={2} style={{ marginBottom: 24, fontWeight: 600 }}>
         Актуальное
-      </Typography>
+      </Title>
 
       {blocks.length === 0 ? (
-        <Alert severity="info">Нет доступных новостей</Alert>
+        <Alert message="Нет доступных новостей" type="info" showIcon />
       ) : (
         <>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                lg: "repeat(3, 1fr)",
-              },
-              gap: 3,
-              mb: 5,
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+              gap: 18,
+              marginBottom: 32,
             }}
           >
             {blocks.map((block) => (
               <BlockCard key={block.id} block={block} />
             ))}
-          </Box>
+          </div>
 
-          {/* AntD Pagination снизу */}
-           <div
+          <div
             style={{
-              marginTop: 32,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
               gap: 16,
+              marginTop: 32,
             }}
           >
-            <Space align="center">
-              <span>На странице</span>
+            <Space size="middle">
+              <Text type="secondary">На странице:</Text>
               <Select
                 value={pageSize}
                 onChange={(value) => {
@@ -219,6 +213,7 @@ const getNewsWordForm = (count) => {
                   setPageSize(value);
                 }}
                 style={{ width: 80 }}
+                size="middle"
               >
                 {[3, 6, 9, 12, 15].map((size) => (
                   <Option key={size} value={size}>
@@ -226,7 +221,7 @@ const getNewsWordForm = (count) => {
                   </Option>
                 ))}
               </Select>
-              <span>{getNewsWordForm(pageSize)}</span>
+              <Text type="secondary">{getNewsWordForm(pageSize)}</Text>
             </Space>
 
             <Pagination
@@ -235,6 +230,8 @@ const getNewsWordForm = (count) => {
               total={total}
               onChange={(newPage) => setPage(newPage)}
               showSizeChanger={false}
+              size="middle"
+              style={{ marginLeft: 'auto' }}
             />
           </div>
         </>
