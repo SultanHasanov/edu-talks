@@ -19,21 +19,29 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import { ChromePicker } from "react-color";
 
 const AddNewsForm = () => {
   const [formData, setFormData] = useState({
     title: "",
     content: "",
     image_url: "",
+    color: "#4A90E2",
+    sticker: "Новость",
   });
   const [editData, setEditData] = useState({
-    id: null,
     title: "",
     content: "",
     image_url: "",
+    color: "#4A90E2",
+    sticker: "Новость",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -44,33 +52,36 @@ const AddNewsForm = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [newsToDelete, setNewsToDelete] = useState(null);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showEditColorPicker, setShowEditColorPicker] = useState(false);
   const access_token = localStorage.getItem("access_token");
 
-  const fetchNews = async () => {
-  try {
-    setNewsLoading(true);
-    setNewsError("");
-    const response = await fetch("http://85.143.175.100:8080/news");
-    
-    if (!response.ok) {
-      throw new Error(`Ошибка: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    // Проверяем, что data существует и data.data является массивом
-    setNews(Array.isArray(data?.data.data) ? data.data.data : []);
-  } catch (err) {
-    setNewsError(
-      err instanceof Error ? err.message : "Произошла ошибка при загрузке новостей"
-    );
-  } finally {
-    setNewsLoading(false);
-  }
-};
+  const stickerOptions = ["Новость", "Рекомендации", "Важно", "Обновление"];
 
-useEffect(() => {
-  fetchNews();
-}, []);
+  const fetchNews = async () => {
+    try {
+      setNewsLoading(true);
+      setNewsError("");
+      const response = await fetch("http://85.143.175.100:8080/news");
+      
+      if (!response.ok) {
+        throw new Error(`Ошибка: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setNews(Array.isArray(data?.data.data) ? data.data.data : []);
+    } catch (err) {
+      setNewsError(
+        err instanceof Error ? err.message : "Произошла ошибка при загрузке новостей"
+      );
+    } finally {
+      setNewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNews();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -85,6 +96,20 @@ useEffect(() => {
     setEditData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleColorChange = (color) => {
+    setFormData((prev) => ({
+      ...prev,
+      color: color.hex,
+    }));
+  };
+
+  const handleEditColorChange = (color) => {
+    setEditData((prev) => ({
+      ...prev,
+      color: color.hex,
     }));
   };
 
@@ -103,14 +128,19 @@ useEffect(() => {
         },
         body: JSON.stringify(formData),
       });
-      console.log(response)
 
       if (!response.ok) {
         throw new Error(`Ошибка: ${response.status}`);
       }
 
       setSuccess("Новость успешно добавлена!");
-      setFormData({ title: "", content: "", image_url: "" });
+      setFormData({ 
+        title: "", 
+        content: "", 
+        image_url: "", 
+        color: "#ffffff",
+        sticker: "Новость" 
+      });
       await fetchNews();
     } catch (err) {
       setError(
@@ -187,12 +217,14 @@ useEffect(() => {
     }
   };
 
-  const openEditModal = (newsItem) => {
+ const openEditModal = (newsItem) => {
     setEditData({
       id: newsItem.id,
       title: newsItem.title,
       content: newsItem.content,
       image_url: newsItem.image_url || "",
+      color: newsItem.color || "#4A90E2",
+      sticker: newsItem.sticker || "Новость",
     });
     setOpenEditDialog(true);
   };
@@ -201,6 +233,91 @@ useEffect(() => {
     setNewsToDelete(id);
     setDeleteConfirmOpen(true);
   };
+
+  const NewsCardPreview = ({ title, content, image_url, color, sticker, isEdit = false }) => (
+   <Paper
+  elevation={4}
+  sx={{
+    p: 3,
+    mb: 3,
+    minHeight: "300px",
+    width: "70%",
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: "8px",
+    display: "flex",
+    flexDirection: "column",
+    '&::before': image_url ? {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      height: "70%",
+      backgroundImage: `url(${image_url})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      zIndex: 1,
+    } : {},
+  }}
+>
+  {/* Стикер */}
+  <Box
+    sx={{
+      position: "absolute",
+      top: 12,
+      left: 12,
+      backgroundColor: color,
+      color: "white",
+      px: 2,
+      py: 1,
+      borderRadius: "16px",
+      fontWeight: "bold",
+      fontSize: "0.875rem",
+      zIndex: 2,
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+      textTransform: "uppercase",
+      letterSpacing: "0.5px",
+    }}
+  >
+    {sticker}
+  </Box>
+
+  {/* Пустое пространство для заполнения изображением */}
+  <Box sx={{ flex: 1 }} />
+
+  {/* Контент внизу карточки */}
+  <Box sx={{ 
+    position: "relative", 
+    zIndex: 2,
+    paddingTop: 2,
+    borderTop: image_url ? "1px solid rgba(0,0,0,0.1)" : "none"
+  }}>
+    <Typography 
+      variant="h5" 
+      component="h2" 
+      gutterBottom
+      sx={{ 
+        fontWeight: "bold",
+        color: "#333",
+        lineHeight: 1.2,
+      }}
+    >
+      {title || "Заголовок новости"}
+    </Typography>
+ 
+    <Typography 
+      variant="caption" 
+      display="block" 
+      sx={{ 
+        color: "#999",
+      }}
+    >
+      {new Date().toLocaleDateString("ru-RU")}
+    </Typography>
+  </Box>
+</Paper>
+  );
 
   return (
     <Container maxWidth="md">
@@ -257,19 +374,59 @@ useEffect(() => {
             placeholder="https://example.com/image.jpg"
           />
 
-          {formData.image_url && (
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Typography variant="subtitle1">Превью изображения:</Typography>
-              <img
-                src={formData.image_url}
-                alt="Превью"
-                style={{ maxWidth: "100%", maxHeight: "200px" }}
-                onError={(e) => {
-                  e.target.src = "https://via.placeholder.com/200?text=Изображение+не+найдено";
-                }}
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Стикер</InputLabel>
+            <Select
+              name="sticker"
+              value={formData.sticker}
+              onChange={handleChange}
+              label="Стикер"
+              disabled={loading}
+            >
+              {stickerOptions.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+           <Box sx={{ mt: 2, mb: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Цвет стикера:
+            </Typography>
+            <Box
+              sx={{
+                width: 50,
+                height: 50,
+                backgroundColor: formData.color,
+                border: "1px solid #ccc",
+                cursor: "pointer",
+                mb: 1,
+                borderRadius: 1,
+              }}
+              onClick={() => setShowColorPicker(!showColorPicker)}
+            />
+            {showColorPicker && (
+              <ChromePicker
+                color={formData.color}
+                onChange={handleColorChange}
               />
-            </Box>
-          )}
+            )}
+          </Box>
+
+         
+
+           <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+            Превью карточки новости:
+          </Typography>
+          <NewsCardPreview
+            title={formData.title}
+            content={formData.content}
+            image_url={formData.image_url}
+            color={formData.color}
+            sticker={formData.sticker}
+          />
 
           <Box sx={{ mt: 2 }}>
             <Button
@@ -323,7 +480,26 @@ useEffect(() => {
                       </IconButton>
                     </>
                   }
+                  sx={{ 
+                    backgroundColor: item.color || "transparent",
+                    position: "relative",
+                    minHeight: "120px",
+                  }}
                 >
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 10,
+                      right: 10,
+                      backgroundColor: "rgba(255, 255, 255, 0.8)",
+                      px: 1.5,
+                      py: 0.5,
+                      borderRadius: 1,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {item.sticker || "Новость"}
+                  </Box>
                   {item.image_url && (
                     <ListItemAvatar>
                       <Avatar
@@ -346,7 +522,7 @@ useEffect(() => {
       </Paper>
 
       {/* Диалог редактирования */}
-      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>Редактировать новость</DialogTitle>
         <DialogContent>
           <TextField
@@ -383,6 +559,46 @@ useEffect(() => {
             disabled={loading}
           />
 
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Стикер</InputLabel>
+            <Select
+              name="sticker"
+              value={editData.sticker}
+              onChange={handleEditChange}
+              label="Стикер"
+              disabled={loading}
+            >
+              {stickerOptions.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Box sx={{ mt: 2, mb: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Цвет фона:
+            </Typography>
+            <Box
+              sx={{
+                width: 50,
+                height: 50,
+                backgroundColor: editData.color,
+                border: "1px solid #ccc",
+                cursor: "pointer",
+                mb: 1,
+              }}
+              onClick={() => setShowEditColorPicker(!showEditColorPicker)}
+            />
+            {showEditColorPicker && (
+              <ChromePicker
+                color={editData.color}
+                onChange={handleEditColorChange}
+              />
+            )}
+          </Box>
+
           {editData.image_url && (
             <Box sx={{ mt: 2, mb: 2 }}>
               <Typography variant="subtitle1">Превью изображения:</Typography>
@@ -396,6 +612,64 @@ useEffect(() => {
               />
             </Box>
           )}
+
+          <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+            Превью карточки новости:
+          </Typography>
+           <Paper
+      elevation={3}
+      sx={{
+        p: 3,
+        mb: 3,
+        minHeight: "200px",
+        position: "relative",
+        overflow: "hidden",
+        backgroundImage: editData.image_url ? `url(${image_url})` : "none",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        '&::before': {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(255, 255, 255, 0.7)",
+          zIndex: 1,
+        }
+      }}
+    >
+      {/* Стикер */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          backgroundColor: editData.color,
+          px: 2,
+          py: 1,
+          borderRadius: 1,
+          fontWeight: "bold",
+          zIndex: 2,
+          boxShadow: 1,
+        }}
+      >
+        {editData.sticker}
+      </Box>
+
+      {/* Контент */}
+      <Box sx={{ position: "relative", zIndex: 2 }}>
+        <Typography variant="h5" component="h2" gutterBottom>
+          {editData.title}
+        </Typography>
+        <Typography variant="body1" paragraph>
+          {editData.content}
+        </Typography>
+        <Typography variant="caption" display="block" sx={{ mt: 2 }}>
+          {editData.date}
+        </Typography>
+      </Box>
+    </Paper>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenEditDialog(false)} disabled={loading}>

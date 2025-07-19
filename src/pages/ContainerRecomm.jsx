@@ -53,9 +53,9 @@ const ContainerRecomm = () => {
       id: newsItem.id,
       title: newsItem.title,
       date: new Date(newsItem.created_at).toLocaleDateString(),
-      type: "НОВОСТЬ",
+      type: newsItem.sticker,
       content: newsItem.content,
-      color: "#7dd3fc",
+      color: newsItem.color,
       image: newsItem.image_url,
     }));
   }, [serverNews]);

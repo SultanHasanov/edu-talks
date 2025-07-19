@@ -55,7 +55,8 @@ import { fetchWithAuth } from "../utils/fetchWithAuth";
 import NotificationSender from "../components/NotificationSender";
 
 const Setting = () => {
-  const { role, access_token, email, phone, address, full_name, authFetch  } = useAuth();
+  const { role, access_token, email, phone, address, full_name, authFetch } =
+    useAuth();
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -69,9 +70,7 @@ const Setting = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoading, setUserLoading] = useState(false);
   const [userError, setUserError] = useState(null);
-  // const access_token = localStorage.getItem("access_token");
-
- 
+  const [news, setNews] = useState(null);
 
   const isAdmin = role === "admin";
 
@@ -87,6 +86,7 @@ const Setting = () => {
     if (isAdmin) {
       // Загружаем пользователей только когда активна вкладка "Пользователи"
       fetchUsers();
+      fetchNews();
     }
   }, [isAdmin, tabValue]);
 
@@ -110,12 +110,40 @@ const Setting = () => {
       const data = await response.json();
       setUsers(data.data.data);
     } catch (err) {
-      console.log(err)
+      console.log(err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+   const fetchNews = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await authFetch(
+        "http://85.143.175.100:8080/news",
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Ошибка загрузки пользователей");
+      }
+
+      const data = await response.json();
+      setNews(data.data.total);
+    } catch (err) {
+      console.log(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -291,7 +319,7 @@ const Setting = () => {
                   </Typography>
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={12} sm={4}>
-                      <Card>
+                      <Card style={{ textAlign: "center" }}>
                         <CardContent>
                           <Typography
                             variant="subtitle2"
@@ -304,7 +332,7 @@ const Setting = () => {
                       </Card>
                     </Grid>
                     <Grid item xs={12} sm={4}>
-                      <Card>
+                      <Card style={{ textAlign: "center" }}>
                         <CardContent>
                           <Typography
                             variant="subtitle2"
@@ -319,7 +347,7 @@ const Setting = () => {
                       </Card>
                     </Grid>
                     <Grid item xs={12} sm={4}>
-                      <Card>
+                      <Card style={{ textAlign: "center" }}>
                         <CardContent>
                           <Typography
                             variant="subtitle2"
@@ -347,6 +375,21 @@ const Setting = () => {
                               users.filter((u) => u.HasSubscription === true)
                                 .length
                             }
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Card style={{ textAlign: "center" }}>
+                        <CardContent>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Новости
+                          </Typography>
+                          <Typography variant="h4">
+                           {news}
                           </Typography>
                         </CardContent>
                       </Card>
@@ -392,7 +435,7 @@ const Setting = () => {
               {/* Настройки */}
               {tabValue === 4 && (
                 <>
-                  <NotificationSender/>
+                  <NotificationSender />
                 </>
               )}
             </>

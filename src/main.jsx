@@ -1,6 +1,5 @@
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import App from "./App.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
@@ -9,9 +8,9 @@ import Layout from "./components/Layout.jsx";
 import ContainerRecomm from "./pages/ContainerRecomm.jsx";
 import TemplatesSection from "./pages/TemplatesSection.jsx";
 import ScriptSection from "./pages/ScriptSection.jsx";
-import LegalSection from "./pages/legalSection.jsx";
 import BlockDetails from "./components/BlockDetails.jsx";
 import Setting from "./pages/Setting.jsx";
+import LegalSection from "./pages/LegalSection.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
