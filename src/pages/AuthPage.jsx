@@ -40,7 +40,7 @@ const AuthPage = () => {
   const [authError, setAuthError] = useState("");
   const [regError, setRegError] = useState("");
   const [regSuccess, setRegSuccess] = useState(false);
- 
+
   const [isLoading, setIsLoading] = useState(false);
   const { login, logout, isAuthenticated, username } = useAuth();
   const [successMessage, setSuccessMessage] = useState("");
@@ -101,8 +101,13 @@ const AuthPage = () => {
         throw new Error(data.message || "Ошибка авторизации");
       }
 
-      console.log(data)
-      login(data.data.access_token, data.data.refresh_token, data.data.role, data.data.username, data.data.full_name);
+      console.log(data);
+      login(
+        data.data.access_token,
+        data.data.role,
+        data.data.username,
+        data.data.full_name
+      );
       navigate("/");
     } catch (error) {
       setAuthError(error.message || "Неверный логин или пароль");
@@ -176,42 +181,9 @@ const AuthPage = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
-   if (isAuthenticated) {
-    return (
-      <Container maxWidth="sm" sx={{ mt: 8 }}>
-        <BackButtonIcon />
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-          <Box textAlign="center" mb={3}>
-            <PersonIcon sx={{ fontSize: 60, color: "primary.main" }} />
-            <Typography variant="h5" component="h1" gutterBottom>
-              Добро пожаловать, {username}!
-            </Typography>
-            <Typography color="text.secondary" mb={3}>
-              Вы успешно авторизованы в системе.
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              size="large"
-              onClick={handleLogout}
-            >
-              Выйти
-            </Button>
-          </Box>
-        </Paper>
-      </Container>
-    );
-  }
-
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <BackButtonIcon />
+    <Container maxWidth="sm" sx={{ mt: 3 }}>
+      {/* <BackButtonIcon /> */}
 
       <Paper elevation={3} sx={{ borderRadius: 2 }}>
         <Tabs

@@ -11,6 +11,7 @@ import ScriptSection from "./pages/ScriptSection.jsx";
 import BlockDetails from "./components/BlockDetails.jsx";
 import Setting from "./pages/Setting.jsx";
 import LegalSection from "./pages/LegalSection.jsx";
+import ArticleEditor from "./components/ArticleEditor.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -26,6 +27,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/scripts" element={<ScriptSection />} />
           <Route path="/legal" element={<LegalSection />} />
           <Route path="/setting" element={<Setting />} />
+          <Route path="/1" element={<ArticleEditor />} />
         </Route>
       </Routes>
     </AuthProvider>

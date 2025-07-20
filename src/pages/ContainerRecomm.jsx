@@ -173,7 +173,7 @@ const ContainerRecomm = () => {
 
   return (
     <Container maxWidth="xl" style={{ padding: '24px 0' }}>
-      <Title level={2} style={{ marginBottom: 24, fontWeight: 600 }}>
+      <Title level={2} style={{ marginBottom: 24, fontWeight: 600, padding: 10 }}>
         Актуальное
       </Title>
 
@@ -184,9 +184,10 @@ const ContainerRecomm = () => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
               gap: 18,
               marginBottom: 32,
+              padding: 10
             }}
           >
             {blocks.map((block) => (
@@ -202,6 +203,7 @@ const ContainerRecomm = () => {
               flexWrap: 'wrap',
               gap: 16,
               marginTop: 32,
+              padding: 10
             }}
           >
             <Space size="middle">
@@ -231,7 +233,7 @@ const ContainerRecomm = () => {
               onChange={(newPage) => setPage(newPage)}
               showSizeChanger={false}
               size="middle"
-              style={{ marginLeft: 'auto' }}
+              style={{ marginLeft: 'auto',  }}
             />
           </div>
         </>

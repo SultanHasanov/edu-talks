@@ -9,28 +9,32 @@ import {
   Checkbox,
   message,
   Spin,
+  Button,
 } from "antd";
 import {
   UserOutlined,
   MailOutlined,
   PhoneOutlined,
   HomeOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const UserProfile = () => {
-  const { access_token } = useAuth();
+ const access_token = localStorage.getItem('access_token')
   const [userData, setUserData] = useState({
     username: "",
     email: "",
     phone: "",
     address: "",
     full_name: "",
+    email_verified: false,
+    email_subscription: false,
   });
-  const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [subLoading, setSubLoading] = useState(false);
 
@@ -39,12 +43,15 @@ const UserProfile = () => {
     const fetchProfile = async () => {
       setLoading(true);
       try {
-        const response = await axios.get("http://85.143.175.100:8080/api/profile", {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        });
-        setUserData(response.data);
+        const response = await axios.get(
+          "http://85.143.175.100:8080/api/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+            },
+          }
+        );
+        setUserData(response.data.data);
       } catch (error) {
         console.error("Ошибка при загрузке профиля:", error);
         message.error("Не удалось загрузить профиль");
@@ -60,30 +67,45 @@ const UserProfile = () => {
 
   const handleSubscriptionChange = async (e) => {
     const checked = e.target.checked;
-    setSubscribed(checked);
-
-    if (checked) {
-      setSubLoading(true);
-      try {
-        await axios.patch(
-          "http://85.143.175.100:8080/api/email-subscription",
-          { subscribe: true },
-          {
-            headers: {
-              Authorization: `Bearer ${access_token}`,
-            },
-          }
-        );
-        message.success("Вы подписались на рассылку");
-      } catch (err) {
-        console.error(err);
-        message.error("Не удалось подписаться на рассылку");
-        setSubscribed(false);
-      } finally {
-        setSubLoading(false);
-      }
+    setSubLoading(true);
+    try {
+      await axios.patch(
+        "http://85.143.175.100:8080/api/email-subscription",
+        { subscribe: checked },
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+      setUserData((prev) => ({ ...prev, email_subscription: checked }));
+      message.success(
+        checked ? "Вы подписались на рассылку" : "Вы отписались от рассылки"
+      );
+    } catch (err) {
+      console.error(err);
+      message.error("Не удалось изменить подписку");
+    } finally {
+      setSubLoading(false);
     }
   };
+
+  const handleResendVerification = async () => {
+  try {
+    await axios(
+      `http://85.143.175.100:8080/verify-email?token=${access_token}`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+    message.success("Письмо с подтверждением отправлено на вашу почту");
+  } catch (error) {
+    console.error("Ошибка при отправке подтверждения:", error);
+    message.error("Не удалось отправить письмо подтверждения");
+  }
+};
 
   return (
     <Row justify="center" style={{ marginTop: 50 }}>
@@ -105,7 +127,9 @@ const UserProfile = () => {
                   icon={<UserOutlined />}
                   style={{ backgroundColor: "#1890ff", marginBottom: 16 }}
                 />
-                <Title level={3}>{userData.full_name || userData.username}</Title>
+                <Title level={3}>
+                  {userData.full_name || userData.username}
+                </Title>
               </div>
 
               <Descriptions
@@ -119,6 +143,25 @@ const UserProfile = () => {
                 </Descriptions.Item>
                 <Descriptions.Item label="Email">
                   <MailOutlined /> {userData.email || "Не указан"}
+                  {userData.email_verified ? (
+                    <Text type="success" style={{ marginLeft: 8 }}>
+                      <CheckCircleOutlined /> Подтвержден
+                    </Text>
+                  ) : (
+                    <>
+                      <Text type="danger" style={{ marginLeft: 8 }}>
+                        <CloseCircleOutlined /> Не подтвержден
+                      </Text>
+                      <Button
+                        type="link"
+                        size="small"
+                        onClick={handleResendVerification}
+                        style={{ marginLeft: 8 }}
+                      >
+                        Подтвердить почту
+                      </Button>
+                    </>
+                  )}
                 </Descriptions.Item>
                 <Descriptions.Item label="Телефон">
                   <PhoneOutlined /> {userData.phone || "Не указан"}
@@ -130,11 +173,13 @@ const UserProfile = () => {
 
               <div style={{ marginTop: 24 }}>
                 <Checkbox
-                  checked={subscribed}
+                  checked={userData.email_subscription}
                   onChange={handleSubscriptionChange}
                   disabled={subLoading}
                 >
-                  Подписаться на рассылку
+                  {userData.email_subscription
+                    ? "Подписан на рассылку обновлений"
+                    : "Подписаться на рассылку"}
                 </Checkbox>
               </div>
             </>

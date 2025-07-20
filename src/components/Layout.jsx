@@ -39,11 +39,12 @@ import {
 } from "@mui/icons-material";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import AppFooter from "./Footer";
 
 const Layout = ({ children }) => {
   const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const { full_name, logout, isAuthenticated } = useAuth();
+  const { full_name, logout, isAuthenticated, role } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -51,10 +52,11 @@ const Layout = ({ children }) => {
 
   const tabLabels = ["Рекомендации", "Шаблоны", "Сценарии", "Правовая база"];
   const tabRoutes = ["/", "/templates", "/scripts", "/legal"];
- const currentTabIndex = tabRoutes.findIndex(route => 
-  location.pathname === route || location.pathname.startsWith(route + '/')
-);
-// Теперь может быть -1, но это не помешает переключению
+  const currentTabIndex = tabRoutes.findIndex(
+    (route) =>
+      location.pathname === route || location.pathname.startsWith(route + "/")
+  );
+  // Теперь может быть -1, но это не помешает переключению
   console.log(currentTabIndex);
   const handleTabChange = (event, newValue) => {
     navigate(tabRoutes[newValue]);
@@ -284,13 +286,14 @@ const Layout = ({ children }) => {
                       </ListItemIcon>
                       <ListItemText>Профиль</ListItemText>
                     </MenuItem>
-
-                    <MenuItem onClick={handleSettingsClick}>
-                      <ListItemIcon>
-                        <Settings fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText>Настройки</ListItemText>
-                    </MenuItem>
+                    {role === "admin" && (
+                      <MenuItem onClick={handleSettingsClick}>
+                        <ListItemIcon>
+                          <Settings fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Настройки</ListItemText>
+                      </MenuItem>
+                    )}
 
                     <MenuItem>
                       <ListItemIcon>
@@ -476,8 +479,18 @@ const Layout = ({ children }) => {
       </Drawer>
 
       {/* Main Content */}
-      <Box component="main">
-        <Outlet />
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+        }}
+      >
+        {/* Остальное содержимое */}
+        <Box component="main" sx={{ flex: 1, marginBottom: 2 }}>
+          <Outlet />
+        </Box>
+        <AppFooter />
       </Box>
     </Box>
   );

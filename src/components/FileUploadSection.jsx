@@ -18,6 +18,7 @@ import {
   Alert,
   Popconfirm,
   Tooltip,
+  Select
 } from "antd";
 import {
   UploadOutlined,
@@ -44,6 +45,7 @@ const FileUploadSection = () => {
   const [selectedFileDetails, setSelectedFileDetails] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [category, setCategory] = useState(null);
   const access_token = localStorage.getItem("access_token");
   const { role } = useAuth();
 
@@ -149,6 +151,7 @@ const FileUploadSection = () => {
     formData.append("file", selectedFile);
     formData.append("description", description);
     formData.append("is_public", isPublic);
+    formData.append("category", category);
 
     try {
       setLoading(true);
@@ -159,6 +162,9 @@ const FileUploadSection = () => {
         {
           method: "POST",
           body: formData,
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
         }
       );
 
@@ -253,6 +259,19 @@ const FileUploadSection = () => {
       ),
     },
     {
+  title: "Категория",
+  dataIndex: "category",
+  key: "category",
+  render: (category) => {
+    const categoryNames = {
+      order: 'Приказ',
+      template: 'Шаблон',
+      scenario: 'Сценарий'
+    };
+    return categoryNames[category] || category;
+  }
+},
+    {
       title: "Действия",
       key: "actions",
       align: "right",
@@ -330,6 +349,17 @@ const FileUploadSection = () => {
             autoSize={{ minRows: 2, maxRows: 4 }}
             style={{ marginBottom: 16 }}
           />
+
+          <Select
+  placeholder="Выберите категорию"
+  style={{ width: '100%', marginBottom: 16 }}
+  onChange={(value) => setCategory(value)}
+  options={[
+    { value: 'order', label: 'Приказ' },
+    { value: 'template', label: 'Шаблон' },
+    { value: 'scenario', label: 'Сценарий' },
+  ]}
+/>
 
           <Checkbox
             checked={isPublic}
@@ -463,6 +493,9 @@ const FileUploadSection = () => {
               <Descriptions.Item label="Описание">
                 {selectedFileDetails.description || "Описание отсутствует"}
               </Descriptions.Item>
+              <Descriptions.Item label="Категория">
+  {selectedFileDetails.category || 'Не указана'}
+</Descriptions.Item>
               <Descriptions.Item label="Статус">
                 <Tag
                   color={selectedFileDetails.is_public ? "success" : "default"}

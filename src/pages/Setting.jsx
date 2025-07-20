@@ -341,7 +341,7 @@ const Setting = () => {
   const StatisticsContent = () => (
     <div style={{ padding: "0 0 24px" }}>
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={8}>
+        <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
               title="Всего пользователей"
@@ -351,7 +351,7 @@ const Setting = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={8}>
+        <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
               title="Администраторов"
@@ -361,7 +361,7 @@ const Setting = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={8}>
+        <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
               title="Обычных пользователей"
@@ -371,17 +371,17 @@ const Setting = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={8}>
+        <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
               title="С подпиской"
-              value={users.filter((u) => u.HasSubscription === true).length}
+              value={users.filter((u) => u.has_subscription === true).length}
               prefix={<SafetyOutlined />}
               valueStyle={{ color: "#722ed1" }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={8}>
+        <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
               title="Новости"
@@ -392,34 +392,6 @@ const Setting = () => {
           </Card>
         </Col>
       </Row>
-    </div>
-  );
-
-  // Компонент активности пользователя
-  const UserActivityContent = () => (
-    <div style={{ padding: "0 0 24px" }}>
-      <Title
-        level={4}
-        style={{
-          marginBottom: 24,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
-        <BarChartOutlined style={{ color: "#1890ff" }} />
-        Моя активность
-      </Title>
-      <Card>
-        <div style={{ textAlign: "center", padding: "40px 20px" }}>
-          <BarChartOutlined
-            style={{ fontSize: 48, color: "#d9d9d9", marginBottom: 16 }}
-          />
-          <Text type="secondary">
-            Здесь будет информация о вашей активности в системе
-          </Text>
-        </div>
-      </Card>
     </div>
   );
 
@@ -495,7 +467,8 @@ const Setting = () => {
           size="large"
           style={{ marginBottom: 0 }}
         >
-          {isAdmin ? (
+          {role === "admin" &&
+          
             <>
               <TabPane
                 tab={
@@ -589,45 +562,8 @@ const Setting = () => {
                 </div>
               </TabPane>
             </>
-          ) : (
-            <>
-              <TabPane
-                tab={
-                  <Space>
-                    <BarChartOutlined />
-                    Моя активность
-                  </Space>
-                }
-                key="1"
-              >
-                <UserActivityContent />
-              </TabPane>
-
-              <TabPane
-                tab={
-                  <Space>
-                    <SettingOutlined />
-                    Настройки
-                  </Space>
-                }
-                key="2"
-              >
-                <ProfileSettingsContent />
-              </TabPane>
-
-              <TabPane
-                tab={
-                  <Space>
-                    <EllipsisOutlined />
-                    Дополнительно
-                  </Space>
-                }
-                key="3"
-              >
-                <AdditionalInfoContent />
-              </TabPane>
-            </>
-          )}
+          }
+          
         </Tabs>
       </Card>
 

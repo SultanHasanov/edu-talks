@@ -138,8 +138,8 @@ const UsersTable = ({
     },
     {
       title: "Подписка",
-      dataIndex: "HasSubscription",
-      key: "subscription",
+      dataIndex: "has_subscription",
+      key: "has_subscription",
       width: 120,
       align: "center",
       render: (hasSubscription) => (

@@ -1,7 +1,6 @@
-import React from "react";
-import { Container, Typography, Box } from "@mui/material";
-import { useAuth } from "../context/AuthContext";
-import FileUploadSection from "../components/FileUploadSection";
+import { Container,  Box } from "@mui/material";
+
+import UserFiles from "../components/UserFiles";
 
 const TemplatesSection = () => {
 
@@ -16,7 +15,7 @@ const TemplatesSection = () => {
       >
        
 
-        <FileUploadSection  />
+        <UserFiles  />
       </Box>
     </Container>
   );
