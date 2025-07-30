@@ -10,6 +10,7 @@ import {
   message,
   Spin,
   Button,
+  Alert,
 } from "antd";
 import {
   UserOutlined,
@@ -18,6 +19,7 @@ import {
   HomeOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
@@ -25,7 +27,7 @@ import axios from "axios";
 const { Title, Text } = Typography;
 
 const UserProfile = () => {
- const access_token = localStorage.getItem('access_token')
+  const access_token = localStorage.getItem('access_token');
   const [userData, setUserData] = useState({
     username: "",
     email: "",
@@ -37,6 +39,8 @@ const UserProfile = () => {
   });
   const [loading, setLoading] = useState(true);
   const [subLoading, setSubLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [checkingVerification, setCheckingVerification] = useState(false);
 
   // Получение данных профиля
   useEffect(() => {
@@ -91,21 +95,54 @@ const UserProfile = () => {
   };
 
   const handleResendVerification = async () => {
-  try {
-    await axios(
-      `http://85.143.175.100:8080/verify-email?token=${access_token}`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
+    try {
+      await axios.post(
+        `http://85.143.175.100:8080/resend-verification`,
+        { email: userData.email },
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+      setVerificationSent(true);
+      message.success(
+        <span>
+          Письмо для подтверждения почты отправлено на <strong>{userData.email}</strong>.
+          Пожалуйста, проверьте вашу почту. Если не найдете письмо, проверьте папку "Спам".
+        </span>
+      );
+    } catch (error) {
+      console.error("Ошибка при отправке подтверждения:", error);
+      message.error("Не удалось отправить письмо подтверждения");
+    }
+  };
+
+  const handleCheckVerification = async () => {
+    setCheckingVerification(true);
+    try {
+      const response = await axios.get(
+        "http://85.143.175.100:8080/api/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+      setUserData(response.data.data);
+      if (response.data.data.email_verified) {
+        message.success("Почта успешно подтверждена!");
+        setVerificationSent(false);
+      } else {
+        message.info("Почта еще не подтверждена. Пожалуйста, проверьте вашу почту.");
       }
-    );
-    message.success("Письмо с подтверждением отправлено на вашу почту");
-  } catch (error) {
-    console.error("Ошибка при отправке подтверждения:", error);
-    message.error("Не удалось отправить письмо подтверждения");
-  }
-};
+    } catch (error) {
+      console.error("Ошибка при проверке подтверждения:", error);
+      message.error("Не удалось проверить статус подтверждения");
+    } finally {
+      setCheckingVerification(false);
+    }
+  };
 
   return (
     <Row justify="center" style={{ marginTop: 50 }}>
@@ -131,6 +168,31 @@ const UserProfile = () => {
                   {userData.full_name || userData.username}
                 </Title>
               </div>
+
+              {verificationSent && !userData.email_verified && (
+                <Alert
+                  message={
+                    <div>
+                      <p>Письмо для подтверждения отправлено на {userData.email}</p>
+                      <p>Пожалуйста, проверьте вашу почту. Если не найдете письмо, проверьте папку "Спам".</p>
+                    </div>
+                  }
+                  type="info"
+                  showIcon
+                  style={{ marginBottom: 16 }}
+                  action={
+                    <Button
+                      type="primary"
+                      size="small"
+                      icon={<SyncOutlined />}
+                      loading={checkingVerification}
+                      onClick={handleCheckVerification}
+                    >
+                      Проверить
+                    </Button>
+                  }
+                />
+              )}
 
               <Descriptions
                 title="Информация пользователя"
