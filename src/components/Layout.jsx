@@ -57,7 +57,6 @@ const Layout = ({ children }) => {
       location.pathname === route || location.pathname.startsWith(route + "/")
   );
   // Теперь может быть -1, но это не помешает переключению
-  console.log(currentTabIndex);
   const handleTabChange = (event, newValue) => {
     navigate(tabRoutes[newValue]);
   };

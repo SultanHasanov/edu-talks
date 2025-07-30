@@ -37,7 +37,9 @@
     "react-dom": "^19.1.0",
     "react-pdf": "^10.0.1",
     "react-pdfjs-viewer": "^0.1.18",
-    "react-router-dom": "^7.6.3"
+    "react-router-dom": "^7.6.3",
+    "recharts": "^3.1.0",
+    "use-debounce": "^10.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

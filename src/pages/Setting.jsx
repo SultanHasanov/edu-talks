@@ -15,6 +15,8 @@ import {
   Divider,
   Tag,
   Alert,
+  Progress,
+  Table,
 } from "antd";
 import {
   UserOutlined,
@@ -35,6 +37,7 @@ import {
   CrownOutlined,
   UserAddOutlined,
   BellOutlined,
+  StopOutlined,
 } from "@ant-design/icons";
 import UsersTable from "../components/UsersTable";
 import UserEditDialog from "../components/UserEditDialog";
@@ -338,62 +341,129 @@ const Setting = () => {
   };
 
   // Компонент статистики
-  const StatisticsContent = () => (
+// Компонент статистики
+const StatisticsContent = () => {
+  const totalUsers = usersAll.length;
+  const adminCount = usersAll.filter((u) => u.role === "admin").length;
+  const userCount = usersAll.filter((u) => u.role === "user").length;
+  const subscribedCount = usersAll.filter((u) => u.has_subscription === true).length;
+  const notSubscribedCount = totalUsers - subscribedCount;
+  const subscribedPercentage = totalUsers > 0 ? Math.round((subscribedCount / totalUsers) * 100) : 0;
+
+  const dataSource = [
+    {
+      key: '1',
+      metric: 'Всего пользователей',
+      value: totalUsers,
+      icon: <TeamOutlined />,
+      color: '#3f8600'
+    },
+    {
+      key: '2',
+      metric: 'Администраторов',
+      value: adminCount,
+      icon: <CrownOutlined />,
+      color: '#cf1322'
+    },
+    {
+      key: '3',
+      metric: 'Обычных пользователей',
+      value: userCount,
+      icon: <UserOutlined />,
+      color: '#1890ff'
+    },
+    {
+      key: '4',
+      metric: 'С подпиской',
+      value: `${subscribedCount} (${subscribedPercentage}%)`,
+      icon: <SafetyOutlined />,
+      color: '#52c41a'
+    },
+    {
+      key: '5',
+      metric: 'Без подписки',
+      value: notSubscribedCount,
+      icon: <StopOutlined />,
+      color: '#fa8c16'
+    },
+    {
+      key: '6',
+      metric: 'Новостей',
+      value: news || 0,
+      icon: <NotificationOutlined />,
+      color: '#faad14'
+    }
+  ];
+
+  const columns = [
+    {
+      title: 'Метрика',
+      dataIndex: 'metric',
+      key: 'metric',
+      render: (text, record) => (
+        <Space>
+          {React.cloneElement(record.icon, { style: { color: record.color } })}
+          {text}
+        </Space>
+      ),
+    },
+    {
+      title: 'Значение',
+      dataIndex: 'value',
+      key: 'value',
+      render: (value, record) => (
+        <Text strong style={{ color: record.color, fontSize: '16px' }}>
+          {value}
+        </Text>
+      ),
+    },
+  ];
+
+  return (
     <div style={{ padding: "0 0 24px" }}>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Всего пользователей"
-              value={usersAll.length}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: "#3f8600" }}
+      <Card 
+        title="Статистика системы" 
+        bordered={false}
+        style={{ marginBottom: 24 }}
+      >
+        <Table 
+          dataSource={dataSource} 
+          columns={columns} 
+          pagination={false}
+          showHeader={false}
+          size="middle"
+        />
+      </Card>
+
+      <Card title="Детализация подписок">
+        <Row gutter={16}>
+          <Col span={12}>
+            <Progress
+              type="dashboard"
+              percent={subscribedPercentage}
+              strokeColor="#52c41a"
+              format={() => `${subscribedCount}/${totalUsers}`}
             />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Администраторов"
-              value={usersAll.filter((u) => u.role === "admin").length}
-              prefix={<CrownOutlined />}
-              valueStyle={{ color: "#cf1322" }}
+            <div style={{ textAlign: 'center', marginTop: 16 }}>
+              <Text strong>Пользователей с подпиской</Text>
+            </div>
+          </Col>
+          <Col span={12}>
+            <Progress
+              type="dashboard"
+              percent={100 - subscribedPercentage}
+              strokeColor="#fa8c16"
+              format={() => `${notSubscribedCount}/${totalUsers}`}
             />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Обычных пользователей"
-              value={users.filter((u) => u.role === "user").length}
-              prefix={<UserOutlined />}
-              valueStyle={{ color: "#1890ff" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="С подпиской"
-              value={users.filter((u) => u.has_subscription === true).length}
-              prefix={<SafetyOutlined />}
-              valueStyle={{ color: "#722ed1" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Новости"
-              value={news || 0}
-              prefix={<NotificationOutlined />}
-              valueStyle={{ color: "#fa8c16" }}
-            />
-          </Card>
-        </Col>
-      </Row>
+            <div style={{ textAlign: 'center', marginTop: 16 }}>
+              <Text strong>Пользователей без подписки</Text>
+            </div>
+          </Col>
+        </Row>
+      </Card>
     </div>
   );
+};
 
   // Компонент настроек профиля
   const ProfileSettingsContent = () => (
@@ -467,8 +537,7 @@ const Setting = () => {
           size="large"
           style={{ marginBottom: 0 }}
         >
-          {role === "admin" &&
-          
+          {role === "admin" && (
             <>
               <TabPane
                 tab={
@@ -556,14 +625,12 @@ const Setting = () => {
                 }
                 key="5"
               >
-                <div >
-                 
+                <div>
                   <NotificationSender />
                 </div>
               </TabPane>
             </>
-          }
-          
+          )}
         </Tabs>
       </Card>
 

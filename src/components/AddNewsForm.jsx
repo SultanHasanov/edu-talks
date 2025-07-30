@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Button,
@@ -22,6 +22,8 @@ import {
   Tooltip,
   Empty,
   Pagination,
+  message,
+  Divider,
 } from "antd";
 import {
   DeleteOutlined,
@@ -32,6 +34,9 @@ import {
   CalendarOutlined,
   FullscreenOutlined,
   CloseOutlined,
+  PaperClipOutlined,
+  CopyOutlined,
+  FireOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text, Paragraph } = Typography;
@@ -69,10 +74,35 @@ const AddNewsForm = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
   const [total, setTotal] = useState(0);
-
+  const [files, setFiles] = useState([]);
+  const [fileModalVisible, setFileModalVisible] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [inputValue, setInputValue] = useState("");
+  const [messageApi, contextHolder] = message.useMessage();
   const access_token = localStorage.getItem("access_token");
 
   const stickerOptions = ["Новость", "Рекомендации", "Важно", "Обновление"];
+
+  const fetchFiles = async () => {
+    try {
+      const response = await fetch(
+        "http://85.143.175.100:8080/api/admin/files",
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+      const data = await response.json();
+      setFiles(data.data);
+    } catch (error) {
+      console.error("Error fetching files:", error);
+      notification.error({
+        message: "Ошибка",
+        description: "Не удалось загрузить список файлов",
+      });
+    }
+  };
 
   const fetchNews = async () => {
     try {
@@ -101,6 +131,7 @@ const AddNewsForm = () => {
 
   useEffect(() => {
     fetchNews();
+    fetchFiles();
   }, [page, pageSize]);
   const handleSubmit = async (values) => {
     setLoading(true);
@@ -122,9 +153,9 @@ const AddNewsForm = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      notification.success({
-        message: "Успех!",
-        description: "Новость успешно добавлена!",
+      messageApi.open({
+        type: "success",
+        content: "Новость успешно добавлена!",
       });
 
       form.resetFields();
@@ -236,9 +267,21 @@ const AddNewsForm = () => {
     setFullscreenModalVisible(true);
   };
 
-  const handleFormChange = (changedValues, allValues) => {
-    setFormData({ ...formData, ...allValues });
-  };
+  const handleFormChange = useCallback(
+    (changedValues, allValues) => {
+      // Если изменилось только поле content, не обновляем formData для превью
+      if (
+        Object.keys(changedValues).length === 1 &&
+        changedValues.hasOwnProperty("content")
+      ) {
+        return;
+      }
+
+      // Для всех остальных полей обновляем превью
+      setFormData({ ...formData, ...allValues });
+    },
+    [formData]
+  );
 
   const getStickerColor = (sticker) => {
     const colors = {
@@ -259,131 +302,132 @@ const AddNewsForm = () => {
     }
   };
 
-  const NewsCardPreview = ({
-    title,
-    content,
-    image_url,
-    color,
-    sticker,
-    date,
-    clickable = false,
-    newsItem = null,
-  }) => (
-    <Card
-      hoverable={clickable}
-      onClick={clickable ? () => openFullscreenModal(newsItem) : undefined}
-      style={{
-        minHeight: 280,
-        border: "1px solid #f0f0f0",
-        borderRadius: 12,
-        position: "relative",
-        cursor: clickable ? "pointer" : "default",
-        transition: "all 0.3s ease",
-        // overflow: "hidden",
-      }}
-      bodyStyle={{
-        padding: 0,
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <Badge.Ribbon
-        text={sticker}
-        color={color}
-        //  placement="start"
+  const NewsCardPreview = React.memo(
+    ({
+      title,
+      content,
+      image_url,
+      color,
+      sticker,
+      date,
+      clickable = false,
+      newsItem = null,
+    }) => (
+      <Card
+        hoverable={clickable}
+        onClick={clickable ? () => openFullscreenModal(newsItem) : undefined}
         style={{
-          fontSize: 14,
-          fontWeight: 600,
-          zIndex: 1000,
-         
-        }}
-      />
-
-      {/* Фоновая часть - 70% высоты */}
-      <div
-        style={{
-          height: "190px",
-          background: image_url ? `url(${image_url})` : "#f5f5f5",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          minHeight: 280,
+          border: "1px solid #f0f0f0",
+          borderRadius: 12,
           position: "relative",
-          display: "flex",
-          alignItems: "flex-end",
-          padding: 16,
+          cursor: clickable ? "pointer" : "default",
+          transition: "all 0.3s ease",
+          // overflow: "hidden",
         }}
-      >
-        {clickable && (
-          <div
-            style={{
-              position: "absolute",
-              top: 16,
-              left: 16,
-              backgroundColor: "rgba(0,0,0,0.5)",
-              borderRadius: 20,
-              padding: "4px 8px",
-              opacity: 0.8,
-              transition: "opacity 0.3s ease",
-            }}
-          >
-            <FullscreenOutlined style={{ color: "#fff", fontSize: 16 }} />
-          </div>
-        )}
-      </div>
-
-      {/* Текстовая часть - 30% высоты */}
-      <div
-        style={{
-          height: "30%",
-          backgroundColor: "#fff",
-          padding: 16,
+        bodyStyle={{
+          padding: 0,
+          height: "100%",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
         }}
       >
-        <div>
-          <Title
-            level={4}
-            style={{
-              marginBottom: 8,
-              color: "#333",
-              fontWeight: 600,
-              lineHeight: 1.3,
-              fontSize: 16,
-            }}
-          >
-            {title || "Заголовок новости"}
-          </Title>
-          {clickable && content && (
-            <Paragraph
-              ellipsis={{ rows: 1, expandable: false }}
+        <Badge.Ribbon
+          text={sticker}
+          color={color}
+          //  placement="start"
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            zIndex: 1000,
+          }}
+        />
+
+        {/* Фоновая часть - 70% высоты */}
+        <div
+          style={{
+            height: "190px",
+            background: image_url ? `url(${image_url})` : "#f5f5f5",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            position: "relative",
+            display: "flex",
+            alignItems: "flex-end",
+            padding: 16,
+          }}
+        >
+          {clickable && (
+            <div
               style={{
-                marginBottom: 8,
-                color: "#666",
-                fontSize: 14,
+                position: "absolute",
+                top: 16,
+                left: 16,
+                backgroundColor: "rgba(0,0,0,0.5)",
+                borderRadius: 20,
+                padding: "4px 8px",
+                opacity: 0.8,
+                transition: "opacity 0.3s ease",
               }}
             >
-              {content}
-            </Paragraph>
+              <FullscreenOutlined style={{ color: "#fff", fontSize: 16 }} />
+            </div>
           )}
         </div>
 
+        {/* Текстовая часть - 30% высоты */}
         <div
           style={{
+            height: "30%",
+            backgroundColor: "#fff",
+            padding: 16,
             display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginTop: "auto",
+            flexDirection: "column",
+            justifyContent: "space-between",
           }}
         >
-          <CalendarOutlined style={{ color: "#999", fontSize: 14 }} />
-          <Text type="secondary" style={{ fontSize: 13 }}>
-            {formatDate(date)}
-          </Text>
+          <div>
+            <Title
+              level={4}
+              style={{
+                marginBottom: 8,
+                color: "#333",
+                fontWeight: 600,
+                lineHeight: 1.3,
+                fontSize: 16,
+              }}
+            >
+              {title || "Заголовок новости"}
+            </Title>
+            {clickable && content && (
+              <Paragraph
+                ellipsis={{ rows: 1, expandable: false }}
+                style={{
+                  marginBottom: 8,
+                  color: "#666",
+                  fontSize: 14,
+                }}
+              >
+                {content}
+              </Paragraph>
+            )}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginTop: "auto",
+            }}
+          >
+            <CalendarOutlined style={{ color: "#999", fontSize: 14 }} />
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {formatDate(date)}
+            </Text>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    )
   );
 
   const getNewsWordForm = (count) => {
@@ -395,8 +439,88 @@ const AddNewsForm = () => {
     return "новостей";
   };
 
+  const parseContentWithFiles = (text, handleDownload) => {
+  const parts = [];
+  let lastIndex = 0;
+
+  const regex = /\[([^\]]+)]\(file:(\d+)\|((?:[^()\\]|\\.|[()])+)\)/g;
+  //        └── описание ┘ └── id ┘ └─────── filename ───────┘
+
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    const [fullMatch, description, fileId, fileNameRaw] = match;
+    const matchStart = match.index;
+
+    // Добавить всё перед найденной ссылкой
+    if (matchStart > lastIndex) {
+      parts.push(text.slice(lastIndex, matchStart));
+    }
+
+    const fileName = fileNameRaw.trim();
+
+    parts.push(
+      <Button
+        key={`${fileId}-${matchStart}`}
+        type="link"
+        onClick={() => handleDownload(Number(fileId), fileName)}
+        style={{ padding: 0, fontSize: 16 }}
+      >
+        📎 Скачать {description}
+      </Button>
+    );
+
+    lastIndex = matchStart + fullMatch.length;
+  }
+
+  // Добавить остаток текста
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
+};
+
+
+const handleDownload = async (fileId, fileName) => {
+    console.log(fileId, fileName);
+    try {
+      setLoadingFileId(fileId);
+
+      const response = await fetch(
+        `http://85.143.175.100:8080/api/files/${fileId}`,
+        {
+          method: "GET",
+          headers: { Authorization: `Bearer ${access_token}` },
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const errorData = await response.json();
+         messageApi.open({
+          type: "error",
+          content: errorData.error,
+        });
+      }
+    } catch (err) {
+      console.error("Ошибка сети:", err);
+      alert("Ошибка соединения с сервером");
+    } finally {
+      setLoadingFileId(null);
+    }
+  };
+
   return (
     <Layout style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
+      {contextHolder}
       <Content
         style={{
           maxWidth: 1200,
@@ -441,7 +565,6 @@ const AddNewsForm = () => {
                     disabled={loading}
                   />
                 </Form.Item>
-
                 <Form.Item
                   label="Содержание"
                   name="content"
@@ -458,6 +581,17 @@ const AddNewsForm = () => {
                     disabled={loading}
                   />
                 </Form.Item>
+                <Space.Compact style={{ width: "100%" }}>
+                  <Button
+                    block={false}
+                    type="primary"
+                    onClick={() => {
+                      fetchFiles();
+                      setFileModalVisible(true);
+                    }}
+                    icon={<PaperClipOutlined />}
+                  />
+                </Space.Compact>
 
                 <Form.Item label="URL изображения" name="image_url">
                   <Input
@@ -627,44 +761,42 @@ const AddNewsForm = () => {
             </Row>
           )}
           <div
-  style={{
-    marginTop: 32,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 16,
-  }}
->
-  <Space align="center">
-    <span>На странице</span>
-    <Select
-      value={pageSize}
-      onChange={(value) => {
-        setPage(1);
-        setPageSize(value);
-      }}
-      style={{ width: 80 }}
-    >
-      {[3, 6, 9, 12, 15].map((size) => (
-        <Option key={size} value={size}>
-          {size}
-        </Option>
-      ))}
-    </Select>
-    <span>{getNewsWordForm(pageSize)}</span>
+            style={{
+              marginTop: 32,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 16,
+            }}
+          >
+            <Space align="center">
+              <span>На странице</span>
+              <Select
+                value={pageSize}
+                onChange={(value) => {
+                  setPage(1);
+                  setPageSize(value);
+                }}
+                style={{ width: 80 }}
+              >
+                {[3, 6, 9, 12, 15].map((size) => (
+                  <Option key={size} value={size}>
+                    {size}
+                  </Option>
+                ))}
+              </Select>
+              <span>{getNewsWordForm(pageSize)}</span>
+            </Space>
 
-  </Space>
-
-  <Pagination
-    current={page}
-    pageSize={pageSize}
-    total={total}
-    onChange={(newPage) => setPage(newPage)}
-    showSizeChanger={false}
-  />
-</div>
-
+            <Pagination
+              current={page}
+              pageSize={pageSize}
+              total={total}
+              onChange={(newPage) => setPage(newPage)}
+              showSizeChanger={false}
+            />
+          </div>
         </Card>
 
         {/* Модальное окно редактирования */}
@@ -783,16 +915,12 @@ const AddNewsForm = () => {
           open={fullscreenModalVisible}
           onCancel={() => setFullscreenModalVisible(false)}
           footer={null}
-          width="100vw"
+          width="80vw"
           style={{ top: 0, paddingBottom: 0, maxWidth: "none" }}
           bodyStyle={{
-            height: "100vh",
+            // height: "100vh",
             padding: 0,
-            background: selectedNews?.image_url
-              ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${selectedNews.image_url})`
-              : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -813,73 +941,169 @@ const AddNewsForm = () => {
           {selectedNews && (
             <div
               style={{
-                maxWidth: 800,
+                maxWidth: 1200,
                 width: "90%",
                 backgroundColor: "rgba(255,255,255,0.95)",
                 backdropFilter: "blur(10px)",
                 borderRadius: 24,
-                padding: 48,
-                textAlign: "center",
+                overflow: "hidden",
                 boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
               }}
             >
-              <div style={{ marginBottom: 24 }}>
+              <Badge.Ribbon
+                text={selectedNews.sticker}
+                color={selectedNews.color}
+                placement="start"
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                }}
+              >
+                <div
+                  style={{
+                    height: 400,
+                    position: "relative",
+                    background: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(${selectedNews.image_url})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    display: "flex",
+                    alignItems: "flex-end",
+                    padding: 24,
+                  }}
+                >
+                  <div>
+                    <Title
+                      level={1}
+                      style={{
+                        color: "white",
+                        marginBottom: 8,
+                        textShadow: "1px 1px 3px rgba(0,0,0,0.5)",
+                      }}
+                    >
+                      {selectedNews.title}
+                    </Title>
+                    <Text
+                      style={{
+                        color: "rgba(255,255,255,0.9)",
+                        textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <CalendarOutlined style={{ marginRight: 8 }} />
+                      Опубликовано:{" "}
+                      {formatDate(selectedNews.date || selectedNews.created_at)}
+                    </Text>
+                  </div>
+                </div>
+              </Badge.Ribbon>
+
+              <div style={{ padding: "24px" }}>
+                {selectedNews.content.split("\n").map((paragraph, i) => (
+                  <Paragraph
+                    key={i}
+                    style={{ fontSize: 16, lineHeight: 1.8, marginBottom: 16 }}
+                  >
+                    {parseContentWithFiles(paragraph, handleDownload)}
+                  </Paragraph>
+                ))}
+              </div>
+
+              <Divider />
+
+              <div style={{ textAlign: "center", paddingBottom: 24 }}>
                 <Tag
-                  color={selectedNews.color}
+                  icon={<FireOutlined />}
+                  color="red"
                   style={{
                     fontSize: 14,
                     padding: "8px 16px",
-                    borderRadius: 20,
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
                   }}
                 >
-                  {selectedNews.sticker}
+                  Актуальная новость
                 </Tag>
-              </div>
-
-              <Title
-                level={1}
-                style={{
-                  marginBottom: 24,
-                  fontSize: 36,
-                  fontWeight: 700,
-                  lineHeight: 1.2,
-                  color: "#333",
-                }}
-              >
-                {selectedNews.title}
-              </Title>
-
-              <Paragraph
-                style={{
-                  fontSize: 18,
-                  lineHeight: 1.6,
-                  marginBottom: 32,
-                  color: "#666",
-                  textAlign: "left",
-                }}
-              >
-                {selectedNews.content}
-              </Paragraph>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  color: "#999",
-                }}
-              >
-                <CalendarOutlined style={{ fontSize: 16 }} />
-                <Text type="secondary" style={{ fontSize: 14 }}>
-                  {formatDate(selectedNews.date || selectedNews.created_at)}
-                </Text>
               </div>
             </div>
           )}
+        </Modal>
+        <Modal
+          title="Выберите файл"
+          open={fileModalVisible}
+          onCancel={() => setFileModalVisible(false)}
+          onOk={() => {
+            if (selectedFile) {
+              const currentContent = form.getFieldValue("content") || "";
+              const displayText =
+                selectedFile.description || selectedFile.filename;
+              const newContent = `${currentContent}\n[${displayText}](file:${selectedFile.id}|${selectedFile.filename})`;
+
+              form.setFieldsValue({
+                content: newContent,
+              });
+
+              handleFormChange(
+                {
+                  content: newContent,
+                },
+                form.getFieldsValue()
+              );
+            }
+            setFileModalVisible(false);
+          }}
+        >
+          <List
+            dataSource={files}
+            rowKey="id"
+            renderItem={(file) => {
+              const displayText = file.description || file.filename;
+              const markdownLink = `[${displayText}](file:${file.id}|${file.filename})`;
+
+              return (
+                <List.Item
+                  onClick={() => setSelectedFile(file)}
+                  style={{
+                    backgroundColor:
+                      selectedFile?.id === file.id ? "#f0f0f0" : "transparent",
+                    cursor: "pointer",
+                    padding: "8px 16px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                  onMouseEnter={(e) => {
+                    const btn = e.currentTarget.querySelector(".copy-btn");
+                    if (btn) btn.style.visibility = "visible";
+                  }}
+                  onMouseLeave={(e) => {
+                    const btn = e.currentTarget.querySelector(".copy-btn");
+                    if (btn) btn.style.visibility = "hidden";
+                  }}
+                >
+                  <List.Item.Meta
+                    title={displayText}
+                    description={`Категория: ${file.category || "не указана"}`}
+                  />
+                  <Tooltip title="Скопировать ссылку">
+                    <Button
+                      type="text"
+                      icon={<CopyOutlined />}
+                      className="copy-btn"
+                      style={{ color: "green" }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(markdownLink);
+                        messageApi.open({
+                          type: "success",
+                          content: "Ссылка скопирована в буфер обмена",
+                        });
+                      }}
+                    />
+                  </Tooltip>
+                </List.Item>
+              );
+            }}
+          />
         </Modal>
       </Content>
     </Layout>
