@@ -18,7 +18,8 @@ import {
   Alert,
   Popconfirm,
   Tooltip,
-  Select
+  Select,
+  Spin,
 } from "antd";
 import {
   UploadOutlined,
@@ -41,18 +42,18 @@ const FileUploadSection = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
   const [description, setDescription] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);
   const [selectedFileDetails, setSelectedFileDetails] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [category, setCategory] = useState(null);
   const access_token = localStorage.getItem("access_token");
   const { role } = useAuth();
-
+  const [previewLoading, setPreviewLoading] = useState(false);
   const handleOpenDetails = async (file) => {
     setSelectedFileDetails(file);
     setDetailsModalOpen(true);
-
+    setPreviewLoading(true);
     try {
       const response = await axios.get(
         `http://85.143.175.100:8080/api/files/${file.id}`,
@@ -89,6 +90,8 @@ const FileUploadSection = () => {
       console.error("Ошибка при загрузке превью:", err);
       setPreviewUrl(null);
       message.error("Не удалось загрузить превью файла");
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -237,8 +240,8 @@ const FileUploadSection = () => {
   const columns = [
     {
       title: "Имя файла",
-      dataIndex: "filename",
-      key: "filename",
+      dataIndex: "description",
+      key: "description",
       render: (text) => (
         <Space>
           <FileOutlined />
@@ -259,18 +262,18 @@ const FileUploadSection = () => {
       ),
     },
     {
-  title: "Категория",
-  dataIndex: "category",
-  key: "category",
-  render: (category) => {
-    const categoryNames = {
-      order: 'Приказ',
-      template: 'Шаблон',
-      scenario: 'Сценарий'
-    };
-    return categoryNames[category] || category;
-  }
-},
+      title: "Категория",
+      dataIndex: "category",
+      key: "category",
+      render: (category) => {
+        const categoryNames = {
+          order: "Приказ",
+          template: "Шаблон",
+          scenario: "Сценарий",
+        };
+        return categoryNames[category] || category;
+      },
+    },
     {
       title: "Действия",
       key: "actions",
@@ -351,15 +354,15 @@ const FileUploadSection = () => {
           />
 
           <Select
-  placeholder="Выберите категорию"
-  style={{ width: '100%', marginBottom: 16 }}
-  onChange={(value) => setCategory(value)}
-  options={[
-    { value: 'order', label: 'Приказ' },
-    { value: 'template', label: 'Шаблон' },
-    { value: 'scenario', label: 'Сценарий' },
-  ]}
-/>
+            placeholder="Выберите категорию"
+            style={{ width: "100%", marginBottom: 16 }}
+            onChange={(value) => setCategory(value)}
+            options={[
+              { value: "order", label: "Приказ" },
+              { value: "template", label: "Шаблон" },
+              { value: "scenario", label: "Сценарий" },
+            ]}
+          />
 
           <Checkbox
             checked={isPublic}
@@ -456,7 +459,7 @@ const FileUploadSection = () => {
       >
         {selectedFileDetails && (
           <>
-            {previewUrl && (
+            {previewUrl ? (
               <div style={{ marginBottom: 24 }}>
                 <Title level={5}>Превью:</Title>
                 {previewUrl.endsWith(".pdf") ||
@@ -481,6 +484,24 @@ const FileUploadSection = () => {
                   />
                 )}
               </div>
+            ) : previewLoading ? (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: 200,
+                }}
+              >
+                <Spin size="large" tip="Загрузка превью..." />
+              </div>
+            ) : (
+              <Alert
+                message="Превью недоступно"
+                description="Для этого типа файла превью не поддерживается"
+                type="info"
+                showIcon
+              />
             )}
 
             <Descriptions bordered column={1}>
@@ -494,8 +515,8 @@ const FileUploadSection = () => {
                 {selectedFileDetails.description || "Описание отсутствует"}
               </Descriptions.Item>
               <Descriptions.Item label="Категория">
-  {selectedFileDetails.category || 'Не указана'}
-</Descriptions.Item>
+                {selectedFileDetails.category || "Не указана"}
+              </Descriptions.Item>
               <Descriptions.Item label="Статус">
                 <Tag
                   color={selectedFileDetails.is_public ? "success" : "default"}

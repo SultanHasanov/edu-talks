@@ -57,7 +57,6 @@ const UsersTable = ({
     }
   };
 
-  console.log(pagination)
 
   const getActionItems = (user) => [
     {
@@ -231,7 +230,7 @@ const UsersTable = ({
                   Обновить
                 </Button>
               </Tooltip>
-              <Button
+              {/* <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={onCreateUser}
@@ -244,7 +243,7 @@ const UsersTable = ({
                 }}
               >
                 Добавить пользователя
-              </Button>
+              </Button> */}
             </Space>
           </Col>
         </Row>

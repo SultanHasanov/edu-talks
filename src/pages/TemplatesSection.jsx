@@ -1,22 +1,16 @@
 import { Container,  Box } from "@mui/material";
 
 import UserFiles from "../components/UserFiles";
+import { useState } from "react";
 
 const TemplatesSection = () => {
-
+  const [queryParam, setQueryParam] = useState("template"); 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
+    <Container  sx={{ py: 3 }}>
+      
        
 
-        <UserFiles  />
-      </Box>
+        <UserFiles queryParam={queryParam} />
     </Container>
   );
 };

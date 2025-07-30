@@ -19,6 +19,7 @@ import {
   Popconfirm,
   Tooltip,
   Select,
+  notification,
 } from "antd";
 import {
   UploadOutlined,
@@ -28,14 +29,16 @@ import {
   EyeOutlined,
   CloseOutlined,
   ExclamationCircleOutlined,
+  CrownOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-const UserFiles = () => {
+const UserFiles = ({ queryParam }) => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -46,9 +49,40 @@ const UserFiles = () => {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [category, setCategory] = useState(null);
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
   const access_token = localStorage.getItem("access_token");
-  const [loadingFileId, setLoadingFileId] = useState(null); // 👈 новое состояние
+  const [loadingFileId, setLoadingFileId] = useState(null);
   const { role } = useAuth();
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const navigate = useNavigate();
+
+  // Проверка подписки
+  const checkSubscription = async () => {
+    try {
+      setProfileLoading(true);
+      const response = await axios.get(
+        "http://85.143.175.100:8080/api/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+      setHasSubscription(response.data.has_subscription);
+    } catch (error) {
+      console.error("Ошибка при проверке подписки:", error);
+      message.error("Не удалось проверить статус подписки");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    checkSubscription();
+    fetchFiles();
+  }, []);
 
   const handleOpenDetails = async (file) => {
     setSelectedFileDetails(file);
@@ -115,12 +149,16 @@ const UserFiles = () => {
   const fetchFiles = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://85.143.175.100:8080/api/files", {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
+      const response = await fetch(
+        `http://85.143.175.100:8080/api/files?category=${queryParam}`,
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
       const data = await response.json();
+      console.log("Полный ответ сервера:", data);
       setFiles(data.data.data);
     } catch (error) {
       console.error("Error fetching files:", error);
@@ -130,48 +168,51 @@ const UserFiles = () => {
     }
   };
 
-  useEffect(() => {
-    fetchFiles();
-  }, []);
-
   const beforeUpload = (file) => {
     setSelectedFile(file);
-    return false; // Отменяем стандартное поведение загрузки
+    return false;
   };
 
   const handleDownload = async (fileId, fileName) => {
     try {
-      setLoadingFileId(fileId); // 👈 включаем только для нужной кнопки
+      setLoadingFileId(fileId);
 
       const response = await fetch(
         `http://85.143.175.100:8080/api/files/${fileId}`,
         {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
+          headers: { Authorization: `Bearer ${access_token}` },
         }
       );
 
-      if (response.status === 200) {
+      if (response.ok) {
+        // response.ok = (status 200-299)
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.setAttribute("download", fileName);
-        document.body.appendChild(link);
+        link.download = fileName;
         link.click();
-        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       } else {
-        const errorText = await response.text();
-        message.error(errorText || "Ошибка загрузки файла");
+        const errorData = await response.json(); // Парсим JSON-ошибку
+        console.error("Ошибка:", errorData.error); // Логируем в консоль
+        message.error(errorData.error);
+        messageApi.open({
+          type: "error",
+          content: errorData.error,
+        });
       }
-    } catch (error) {
-      console.error("Ошибка при загрузке:", error);
-      message.error("Произошла ошибка при загрузке");
+    } catch (err) {
+      console.error("Ошибка сети:", err);
+      alert("Ошибка соединения с сервером");
     } finally {
-      setLoadingFileId(null); // 👈 выключаем после завершения
+      setLoadingFileId(null);
     }
+  };
+
+  const handleSubscribe = () => {
+    navigate("/subscription");
   };
 
   const columns = [
@@ -182,18 +223,15 @@ const UserFiles = () => {
       render: (text) => (
         <Space>
           <FileOutlined />
-          <Text ellipsis style={{ maxWidth: 200 }}>
-            {text}
-          </Text>
+          <Text ellipsis>{text}</Text>
         </Space>
       ),
     },
-
     {
       title: "Категория",
       dataIndex: "category",
       key: "category",
-       align: "center",
+      align: "center",
       render: (category) => {
         const categoryNames = {
           order: "Приказ",
@@ -209,7 +247,6 @@ const UserFiles = () => {
       align: "center",
       render: (_, record) => (
         <Space size="middle">
-        
           <Tooltip title="Скачать">
             <Button
               loading={loadingFileId === record.id}
@@ -223,12 +260,34 @@ const UserFiles = () => {
   ];
 
   return (
-    <div style={{ padding: 24, display: "flex", flex: "wrap" }}>
-      {/* Список файлов */}
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      {contextHolder}
+
+      {!profileLoading && !hasSubscription && role !== "admin" && (
+        <Alert
+          message="У вас нет подписки"
+          description="Чтобы скачивать документы, необходимо оформить подписку"
+          type="warning"
+          showIcon
+          action={
+            <Button
+              type="primary"
+              size="midle"
+              icon={<CrownOutlined />}
+              onClick={handleSubscribe}
+            >
+              Оформить подписку
+            </Button>
+          }
+          style={{ marginBottom: 24, width: "100%", alignItems: "center" }}
+        />
+      )}
+
       <Card
-        title="Доступные файлы"
+        title=""
         bordered={false}
         loading={loading && !files?.length}
+        style={{ width: "100%" }}
       >
         {files?.length === 0 ? (
           <Alert
@@ -238,17 +297,17 @@ const UserFiles = () => {
             showIcon
           />
         ) : (
-          <Table
-            columns={columns}
-            dataSource={files}
-            rowKey="id"
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: true }}
-          />
+          <>
+            <Table
+              columns={columns}
+              dataSource={files}
+              rowKey="id"
+              pagination={{ pageSize: 10 }}
+              scroll={{ x: true }}
+            />
+          </>
         )}
       </Card>
-
-     
     </div>
   );
 };

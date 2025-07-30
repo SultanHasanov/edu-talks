@@ -11,10 +11,14 @@ import ScriptSection from "./pages/ScriptSection.jsx";
 import BlockDetails from "./components/BlockDetails.jsx";
 import Setting from "./pages/Setting.jsx";
 import LegalSection from "./pages/LegalSection.jsx";
-import ArticleEditor from "./components/ArticleEditor.jsx";
+import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
+import SubscriptionPage from "./components/SubscriptionPage.jsx";
+import PaymentSuccess from "./components/PaymentSuccess.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
+   <ErrorBoundary>
+
     <AuthProvider>
       <Routes>
         <Route element={<Layout />}>
@@ -27,9 +31,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/scripts" element={<ScriptSection />} />
           <Route path="/legal" element={<LegalSection />} />
           <Route path="/setting" element={<Setting />} />
-          <Route path="/1" element={<ArticleEditor />} />
+          <Route path="/1" element={<PaymentSuccess />} />
+          <Route path="/subscription" element={<SubscriptionPage />} />
         </Route>
       </Routes>
     </AuthProvider>
+   </ErrorBoundary>
+
   </BrowserRouter>
 );

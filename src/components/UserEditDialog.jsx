@@ -46,7 +46,7 @@ const UserEditDialog = ({
         address: user.address || '',
         role: user.role || 'user',
       });
-      setSubscriptionActive(user.active || false); // предполагаем, что есть это поле
+      setSubscriptionActive(user.has_subscription || false); // предполагаем, что есть это поле
     }
   }, [user]);
 
@@ -155,7 +155,7 @@ const UserEditDialog = ({
                 <Switch
                   checked={subscriptionActive}
                   onChange={(e) => setSubscriptionActive(e.target.checked)}
-                  name="subscription"
+                  name="has_subscription"
                   color="primary"
                 />
               }

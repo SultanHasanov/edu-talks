@@ -1,23 +1,12 @@
-import { Box, Container, Typography } from "@mui/material";
+import { Container } from "@mui/material";
+import UserFiles from "../components/UserFiles";
+import { useState } from "react";
 
 const LegalSection = () => {
+  const [queryParam, setQueryParam] = useState("order");
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Box
-        sx={{
-          minHeight: "500px",
-          backgroundColor: "#f9fafb",
-          borderRadius: 2,
-          p: 3,
-        }}
-      >
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Правовая база
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Здесь будет контент для раздела "Правовая база".
-        </Typography>
-      </Box>
+    <Container sx={{ py: 3 }}>
+      <UserFiles queryParam={queryParam} />
     </Container>
   );
 };
