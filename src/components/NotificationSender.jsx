@@ -24,7 +24,7 @@ const NotificationSender = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/admin/notify", {
+      const response = await fetch("https://edutalks.ru/api/admin/notify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

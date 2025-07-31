@@ -14,9 +14,7 @@ import {
   message, 
   Tooltip 
 } from 'antd';
-
-import '../App.css'
-
+import "../App.css"
 export const RequisitesPage = () => {
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -79,7 +77,7 @@ export const RequisitesPage = () => {
         bordered={false}
         style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
       >
-        <Descriptions  bordered>
+        <Descriptions column={1} bordered>
           <Descriptions.Item label="Валюта приёма платежей">
             Российский рубль (RUB)
           </Descriptions.Item>

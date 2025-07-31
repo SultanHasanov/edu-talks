@@ -26,7 +26,7 @@ const ContainerRecomm = () => {
 
       try {
         const response = await fetch(
-          `/news?page=${page}&page_size=${pageSize}`
+          `https://edutalks.ru/api/news?page=${page}&page_size=${pageSize}`
         );
         if (!response.ok) {
           throw new Error(`Ошибка HTTP: ${response.status}`);

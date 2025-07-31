@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
   // Выход: удаляет токены и вызывает API logout
   const logout = async () => {
     try {
-      await fetch("/logout", {
+      await fetch("https://edutalks.ru/api/logout", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authState.access_token}`,

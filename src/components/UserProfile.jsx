@@ -47,7 +47,7 @@ const UserProfile = () => {
     const fetchProfile = async () => {
       setLoading(true);
       try {
-        const response = await axios.get("/api/profile", {
+        const response = await axios.get("https://edutalks.ru/api/profile", {
           headers: {
             Authorization: `Bearer ${access_token}`,
           },
@@ -71,7 +71,7 @@ const UserProfile = () => {
     setSubLoading(true);
     try {
       await axios.patch(
-        " /api/email-subscription",
+        "https://edutalks.ru/api/email-subscription",
         { subscribe: checked },
         {
           headers: {
@@ -94,7 +94,7 @@ const UserProfile = () => {
   const handleResendVerification = async () => {
     try {
       await axios.post(
-        `/resend-verification`,
+        `https://edutalks.ru/api/resend-verification`,
         { email: userData.email },
         {
           headers: {
@@ -119,7 +119,7 @@ const UserProfile = () => {
   const handleCheckVerification = async () => {
     setCheckingVerification(true);
     try {
-      const response = await axios.get("/api/profile", {
+      const response = await axios.get("https://edutalks.ru/api/profile", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },

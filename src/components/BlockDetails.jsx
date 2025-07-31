@@ -20,7 +20,7 @@ import "antd/dist/reset.css";
 
 const { Title, Text, Paragraph } = Typography;
 const { Ribbon } = Badge;
-const API_BASE_URL = "";
+const API_BASE_URL = "https://edutalks.ru/api";
 
 const BlockDetails = () => {
   const { id } = useParams();
@@ -108,7 +108,7 @@ const handleDownload = async (fileId, fileName) => {
       setLoadingFileId(fileId);
 
       const response = await fetch(
-        `/api/files/${fileId}`,
+        `https://edutalks.ru/api/files/${fileId}`,
         {
           method: "GET",
           headers: { Authorization: `Bearer ${access_token}` },

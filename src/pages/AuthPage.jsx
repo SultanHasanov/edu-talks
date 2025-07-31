@@ -76,7 +76,7 @@ const AuthPage = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/login", {
+      const response = await fetch("https://edutalks.ru/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -140,7 +140,7 @@ const AuthPage = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/register", {
+      const response = await fetch("https://edutalks.ru/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

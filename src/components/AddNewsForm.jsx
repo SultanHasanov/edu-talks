@@ -86,7 +86,7 @@ const AddNewsForm = () => {
   const fetchFiles = async () => {
     try {
       const response = await fetch(
-        "/api/admin/files",
+        "https://edutalks.ru/api/admin/files",
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -108,7 +108,7 @@ const AddNewsForm = () => {
     try {
       setNewsLoading(true);
       const response = await fetch(
-        `/api/news?page=${page}&page_size=${pageSize}`
+        `https://edutalks.ru/api/news?page=${page}&page_size=${pageSize}`
       );
 
       if (!response.ok) {
@@ -138,7 +138,7 @@ const AddNewsForm = () => {
 
     try {
       const response = await fetch(
-        "/api/admin/news",
+        "https://edutalks.ru/api/admin/news",
         {
           method: "POST",
           headers: {
@@ -186,7 +186,7 @@ const AddNewsForm = () => {
 
     try {
       const response = await fetch(
-        `/api/admin/news/${editingNewsId}`,
+        `https://edutalks.ru/api/admin/news/${editingNewsId}`,
         {
           method: "PATCH",
           headers: {
@@ -225,7 +225,7 @@ const AddNewsForm = () => {
 
     try {
       const response = await fetch(
-        `/api/admin/news/${id}`,
+        `https://edutalks.ru/api/admin/news/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -488,7 +488,7 @@ const handleDownload = async (fileId, fileName) => {
       setLoadingFileId(fileId);
 
       const response = await fetch(
-        `/api/files/${fileId}`,
+        `https://edutalks.ru/api/files/${fileId}`,
         {
           method: "GET",
           headers: { Authorization: `Bearer ${access_token}` },

@@ -55,7 +55,7 @@ const FileUploadSection = () => {
     setDetailsModalOpen(true);
     setPreviewLoading(true);
     try {
-      const response = await axios.get(`/api/files/${file.id}`, {
+      const response = await axios.get(`https://edutalks.ru/api/files/${file.id}`, {
         responseType: "blob",
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -114,7 +114,7 @@ const FileUploadSection = () => {
   const fetchFiles = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/admin/files", {
+      const response = await fetch("https://edutalks.ru/api/admin/files", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
@@ -154,7 +154,7 @@ const FileUploadSection = () => {
       setLoading(true);
       setUploadProgress(0);
 
-      const response = await fetch("/api/admin/files/upload", {
+      const response = await fetch("https://edutalks.ru/api/admin/files/upload", {
         method: "POST",
         body: formData,
         headers: {
@@ -180,7 +180,7 @@ const FileUploadSection = () => {
 
   const handleDownload = async (fileId, fileName) => {
     try {
-      const response = await fetch(`/api/files/${fileId}`, {
+      const response = await fetch(`https://edutalks.ru/api/files/${fileId}`, {
         method: "GET",
       });
 
@@ -206,7 +206,7 @@ const FileUploadSection = () => {
   const handleDeleteFile = async (file) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/files/${file.id}`, {
+      const response = await fetch(`https://edutalks.ru/api/admin/files/${file.id}`, {
         method: "DELETE",
       });
 

@@ -63,7 +63,7 @@ const UserFiles = ({ queryParam }) => {
     try {
       setProfileLoading(true);
       const response = await axios.get(
-        "/api/profile",
+        "https://edutalks.ru/api/profile",
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -90,7 +90,7 @@ const UserFiles = ({ queryParam }) => {
 
     try {
       const response = await axios.get(
-        `/api/files/${file.id}`,
+        `https://edutalks.ru/api/files/${file.id}`,
         {
           responseType: "blob",
           headers: {
@@ -150,7 +150,7 @@ const UserFiles = ({ queryParam }) => {
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/files?category=${queryParam}`,
+        `https://edutalks.ru/api/files?category=${queryParam}`,
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -179,7 +179,7 @@ const UserFiles = ({ queryParam }) => {
       setLoadingFileId(fileId);
 
       const response = await fetch(
-        `/api/files/${fileId}`,
+        `https://edutalks.ru/api/files/${fileId}`,
         {
           method: "GET",
           headers: { Authorization: `Bearer ${access_token}` },

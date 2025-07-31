@@ -84,7 +84,7 @@ const SubscriptionPage = () => {
 
       // Отправляем запрос на создание платежа в ЮKassa
       const response = await axios.post(
-        "/api/create-payment",
+        "https://edutalks.ru/api/create-payment",
         {
           amount: planData.price,
           description: `Подписка на ${planData.period} - ${planData.title}`,
