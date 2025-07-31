@@ -174,7 +174,7 @@ const UserFiles = ({ queryParam }) => {
   };
 
   const handleDownload = async (fileId, fileName) => {
-     console.log(fileId, fileName);
+    
     try {
       setLoadingFileId(fileId);
 

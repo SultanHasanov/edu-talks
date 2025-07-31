@@ -108,7 +108,7 @@ const AddNewsForm = () => {
     try {
       setNewsLoading(true);
       const response = await fetch(
-        `http://85.143.175.100:8080/news?page=${page}&page_size=${pageSize}`
+        `/api/news?page=${page}&page_size=${pageSize}`
       );
 
       if (!response.ok) {
@@ -116,7 +116,7 @@ const AddNewsForm = () => {
       }
 
       const data = await response.json();
-      setNews(data.data.data);
+      setNews(data?.data?.data);
       setTotal(data.data.total);
     } catch (err) {
       console.error("Error fetching news:", err);
@@ -138,7 +138,7 @@ const AddNewsForm = () => {
 
     try {
       const response = await fetch(
-        "http://85.143.175.100:8080/api/admin/news",
+        "/api/admin/news",
         {
           method: "POST",
           headers: {
@@ -670,7 +670,7 @@ const handleDownload = async (fileId, fileName) => {
               <Title level={3} style={{ margin: 0 }}>
                 Список новостей
               </Title>
-              <Badge count={news.length} showZero color="#52c41a" />
+              <Badge count={news?.length} showZero color="#52c41a" />
             </Space>
           }
         >
@@ -681,11 +681,11 @@ const handleDownload = async (fileId, fileName) => {
                 <Text type="secondary">Загрузка новостей...</Text>
               </div>
             </div>
-          ) : news.length === 0 ? (
+          ) : news?.length === 0 ? (
             <Empty description="Новости не найдены" style={{ padding: 48 }} />
           ) : (
             <Row gutter={[24, 24]}>
-              {news.map((item) => (
+              {news?.map((item) => (
                 <Col xs={24} sm={12} lg={8} key={item.id}>
                   <div style={{ position: "relative" }}>
                     <NewsCardPreview

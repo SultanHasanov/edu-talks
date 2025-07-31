@@ -9,7 +9,7 @@ const { Option } = Select;
 const { Meta } = Card;
 const { Title, Text } = Typography;
 const { Ribbon } = Badge;
-const API_BASE_URL = "http://85.143.175.100:8080";
+const API_BASE_URL = "/api";
 
 const ContainerRecomm = () => {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const ContainerRecomm = () => {
 
       try {
         const response = await fetch(
-          `${API_BASE_URL}/news?page=${page}&page_size=${pageSize}`
+          `/api/news?page=${page}&page_size=${pageSize}`
         );
         if (!response.ok) {
           throw new Error(`Ошибка HTTP: ${response.status}`);
