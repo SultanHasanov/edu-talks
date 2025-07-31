@@ -20,7 +20,7 @@ export const fetchWithAuth = async (url, options = {}, retry = true) => {
 
   if (response.status === 401 && retry && refreshToken) {
     // Пытаемся обновить токен
-    const refreshResponse = await fetch("http://85.143.175.100:8080/refresh", {
+    const refreshResponse = await fetch(" /refresh", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

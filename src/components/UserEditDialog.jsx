@@ -1,5 +1,5 @@
 // components/UserEditDialog.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -16,22 +16,15 @@ import {
   Alert,
   Switch,
   FormControlLabel,
-} from '@mui/material';
+} from "@mui/material";
 
-const UserEditDialog = ({ 
-  open, 
-  user, 
-  onClose, 
-  onSave,
-  loading,
-  error,
-}) => {
+const UserEditDialog = ({ open, user, onClose, onSave, loading, error }) => {
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    address: '',
-    role: 'user',
+    full_name: "",
+    email: "",
+    phone: "",
+    address: "",
+    role: "user",
   });
 
   const [subscriptionActive, setSubscriptionActive] = useState(false);
@@ -40,11 +33,11 @@ const UserEditDialog = ({
   useEffect(() => {
     if (user) {
       setFormData({
-        full_name: user.full_name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        address: user.address || '',
-        role: user.role || 'user',
+        full_name: user.full_name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        role: user.role || "user",
       });
       setSubscriptionActive(user.has_subscription || false); // предполагаем, что есть это поле
     }
@@ -52,7 +45,7 @@ const UserEditDialog = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
@@ -60,16 +53,16 @@ const UserEditDialog = ({
       // Сначала вызываем основной onSave
       await onSave({
         id: user.id,
-        ...formData
+        ...formData,
       });
 
       // Затем отдельный запрос на подписку
       setSubscriptionUpdating(true);
-      await fetch(`http://85.143.175.100:8080/api/admin/users/${user.id}/subscription`, {
-        method: 'PATCH',
+      await fetch(` /api/admin/users/${user.id}/subscription`, {
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
         },
         body: JSON.stringify({ active: subscriptionActive }),
       });
@@ -77,7 +70,7 @@ const UserEditDialog = ({
       setSubscriptionUpdating(false);
       onClose(); // Закрываем после обоих запросов
     } catch (err) {
-      console.error('Ошибка при сохранении или подписке:', err);
+      console.error("Ошибка при сохранении или подписке:", err);
       setSubscriptionUpdating(false);
     }
   };
@@ -85,7 +78,7 @@ const UserEditDialog = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        {user ? 'Редактирование пользователя' : 'Создание пользователя'}
+        {user ? "Редактирование пользователя" : "Создание пользователя"}
       </DialogTitle>
       <DialogContent>
         {error && (
@@ -93,7 +86,7 @@ const UserEditDialog = ({
             {error}
           </Alert>
         )}
-        
+
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12}>
             <TextField
@@ -166,12 +159,16 @@ const UserEditDialog = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Отмена</Button>
-        <Button 
-          onClick={handleSubmit} 
+        <Button
+          onClick={handleSubmit}
           variant="contained"
           disabled={loading || subscriptionUpdating}
         >
-          {(loading || subscriptionUpdating) ? <CircularProgress size={24} /> : 'Сохранить'}
+          {loading || subscriptionUpdating ? (
+            <CircularProgress size={24} />
+          ) : (
+            "Сохранить"
+          )}
         </Button>
       </DialogActions>
     </Dialog>

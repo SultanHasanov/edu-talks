@@ -76,7 +76,7 @@ const AuthPage = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch("http://85.143.175.100:8080/login", {
+      const response = await fetch("/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -140,7 +140,7 @@ const AuthPage = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch("http://85.143.175.100:8080/register", {
+      const response = await fetch(" /register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

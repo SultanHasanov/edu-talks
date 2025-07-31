@@ -55,15 +55,12 @@ const FileUploadSection = () => {
     setDetailsModalOpen(true);
     setPreviewLoading(true);
     try {
-      const response = await axios.get(
-        `http://85.143.175.100:8080/api/files/${file.id}`,
-        {
-          responseType: "blob",
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
+      const response = await axios.get(` /api/files/${file.id}`, {
+        responseType: "blob",
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
 
       let fileType = response.headers["content-type"];
 
@@ -117,14 +114,11 @@ const FileUploadSection = () => {
   const fetchFiles = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        "http://85.143.175.100:8080/api/admin/files",
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
+      const response = await fetch("/api/admin/files", {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
       const data = await response.json();
       setFiles(data.data);
     } catch (error) {
@@ -160,16 +154,13 @@ const FileUploadSection = () => {
       setLoading(true);
       setUploadProgress(0);
 
-      const response = await fetch(
-        "http://85.143.175.100:8080/api/admin/files/upload",
-        {
-          method: "POST",
-          body: formData,
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
+      const response = await fetch("/api/admin/files/upload", {
+        method: "POST",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
 
       if (!response.ok) throw new Error("Upload failed");
 
@@ -189,12 +180,9 @@ const FileUploadSection = () => {
 
   const handleDownload = async (fileId, fileName) => {
     try {
-      const response = await fetch(
-        `http://85.143.175.100:8080/api/files/${fileId}`,
-        {
-          method: "GET",
-        }
-      );
+      const response = await fetch(`/api/files/${fileId}`, {
+        method: "GET",
+      });
 
       if (response.status === 200) {
         const blob = await response.blob();
@@ -218,12 +206,9 @@ const FileUploadSection = () => {
   const handleDeleteFile = async (file) => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://85.143.175.100:8080/api/admin/files/${file.id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`/api/admin/files/${file.id}`, {
+        method: "DELETE",
+      });
 
       if (!response.ok) throw new Error("Delete failed");
 

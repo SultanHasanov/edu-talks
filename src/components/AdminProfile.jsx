@@ -47,7 +47,8 @@ import {
 import { useAuth } from "../context/AuthContext";
 
 const AdminProfile = () => {
-  const { username, email, phone, address, full_name, access_token } = useAuth();
+  const { username, email, phone, address, full_name, access_token } =
+    useAuth();
   const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -74,7 +75,7 @@ const AdminProfile = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://85.143.175.100:8080/api/admin/users", {
+      const response = await fetch(" /api/admin/users", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
@@ -419,7 +420,10 @@ const AdminProfile = () => {
       </Grid>
 
       {/* Диалог удаления аккаунта */}
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+      >
         <DialogTitle>Подтверждение удаления</DialogTitle>
         <DialogContent>
           <Typography>
@@ -429,7 +433,11 @@ const AdminProfile = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteDialog(false)}>Отмена</Button>
-          <Button onClick={handleDeleteAccount} color="error" variant="contained">
+          <Button
+            onClick={handleDeleteAccount}
+            color="error"
+            variant="contained"
+          >
             Удалить
           </Button>
         </DialogActions>

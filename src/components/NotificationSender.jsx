@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import { 
-  Card, 
-  Form, 
-  Input, 
-  Button, 
-  Typography, 
+import {
+  Card,
+  Form,
+  Input,
+  Button,
+  Typography,
   message as antdMessage,
   Spin,
-  Alert
+  Alert,
 } from "antd";
 import { SendOutlined } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
@@ -24,20 +24,17 @@ const NotificationSender = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        "http://85.143.175.100:8080/api/admin/notify",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access_token}`,
-          },
-          body: JSON.stringify({
-            subject: values.subject,
-            message: values.message,
-          }),
-        }
-      );
+      const response = await fetch(" /api/admin/notify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+        body: JSON.stringify({
+          subject: values.subject,
+          message: values.message,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error(`Ошибка: ${response.status}`);
@@ -54,11 +51,13 @@ const NotificationSender = () => {
   };
 
   return (
-    <div style={{ 
-      maxWidth: 600, 
-      margin: "0 auto", 
-      backgroundColor: "#f5f5f5",
-    }}>
+    <div
+      style={{
+        maxWidth: 600,
+        margin: "0 auto",
+        backgroundColor: "#f5f5f5",
+      }}
+    >
       <Card
         title={
           <Title level={3} style={{ margin: 0 }}>
@@ -79,26 +78,29 @@ const NotificationSender = () => {
               name="subject"
               label="Тема сообщения"
               rules={[
-                { required: true, message: "Пожалуйста, введите тему сообщения" }
+                {
+                  required: true,
+                  message: "Пожалуйста, введите тему сообщения",
+                },
               ]}
             >
-              <Input 
-                placeholder="Введите тему сообщения" 
-                size="large"
-              />
+              <Input placeholder="Введите тему сообщения" size="large" />
             </Form.Item>
 
             <Form.Item
               name="message"
               label="Текст сообщения"
               rules={[
-                { required: true, message: "Пожалуйста, введите текст сообщения" }
+                {
+                  required: true,
+                  message: "Пожалуйста, введите текст сообщения",
+                },
               ]}
             >
-              <TextArea 
-                rows={6} 
+              <TextArea
+                rows={6}
                 placeholder="Введите текст сообщения для рассылки"
-                showCount 
+                showCount
                 maxLength={1000}
               />
             </Form.Item>
@@ -111,10 +113,10 @@ const NotificationSender = () => {
                 size="large"
                 block
                 loading={isLoading}
-                style={{ 
+                style={{
                   backgroundColor: "#1890ff",
                   height: 48,
-                  fontSize: 16
+                  fontSize: 16,
                 }}
               >
                 Отправить рассылку

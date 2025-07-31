@@ -9,7 +9,6 @@ const { Option } = Select;
 const { Meta } = Card;
 const { Title, Text } = Typography;
 const { Ribbon } = Badge;
-const API_BASE_URL = "/api";
 
 const ContainerRecomm = () => {
   const navigate = useNavigate();
@@ -27,7 +26,7 @@ const ContainerRecomm = () => {
 
       try {
         const response = await fetch(
-          `/api/news?page=${page}&page_size=${pageSize}`
+          `/news?page=${page}&page_size=${pageSize}`
         );
         if (!response.ok) {
           throw new Error(`Ошибка HTTP: ${response.status}`);

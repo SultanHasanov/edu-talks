@@ -97,7 +97,7 @@ const Setting = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://85.143.175.100:8080/api/admin/users?page=${page}&page_size=${pageSize}`,
+        `/api/admin/users?page=${page}&page_size=${pageSize}`,
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -142,7 +142,7 @@ const Setting = () => {
     try {
       // Сначала получаем первую страницу, чтобы узнать общее количество пользователей
       const firstPageResponse = await fetch(
-        `http://85.143.175.100:8080/api/admin/users?page=1&page_size=10`,
+        `/api/admin/users?page=1&page_size=10`,
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -159,7 +159,7 @@ const Setting = () => {
 
       // Затем делаем запрос с page_size равным общему количеству пользователей
       const allUsersResponse = await fetch(
-        `http://85.143.175.100:8080/api/admin/users?page=1&page_size=${totalUsers}`,
+        `/api/admin/users?page=1&page_size=${totalUsers}`,
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -202,7 +202,7 @@ const Setting = () => {
 
   const fetchNews = async () => {
     try {
-      const response = await fetch("http://85.143.175.100:8080/news", {
+      const response = await fetch("/news", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
@@ -298,8 +298,8 @@ const Setting = () => {
 
     try {
       const url = userData.id
-        ? `http://85.143.175.100:8080/api/admin/users/${userData.id}`
-        : "http://85.143.175.100:8080/api/admin/users";
+        ? `/api/admin/users/${userData.id}`
+        : "/api/admin/users";
 
       const method = "PATCH";
 

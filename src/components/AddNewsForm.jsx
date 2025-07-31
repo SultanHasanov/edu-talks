@@ -86,7 +86,7 @@ const AddNewsForm = () => {
   const fetchFiles = async () => {
     try {
       const response = await fetch(
-        "http://85.143.175.100:8080/api/admin/files",
+        "/api/admin/files",
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -186,7 +186,7 @@ const AddNewsForm = () => {
 
     try {
       const response = await fetch(
-        `http://85.143.175.100:8080/api/admin/news/${editingNewsId}`,
+        `/api/admin/news/${editingNewsId}`,
         {
           method: "PATCH",
           headers: {
@@ -225,7 +225,7 @@ const AddNewsForm = () => {
 
     try {
       const response = await fetch(
-        `http://85.143.175.100:8080/api/admin/news/${id}`,
+        `/api/admin/news/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -488,7 +488,7 @@ const handleDownload = async (fileId, fileName) => {
       setLoadingFileId(fileId);
 
       const response = await fetch(
-        `http://85.143.175.100:8080/api/files/${fileId}`,
+        `/api/files/${fileId}`,
         {
           method: "GET",
           headers: { Authorization: `Bearer ${access_token}` },

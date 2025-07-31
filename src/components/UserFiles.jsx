@@ -63,7 +63,7 @@ const UserFiles = ({ queryParam }) => {
     try {
       setProfileLoading(true);
       const response = await axios.get(
-        "http://85.143.175.100:8080/api/profile",
+        "/api/profile",
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -90,7 +90,7 @@ const UserFiles = ({ queryParam }) => {
 
     try {
       const response = await axios.get(
-        `http://85.143.175.100:8080/api/files/${file.id}`,
+        `/api/files/${file.id}`,
         {
           responseType: "blob",
           headers: {
@@ -150,7 +150,7 @@ const UserFiles = ({ queryParam }) => {
     try {
       setLoading(true);
       const response = await fetch(
-        `http://85.143.175.100:8080/api/files?category=${queryParam}`,
+        `/api/files?category=${queryParam}`,
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
@@ -179,7 +179,7 @@ const UserFiles = ({ queryParam }) => {
       setLoadingFileId(fileId);
 
       const response = await fetch(
-        `http://85.143.175.100:8080/api/files/${fileId}`,
+        `/api/files/${fileId}`,
         {
           method: "GET",
           headers: { Authorization: `Bearer ${access_token}` },

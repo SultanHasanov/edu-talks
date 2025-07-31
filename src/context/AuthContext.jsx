@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
   // Выход: удаляет токены и вызывает API logout
   const logout = async () => {
     try {
-      await fetch("http://85.143.175.100:8080/logout", {
+      await fetch("/logout", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authState.access_token}`,

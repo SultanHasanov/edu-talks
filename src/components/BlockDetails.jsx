@@ -20,7 +20,7 @@ import "antd/dist/reset.css";
 
 const { Title, Text, Paragraph } = Typography;
 const { Ribbon } = Badge;
-const API_BASE_URL = "http://85.143.175.100:8080";
+const API_BASE_URL = "";
 
 const BlockDetails = () => {
   const { id } = useParams();
@@ -108,7 +108,7 @@ const handleDownload = async (fileId, fileName) => {
       setLoadingFileId(fileId);
 
       const response = await fetch(
-        `http://85.143.175.100:8080/api/files/${fileId}`,
+        `/api/files/${fileId}`,
         {
           method: "GET",
           headers: { Authorization: `Bearer ${access_token}` },

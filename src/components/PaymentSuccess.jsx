@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Result,
-  Button,
-  Card,
-  Typography,
-  Space,
-  Spin,
-  Alert,
-} from "antd";
+import { Result, Button, Card, Typography, Space, Spin, Alert } from "antd";
 import {
   CheckCircleOutlined,
   HomeOutlined,
@@ -25,40 +17,40 @@ const PaymentSuccess = () => {
   const [loading, setLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [error, setError] = useState(null);
-  
+
   const access_token = localStorage.getItem("access_token");
 
-//   useEffect(() => {
-//     // Получаем параметры из URL (ЮKassa передает их после успешного платежа)
-//     const paymentId = searchParams.get('payment_id');
-    
-//     if (paymentId) {
-//       checkPaymentStatus(paymentId);
-//     } else {
-//       setError("Не найден идентификатор платежа");
-//       setLoading(false);
-//     }
-//   }, [searchParams]);
+  //   useEffect(() => {
+  //     // Получаем параметры из URL (ЮKassa передает их после успешного платежа)
+  //     const paymentId = searchParams.get('payment_id');
 
-//   const checkPaymentStatus = async (paymentId) => {
-//     try {
-//       const response = await axios.get(
-//         `http://85.143.175.100:8080/api/payment-status/${paymentId}`,
-//         {
-//           headers: {
-//             Authorization: `Bearer ${access_token}`,
-//           },
-//         }
-//       );
+  //     if (paymentId) {
+  //       checkPaymentStatus(paymentId);
+  //     } else {
+  //       setError("Не найден идентификатор платежа");
+  //       setLoading(false);
+  //     }
+  //   }, [searchParams]);
 
-//       setPaymentStatus(response.data);
-//     } catch (error) {
-//       console.error("Ошибка при проверке статуса платежа:", error);
-//       setError("Не удалось проверить статус платежа");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
+  //   const checkPaymentStatus = async (paymentId) => {
+  //     try {
+  //       const response = await axios.get(
+  //         ` /api/payment-status/${paymentId}`,
+  //         {
+  //           headers: {
+  //             Authorization: `Bearer ${access_token}`,
+  //           },
+  //         }
+  //       );
+
+  //       setPaymentStatus(response.data);
+  //     } catch (error) {
+  //       console.error("Ошибка при проверке статуса платежа:", error);
+  //       setError("Не удалось проверить статус платежа");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
   const handleGoHome = () => {
     navigate("/");
@@ -114,7 +106,7 @@ const PaymentSuccess = () => {
     );
   }
 
-  const isPaymentSuccessful = true
+  const isPaymentSuccessful = true;
 
   return (
     <div
@@ -138,13 +130,17 @@ const PaymentSuccess = () => {
                 />
               }
               title={
-                <Title level={2} style={{ color: "#52c41a", marginBottom: "8px" }}>
+                <Title
+                  level={2}
+                  style={{ color: "#52c41a", marginBottom: "8px" }}
+                >
                   Подписка успешно оформлена!
                 </Title>
               }
               subTitle={
                 <Paragraph style={{ fontSize: "16px", color: "#666" }}>
-                  Поздравляем! Ваша подписка активирована. Теперь у вас есть полный доступ ко всем документам и материалам.
+                  Поздравляем! Ваша подписка активирована. Теперь у вас есть
+                  полный доступ ко всем документам и материалам.
                 </Paragraph>
               }
               extra={[
@@ -188,25 +184,50 @@ const PaymentSuccess = () => {
                     marginBottom: "16px",
                   }}
                 />
-                <Title level={3} style={{ color: "white", marginBottom: "24px" }}>
+                <Title
+                  level={3}
+                  style={{ color: "white", marginBottom: "24px" }}
+                >
                   Ваши новые возможности
                 </Title>
-                <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))" }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gap: "16px",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                  }}
+                >
                   <div>
-                    <CheckCircleOutlined style={{ color: "#52c41a", marginRight: "8px" }} />
-                    <Text style={{ color: "white" }}>Неограниченное скачивание документов</Text>
+                    <CheckCircleOutlined
+                      style={{ color: "#52c41a", marginRight: "8px" }}
+                    />
+                    <Text style={{ color: "white" }}>
+                      Неограниченное скачивание документов
+                    </Text>
                   </div>
                   <div>
-                    <CheckCircleOutlined style={{ color: "#52c41a", marginRight: "8px" }} />
-                    <Text style={{ color: "white" }}>Доступ ко всем категориям</Text>
+                    <CheckCircleOutlined
+                      style={{ color: "#52c41a", marginRight: "8px" }}
+                    />
+                    <Text style={{ color: "white" }}>
+                      Доступ ко всем категориям
+                    </Text>
                   </div>
                   <div>
-                    <CheckCircleOutlined style={{ color: "#52c41a", marginRight: "8px" }} />
-                    <Text style={{ color: "white" }}>Приоритетная поддержка</Text>
+                    <CheckCircleOutlined
+                      style={{ color: "#52c41a", marginRight: "8px" }}
+                    />
+                    <Text style={{ color: "white" }}>
+                      Приоритетная поддержка
+                    </Text>
                   </div>
                   <div>
-                    <CheckCircleOutlined style={{ color: "#52c41a", marginRight: "8px" }} />
-                    <Text style={{ color: "white" }}>Обновления в реальном времени</Text>
+                    <CheckCircleOutlined
+                      style={{ color: "#52c41a", marginRight: "8px" }}
+                    />
+                    <Text style={{ color: "white" }}>
+                      Обновления в реальном времени
+                    </Text>
                   </div>
                 </div>
               </div>

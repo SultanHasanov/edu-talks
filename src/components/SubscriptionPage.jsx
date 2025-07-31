@@ -79,12 +79,12 @@ const SubscriptionPage = () => {
   const handleSubscribe = async () => {
     try {
       setLoading(true);
-      
+
       const planData = plans[selectedPlan];
-      
+
       // Отправляем запрос на создание платежа в ЮKassa
       const response = await axios.post(
-        "http://85.143.175.100:8080/api/create-payment",
+        " /api/create-payment",
         {
           amount: planData.price,
           description: `Подписка на ${planData.period} - ${planData.title}`,
@@ -124,7 +124,7 @@ const SubscriptionPage = () => {
   const PlanCard = ({ planKey, plan }) => {
     const isSelected = selectedPlan === planKey;
     let monthlyEquivalent;
-    
+
     if (plan.period === "год") {
       monthlyEquivalent = Math.round(plan.price / 12);
     } else if (plan.period === "6 месяцев") {
@@ -171,10 +171,13 @@ const SubscriptionPage = () => {
         )}
 
         <div style={{ textAlign: "center", marginBottom: "20px" }}>
-          <Title level={3} style={{ margin: 0, color: isSelected ? "#1890ff" : "#262626" }}>
+          <Title
+            level={3}
+            style={{ margin: 0, color: isSelected ? "#1890ff" : "#262626" }}
+          >
             {plan.title}
           </Title>
-          
+
           {plan.savings && (
             <Tag
               color="green"
@@ -192,7 +195,13 @@ const SubscriptionPage = () => {
         </div>
 
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              justifyContent: "center",
+            }}
+          >
             <Title
               level={1}
               style={{
@@ -205,11 +214,11 @@ const SubscriptionPage = () => {
               {formatPrice(plan.price)}
             </Title>
           </div>
-          
+
           <Text type="secondary" style={{ fontSize: "16px" }}>
             за {plan.period}
           </Text>
-          
+
           {(plan.period === "год" || plan.period === "6 месяцев") && (
             <div style={{ marginTop: "8px" }}>
               <Text type="secondary" style={{ fontSize: "14px" }}>
@@ -222,7 +231,10 @@ const SubscriptionPage = () => {
         <div style={{ marginBottom: "24px" }}>
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
             {plan.features.map((feature, index) => (
-              <div key={index} style={{ display: "flex", alignItems: "center" }}>
+              <div
+                key={index}
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 <CheckOutlined
                   style={{
                     color: "#52c41a",
@@ -249,7 +261,13 @@ const SubscriptionPage = () => {
   };
 
   return (
-    <div style={{ padding: "40px 20px", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <div
+      style={{
+        padding: "40px 20px",
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         {/* Заголовок */}
         <div style={{ textAlign: "center", marginBottom: "48px" }}>
@@ -265,13 +283,17 @@ const SubscriptionPage = () => {
               margin: "0 auto",
             }}
           >
-            Получите неограниченный доступ ко всем документам и материалам. 
+            Получите неограниченный доступ ко всем документам и материалам.
             Выберите план, который подходит именно вам.
           </Paragraph>
         </div>
 
         {/* Карточки планов */}
-        <Row gutter={[24, 32]} justify="center" style={{ marginBottom: "48px" }}>
+        <Row
+          gutter={[24, 32]}
+          justify="center"
+          style={{ marginBottom: "48px" }}
+        >
           <Col xs={24} md={8} lg={8}>
             <PlanCard planKey="month" plan={plans.month} />
           </Col>
@@ -314,14 +336,29 @@ const SubscriptionPage = () => {
           }}
           bodyStyle={{ padding: "32px" }}
         >
-          <Title level={3} style={{ color: "white", textAlign: "center", marginBottom: "32px" }}>
+          <Title
+            level={3}
+            style={{
+              color: "white",
+              textAlign: "center",
+              marginBottom: "32px",
+            }}
+          >
             Почему стоит выбрать нашу подписку?
           </Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
               <div style={{ textAlign: "center" }}>
-                <SafetyOutlined style={{ fontSize: "48px", color: "#52c41a", marginBottom: "16px" }} />
-                <Title level={4} style={{ color: "white" }}>Безопасность</Title>
+                <SafetyOutlined
+                  style={{
+                    fontSize: "48px",
+                    color: "#52c41a",
+                    marginBottom: "16px",
+                  }}
+                />
+                <Title level={4} style={{ color: "white" }}>
+                  Безопасность
+                </Title>
                 <Text style={{ color: "rgba(255,255,255,0.8)" }}>
                   Все платежи защищены и обрабатываются через ЮKassa
                 </Text>
@@ -329,8 +366,16 @@ const SubscriptionPage = () => {
             </Col>
             <Col xs={24} md={8}>
               <div style={{ textAlign: "center" }}>
-                <ThunderboltOutlined style={{ fontSize: "48px", color: "#faad14", marginBottom: "16px" }} />
-                <Title level={4} style={{ color: "white" }}>Мгновенный доступ</Title>
+                <ThunderboltOutlined
+                  style={{
+                    fontSize: "48px",
+                    color: "#faad14",
+                    marginBottom: "16px",
+                  }}
+                />
+                <Title level={4} style={{ color: "white" }}>
+                  Мгновенный доступ
+                </Title>
                 <Text style={{ color: "rgba(255,255,255,0.8)" }}>
                   Доступ к материалам активируется сразу после оплаты
                 </Text>
@@ -338,8 +383,16 @@ const SubscriptionPage = () => {
             </Col>
             <Col xs={24} md={8}>
               <div style={{ textAlign: "center" }}>
-                <CrownOutlined style={{ fontSize: "48px", color: "#722ed1", marginBottom: "16px" }} />
-                <Title level={4} style={{ color: "white" }}>Премиум качество</Title>
+                <CrownOutlined
+                  style={{
+                    fontSize: "48px",
+                    color: "#722ed1",
+                    marginBottom: "16px",
+                  }}
+                />
+                <Title level={4} style={{ color: "white" }}>
+                  Премиум качество
+                </Title>
                 <Text style={{ color: "rgba(255,255,255,0.8)" }}>
                   Эксклюзивные материалы и регулярные обновления
                 </Text>
@@ -357,9 +410,22 @@ const SubscriptionPage = () => {
           centered
         >
           <div style={{ textAlign: "center", padding: "20px 0" }}>
-            <CrownOutlined style={{ fontSize: "64px", color: "#faad14", marginBottom: "24px" }} />
+            <CrownOutlined
+              style={{
+                fontSize: "64px",
+                color: "#faad14",
+                marginBottom: "24px",
+              }}
+            />
             <Title level={3}>Подтвердите оформление подписки</Title>
-            <div style={{ backgroundColor: "#f5f5f5", padding: "20px", borderRadius: "8px", marginBottom: "24px" }}>
+            <div
+              style={{
+                backgroundColor: "#f5f5f5",
+                padding: "20px",
+                borderRadius: "8px",
+                marginBottom: "24px",
+              }}
+            >
               <Text strong style={{ fontSize: "16px" }}>
                 {plans[selectedPlan].title}
               </Text>
@@ -399,11 +465,11 @@ const SubscriptionPage = () => {
           transform: translateY(-8px);
           box-shadow: 0 8px 24px rgba(24, 144, 255, 0.2);
         }
-        
+
         .plan-card.popular {
           background: linear-gradient(135deg, #fff 0%, #f6ffed 100%);
         }
-        
+
         .plan-card:hover {
           transform: translateY(-4px);
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
