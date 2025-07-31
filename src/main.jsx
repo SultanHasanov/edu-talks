@@ -14,6 +14,7 @@ import LegalSection from "./pages/LegalSection.jsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
 import SubscriptionPage from "./components/SubscriptionPage.jsx";
 import PaymentSuccess from "./components/PaymentSuccess.jsx";
+import { RequisitesPage } from "./components/RequisitesPage.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -33,6 +34,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/setting" element={<Setting />} />
           <Route path="/1" element={<PaymentSuccess />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
+          <Route path="/requisites" element={<RequisitesPage />} />
         </Route>
       </Routes>
     </AuthProvider>

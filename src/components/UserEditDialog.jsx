@@ -58,7 +58,7 @@ const UserEditDialog = ({ open, user, onClose, onSave, loading, error }) => {
 
       // Затем отдельный запрос на подписку
       setSubscriptionUpdating(true);
-      await fetch(` /api/admin/users/${user.id}/subscription`, {
+      await fetch(`/api/admin/users/${user.id}/subscription`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

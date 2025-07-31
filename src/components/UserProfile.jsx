@@ -47,7 +47,7 @@ const UserProfile = () => {
     const fetchProfile = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(" /api/profile", {
+        const response = await axios.get("/api/profile", {
           headers: {
             Authorization: `Bearer ${access_token}`,
           },
@@ -94,7 +94,7 @@ const UserProfile = () => {
   const handleResendVerification = async () => {
     try {
       await axios.post(
-        ` /resend-verification`,
+        `/resend-verification`,
         { email: userData.email },
         {
           headers: {
@@ -119,7 +119,7 @@ const UserProfile = () => {
   const handleCheckVerification = async () => {
     setCheckingVerification(true);
     try {
-      const response = await axios.get(" /api/profile", {
+      const response = await axios.get("/api/profile", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },

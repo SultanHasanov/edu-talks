@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Layout,
   Typography,
@@ -10,19 +11,27 @@ import {
   Menu,
   theme,
   Avatar,
+  Card,
+  Descriptions,
 } from "antd";
 import {
   GithubOutlined,
   TwitterOutlined,
   LinkedinOutlined,
   MailOutlined,
+  BankOutlined,
+  IdcardOutlined,
+  HomeOutlined,
+  PhoneOutlined,
 } from "@ant-design/icons";
+import { RequisitesPage } from "./RequisitesPage";
 
 const { Footer } = Layout;
 const { useToken } = theme;
 
 const AppFooter = () => {
   const { token } = useToken();
+  const navigate = useNavigate();
 
   return (
     <Footer
@@ -35,8 +44,6 @@ const AppFooter = () => {
     >
       <div
         style={{
-          // maxWidth: 1200,
-          // margin: '0 auto',
           width: "100%",
           padding: "0 15px",
         }}
@@ -98,6 +105,11 @@ const AppFooter = () => {
                   info@edutalks.ru
                 </Typography.Link>
               </Space>
+              <Space>
+                <Typography.Link onClick={() => navigate("/requisites")}>
+                  Реквизиты
+                </Typography.Link>
+              </Space>
               <Typography.Text type="secondary">
                 © {new Date().getFullYear()} EduTalks. Все права защищены.
               </Typography.Text>
@@ -110,4 +122,6 @@ const AppFooter = () => {
   );
 };
 
+// Новая страница с реквизитами
+<RequisitesPage/>
 export default AppFooter;

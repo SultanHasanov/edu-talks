@@ -55,7 +55,7 @@ const FileUploadSection = () => {
     setDetailsModalOpen(true);
     setPreviewLoading(true);
     try {
-      const response = await axios.get(` /api/files/${file.id}`, {
+      const response = await axios.get(`/api/files/${file.id}`, {
         responseType: "blob",
         headers: {
           Authorization: `Bearer ${access_token}`,
