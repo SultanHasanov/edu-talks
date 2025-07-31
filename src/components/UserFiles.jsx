@@ -20,6 +20,7 @@ import {
   Tooltip,
   Select,
   notification,
+  Grid,
 } from "antd";
 import {
   UploadOutlined,
@@ -36,7 +37,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
+const { useBreakpoint } = Grid;
 
 const UserFiles = ({ queryParam }) => {
   const [files, setFiles] = useState([]);
@@ -55,21 +56,17 @@ const UserFiles = ({ queryParam }) => {
   const [loadingFileId, setLoadingFileId] = useState(null);
   const { role } = useAuth();
   const [messageApi, contextHolder] = message.useMessage();
-
+  const screens = useBreakpoint();
   const navigate = useNavigate();
 
-  // Проверка подписки
   const checkSubscription = async () => {
     try {
       setProfileLoading(true);
-      const response = await axios.get(
-        "https://edutalks.ru/api/profile",
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
+      const response = await axios.get("https://edutalks.ru/api/profile", {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
       setHasSubscription(response.data.has_subscription);
     } catch (error) {
       console.error("Ошибка при проверке подписки:", error);
@@ -158,7 +155,6 @@ const UserFiles = ({ queryParam }) => {
         }
       );
       const data = await response.json();
-      console.log("Полный ответ сервера:", data);
       setFiles(data.data.data);
     } catch (error) {
       console.error("Error fetching files:", error);
@@ -174,7 +170,6 @@ const UserFiles = ({ queryParam }) => {
   };
 
   const handleDownload = async (fileId, fileName) => {
-    
     try {
       setLoadingFileId(fileId);
 
@@ -187,7 +182,6 @@ const UserFiles = ({ queryParam }) => {
       );
 
       if (response.ok) {
-        // response.ok = (status 200-299)
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -196,8 +190,8 @@ const UserFiles = ({ queryParam }) => {
         link.click();
         URL.revokeObjectURL(url);
       } else {
-        const errorData = await response.json(); // Парсим JSON-ошибку
-        console.error("Ошибка:", errorData.error); // Логируем в консоль
+        const errorData = await response.json();
+        console.error("Ошибка:", errorData.error);
         message.error(errorData.error);
         messageApi.open({
           type: "error",
@@ -224,44 +218,49 @@ const UserFiles = ({ queryParam }) => {
       render: (text) => (
         <Space>
           <FileOutlined />
-          <Text ellipsis>{text}</Text>
+          <Text ellipsis style={{ maxWidth: 120 }}>
+            {text}
+          </Text>
         </Space>
       ),
     },
-    {
-      title: "Категория",
-      dataIndex: "category",
-      key: "category",
-      align: "center",
-      render: (category) => {
-        const categoryNames = {
-          order: "Приказ",
-          template: "Шаблон",
-          scenario: "Сценарий",
-        };
-        return categoryNames[category] || category;
-      },
-    },
+    ...(screens.xs
+      ? []
+      : [
+          {
+            title: "Категория",
+            dataIndex: "category",
+            key: "category",
+            align: "center",
+            render: (category) => {
+              const categoryNames = {
+                order: "Приказ",
+                template: "Шаблон",
+                scenario: "Сценарий",
+              };
+              return categoryNames[category] || category;
+            },
+          },
+        ]),
     {
       title: "Действия",
       key: "actions",
       align: "center",
       render: (_, record) => (
-        <Space size="middle">
-          <Tooltip title="Скачать">
-            <Button
-              loading={loadingFileId === record.id}
-              icon={<DownloadOutlined />}
-              onClick={() => handleDownload(record.id, record.filename)}
-            />
-          </Tooltip>
-        </Space>
+        <Tooltip title="Скачать">
+          <Button
+            size={screens.xs ? "small" : "middle"}
+            loading={loadingFileId === record.id}
+            icon={<DownloadOutlined />}
+            onClick={() => handleDownload(record.id, record.filename)}
+          />
+        </Tooltip>
       ),
     },
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <div style={{ padding: screens.xs ? "8px" : "24px" }}>
       {contextHolder}
 
       {!profileLoading && !hasSubscription && role !== "admin" && (
@@ -273,40 +272,40 @@ const UserFiles = ({ queryParam }) => {
           action={
             <Button
               type="primary"
-              size="midle"
+              size="middle"
               icon={<CrownOutlined />}
               onClick={handleSubscribe}
             >
               Оформить подписку
             </Button>
           }
-          style={{ marginBottom: 24, width: "100%", alignItems: "center" }}
+          style={{
+            marginBottom: 24,
+            width: "100%",
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         />
       )}
 
       <Card
-        title=""
         bordered={false}
         loading={loading && !files?.length}
-        style={{ width: "100%" }}
+        bodyStyle={{ padding: screens.xs ? 12 : 24 }}
       >
         {files?.length === 0 ? (
-          <Alert
-            message="Нет доступных файлов"
-            description=""
-            type="info"
-            showIcon
-          />
+          <Alert message="Нет доступных файлов" type="info" showIcon />
         ) : (
-          <>
-            <Table
-              columns={columns}
-              dataSource={files}
-              rowKey="id"
-              pagination={{ pageSize: 10 }}
-              scroll={{ x: true }}
-            />
-          </>
+          <Table
+            columns={columns}
+            dataSource={files}
+            rowKey="id"
+            pagination={{ pageSize: 10 }}
+            scroll={{ x: true }}
+            size={screens.xs ? "small" : "middle"}
+          />
         )}
       </Card>
     </div>

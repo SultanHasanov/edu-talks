@@ -4,6 +4,7 @@ import { Card, Pagination, Select, Space, Tag, Typography, Alert, Badge } from "
 import { CalendarOutlined, FireOutlined } from '@ant-design/icons';
 import "antd/dist/reset.css";
 import { useNavigate } from "react-router-dom";
+import '../App.css'
 
 const { Option } = Select;
 const { Meta } = Card;
@@ -96,7 +97,7 @@ const ContainerRecomm = () => {
           cover={
             <div
               style={{
-                height: 180,
+                height: 150,
                 backgroundImage: `url(${block.image})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -183,10 +184,10 @@ const ContainerRecomm = () => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
-              gap: 18,
-              marginBottom: 32,
-              padding: 10
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: 16,
+              marginBottom: 24,
+              padding: "0 24px",
             }}
           >
             {blocks.map((block) => (
