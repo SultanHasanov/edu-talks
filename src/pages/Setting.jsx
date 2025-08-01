@@ -238,6 +238,40 @@ const Setting = () => {
     });
   };
 
+  const showDeleteConfirm = (user) => {
+  Modal.confirm({
+    title: 'Вы уверены, что хотите удалить пользователя?',
+    content:  <span>
+    Пользователь: <Typography.Text strong style={{fontSize: '16px'}}>{user.full_name}</Typography.Text> будет удален
+  </span>,
+    okText: 'Удалить',
+    okType: 'danger',
+    cancelText: 'Отмена',
+    async onOk() {
+      try {
+        const response = await fetch(`https://edutalks.ru/api/admin/users/${user.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${access_token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Ошибка при удалении');
+        }
+
+        message.success('Пользователь успешно удален');
+        fetchUsers()
+        
+      } catch (error) {
+        message.error('Не удалось удалить пользователя');
+        console.error('Ошибка:', error);
+      }
+    },
+  });
+};
+
   const handleSaveClick = async () => {
     try {
       // Здесь должна быть логика сохранения изменений через API
@@ -279,19 +313,7 @@ const Setting = () => {
     setEditDialogOpen(true);
   };
 
-  const handleDeleteUser = (user) => {
-    confirm({
-      title: "Удаление пользователя",
-      content: `Вы уверены, что хотите удалить пользователя ${user.full_name}?`,
-      okText: "Удалить",
-      okType: "danger",
-      cancelText: "Отмена",
-      onOk() {
-        console.log("Удалить пользователя:", user);
-        message.success("Пользователь удален");
-      },
-    });
-  };
+
 
   const handleSaveUser = async (userData) => {
     setUserLoading(true);
@@ -568,7 +590,7 @@ const StatisticsContent = () => {
                     loading={loading}
                     onRefresh={handleRefresh}
                     onEditUser={handleEditUser}
-                    onDeleteUser={handleDeleteUser}
+                    showDeleteConfirm={showDeleteConfirm}
                     onCreateUser={handleCreateUser}
                     pagination={pagination}
                     onTableChange={handleTableChange}

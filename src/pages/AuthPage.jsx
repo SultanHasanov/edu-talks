@@ -153,19 +153,20 @@ const AuthPage = () => {
       const contentType = response.headers.get("Content-Type");
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
+        
+        console.log("Текстовый ответ:", data); 
       } else {
-        const text = await response.text();
-        data = { message: text };
+        data = await response.json();
       }
 
       // Теперь безопасно проверяем статус
       if (!response.ok) {
-        throw new Error(data.message || "Ошибка регистрации");
+        throw new Error(data.error || "Ошибка регистрации");
       }
 
       // Успешная регистрация
       setRegSuccess(true);
-      setSuccessMessage(data.message || "Регистрация прошла успешно");
+      setSuccessMessage(data.data || "Регистрация прошла успешно");
       setFormData({
         username: "",
         email: "",

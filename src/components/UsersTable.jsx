@@ -18,7 +18,9 @@ import {
   Badge,
   Progress,
   Statistic,
-  Popover
+  Popover,
+  Modal,
+  message,
 } from "antd";
 import {
   MoreOutlined,
@@ -36,9 +38,20 @@ import {
   SafetyOutlined,
   MailOutlined,
   CalendarOutlined,
-  PhoneOutlined
+  PhoneOutlined,
 } from "@ant-design/icons";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as ChartTooltip,
+  Legend,
+} from "recharts";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -46,14 +59,13 @@ const { Option } = Select;
 const UsersTable = ({
   users,
   loading,
-  onRefresh,
   onEditUser,
-  onDeleteUser,
   onCreateUser,
   pagination,
   onTableChange,
+  showDeleteConfirm,
 }) => {
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [selectedRole, setSelectedRole] = useState(null);
   const [selectedSubscription, setSelectedSubscription] = useState(null);
 
@@ -73,23 +85,25 @@ const UsersTable = ({
   };
 
   // Фильтрация данных
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.full_name?.toLowerCase().includes(searchText.toLowerCase()) || 
-                         user.email?.toLowerCase().includes(searchText.toLowerCase());
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.full_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchText.toLowerCase());
     const matchesRole = selectedRole ? user.role === selectedRole : true;
-    const matchesSubscription = selectedSubscription !== null 
-      ? user.has_subscription === selectedSubscription 
-      : true;
-    
+    const matchesSubscription =
+      selectedSubscription !== null
+        ? user.has_subscription === selectedSubscription
+        : true;
+
     return matchesSearch && matchesRole && matchesSubscription;
   });
 
   // Статистика для заголовка
   const userStats = {
     total: users.length,
-    admins: users.filter(u => u.role === 'admin').length,
-    users: users.filter(u => u.role === 'user').length,
-    subscribed: users.filter(u => u.has_subscription).length,
+    admins: users.filter((u) => u.role === "admin").length,
+    users: users.filter((u) => u.role === "user").length,
+    subscribed: users.filter((u) => u.has_subscription).length,
   };
 
   const getActionItems = (user) => [
@@ -101,9 +115,9 @@ const UsersTable = ({
     },
     {
       key: "delete",
-      icon: <DeleteOutlined style={{ color: "#ff4d4f" }} />,
-      label: <span style={{ color: "#ff4d4f" }}>Удалить</span>,
-      onClick: () => onDeleteUser(user),
+      icon: <DeleteOutlined />,
+      label: <span>Удалить</span>,
+      onClick: () => showDeleteConfirm(user),
       danger: true,
     },
   ];
@@ -116,15 +130,20 @@ const UsersTable = ({
       width: 220,
       render: (name, record) => (
         <Space>
-          <Badge 
-            count={record.role === 'admin' ? <CrownOutlined style={{ color: '#faad14' }} /> : null}
+          <Badge
+            count={
+              record.role === "admin" ? (
+                <CrownOutlined style={{ color: "#faad14" }} />
+              ) : null
+            }
             offset={[-5, 24]}
           >
             <Avatar
               size="large"
               icon={<UserOutlined />}
               style={{
-                backgroundColor: record.role === "admin" ? "#722ed1" : "#1890ff",
+                backgroundColor:
+                  record.role === "admin" ? "#722ed1" : "#1890ff",
               }}
             />
           </Badge>
@@ -146,12 +165,12 @@ const UsersTable = ({
       render: (_, record) => (
         <div>
           <div style={{ marginBottom: 4 }}>
-            <MailOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+            <MailOutlined style={{ marginRight: 8, color: "#1890ff" }} />
             <Text>{record.email || "Не указан"}</Text>
           </div>
           {record.phone && (
             <div>
-              <PhoneOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+              <PhoneOutlined style={{ marginRight: 8, color: "#52c41a" }} />
               <Text>{record.phone}</Text>
             </div>
           )}
@@ -165,22 +184,30 @@ const UsersTable = ({
       render: (_, record) => (
         <Space direction="vertical" size={4}>
           <Tag
-            icon={record.role === "admin" ? <CrownOutlined /> : <UserOutlined />}
+            icon={
+              record.role === "admin" ? <CrownOutlined /> : <UserOutlined />
+            }
             color={record.role === "admin" ? "gold" : "blue"}
-            style={{ 
-              borderRadius: "16px", 
+            style={{
+              borderRadius: "16px",
               fontWeight: 500,
-              marginRight: 0
+              marginRight: 0,
             }}
           >
             {record.role === "admin" ? "Администратор" : "Пользователь"}
           </Tag>
           <Tag
-            icon={record.has_subscription ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
+            icon={
+              record.has_subscription ? (
+                <CheckCircleOutlined />
+              ) : (
+                <CloseCircleOutlined />
+              )
+            }
             color={record.has_subscription ? "green" : "default"}
-            style={{ 
-              borderRadius: "16px", 
-              fontWeight: 500 
+            style={{
+              borderRadius: "16px",
+              fontWeight: 500,
             }}
           >
             {record.has_subscription ? "Подписка активна" : "Без подписки"}
@@ -194,8 +221,8 @@ const UsersTable = ({
       key: "activity",
       width: 160,
       render: (date) => (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <CalendarOutlined style={{ marginRight: 8, color: '#722ed1' }} />
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <CalendarOutlined style={{ marginRight: 8, color: "#722ed1" }} />
           <Text style={{ color: "#595959", fontSize: "13px" }}>
             {formatDate(date)}
           </Text>
@@ -212,7 +239,7 @@ const UsersTable = ({
           menu={{ items: getActionItems(record) }}
           placement="bottomRight"
           trigger={["click"]}
-          overlayStyle={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+          overlayStyle={{ boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}
         >
           <Button
             type="text"
@@ -240,13 +267,17 @@ const UsersTable = ({
 
   // Данные для графиков
   const roleData = [
-    { name: 'Админы', value: userStats.admins, color: '#faad14' },
-    { name: 'Пользователи', value: userStats.users, color: '#1890ff' },
+    { name: "Админы", value: userStats.admins, color: "#faad14" },
+    { name: "Пользователи", value: userStats.users, color: "#1890ff" },
   ];
 
   const subscriptionData = [
-    { name: 'С подпиской', value: userStats.subscribed, color: '#52c41a' },
-    { name: 'Без подписки', value: userStats.total - userStats.subscribed, color: '#d9d9d9' },
+    { name: "С подпиской", value: userStats.subscribed, color: "#52c41a" },
+    {
+      name: "Без подписки",
+      value: userStats.total - userStats.subscribed,
+      color: "#d9d9d9",
+    },
   ];
 
   return (
@@ -255,33 +286,34 @@ const UsersTable = ({
         style={{
           borderRadius: "12px",
           boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-          border: 'none'
+          border: "none",
         }}
         bodyStyle={{ padding: 0 }}
       >
         {/* Заголовок и статистика */}
-       
 
         {/* Фильтры */}
-        <div style={{ 
-          padding: '16px 24px', 
-          backgroundColor: '#fafafa',
-          borderTop: '1px solid #f0f0f0',
-          borderBottom: '1px solid #f0f0f0'
-        }}>
+        <div
+          style={{
+            padding: "16px 24px",
+            backgroundColor: "#fafafa",
+            borderTop: "1px solid #f0f0f0",
+            borderBottom: "1px solid #f0f0f0",
+          }}
+        >
           <Row gutter={16} align="middle">
             <Col xs={24} sm={12} md={8} lg={6} style={{ marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <SearchOutlined style={{ color: '#8c8c8c', marginRight: 8 }} />
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <SearchOutlined style={{ color: "#8c8c8c", marginRight: 8 }} />
                 <input
                   placeholder="Поиск по имени или email"
                   style={{
-                    border: '1px solid #d9d9d9',
-                    borderRadius: '6px',
-                    padding: '6px 11px',
-                    width: '100%',
-                    outline: 'none',
-                    transition: 'all 0.3s'
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "6px",
+                    padding: "6px 11px",
+                    width: "100%",
+                    outline: "none",
+                    transition: "all 0.3s",
                   }}
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
@@ -291,7 +323,7 @@ const UsersTable = ({
             <Col xs={12} sm={6} md={4} lg={3} style={{ marginBottom: 8 }}>
               <Select
                 placeholder="Роль"
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
                 suffixIcon={<FilterOutlined />}
                 allowClear
                 value={selectedRole}
@@ -304,7 +336,7 @@ const UsersTable = ({
             <Col xs={12} sm={6} md={4} lg={3} style={{ marginBottom: 8 }}>
               <Select
                 placeholder="Подписка"
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
                 suffixIcon={<FilterOutlined />}
                 allowClear
                 value={selectedSubscription}
@@ -318,7 +350,7 @@ const UsersTable = ({
         </div>
 
         {/* Таблица */}
-        <div style={{ padding: '24px' }}>
+        <div style={{ padding: "24px" }}>
           <Spin spinning={loading} tip="Загрузка пользователей...">
             <Table
               columns={columns}
@@ -350,8 +382,8 @@ const UsersTable = ({
                     <div style={{ marginTop: "8px", fontSize: "14px" }}>
                       Попробуйте изменить параметры поиска
                     </div>
-                    <Button 
-                      type="primary" 
+                    <Button
+                      type="primary"
                       onClick={onCreateUser}
                       style={{ marginTop: 16 }}
                     >
@@ -362,7 +394,7 @@ const UsersTable = ({
               }}
             />
           </Spin>
-          
+
           {/* Пагинация */}
           <div
             style={{
@@ -392,7 +424,9 @@ const UsersTable = ({
                   </Option>
                 ))}
               </Select>
-              <Text type="secondary">{getUserWordForm(pagination?.pageSize || 10)}</Text>
+              <Text type="secondary">
+                {getUserWordForm(pagination?.pageSize || 10)}
+              </Text>
             </Space>
 
             <Pagination
