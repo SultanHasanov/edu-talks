@@ -59,6 +59,7 @@ const UserFiles = ({ queryParam }) => {
   const screens = useBreakpoint();
   const navigate = useNavigate();
 
+  
   const checkSubscription = async () => {
     try {
       setProfileLoading(true);
@@ -67,7 +68,7 @@ const UserFiles = ({ queryParam }) => {
           Authorization: `Bearer ${access_token}`,
         },
       });
-      setHasSubscription(response.data.has_subscription);
+      setHasSubscription(response.data.data.has_subscription);
     } catch (error) {
       console.error("Ошибка при проверке подписки:", error);
       message.error("Не удалось проверить статус подписки");

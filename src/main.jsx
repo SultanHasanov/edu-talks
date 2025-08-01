@@ -15,6 +15,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
 import SubscriptionPage from "./components/SubscriptionPage.jsx";
 import PaymentSuccess from "./components/PaymentSuccess.jsx";
 import { RequisitesPage } from "./components/RequisitesPage.jsx";
+import VerifyEmail from "./components/VerifyEmail";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -35,6 +36,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/1" element={<PaymentSuccess />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
           <Route path="/requisites" element={<RequisitesPage />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
         </Route>
       </Routes>
     </AuthProvider>
