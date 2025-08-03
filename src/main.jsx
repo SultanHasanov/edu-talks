@@ -36,7 +36,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/1" element={<PaymentSuccess />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
           <Route path="/requisites" element={<RequisitesPage />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/api/verify-email" element={<VerifyEmail />} />
         </Route>
       </Routes>
     </AuthProvider>
