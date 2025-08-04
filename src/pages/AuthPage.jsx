@@ -12,6 +12,7 @@ import {
   IconButton,
   InputAdornment,
   Alert,
+  Checkbox
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -25,6 +26,7 @@ import {
 import BackButtonIcon from "../ui/BackButtonIcon";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+
 
 const AuthPage = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -40,7 +42,7 @@ const AuthPage = () => {
   const [authError, setAuthError] = useState("");
   const [regError, setRegError] = useState("");
   const [regSuccess, setRegSuccess] = useState(false);
-
+const [agreeWithTerms, setAgreeWithTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login, logout, isAuthenticated, username } = useAuth();
   const [successMessage, setSuccessMessage] = useState("");
@@ -132,6 +134,11 @@ const AuthPage = () => {
       setRegError("Пожалуйста, заполните все поля");
       return;
     }
+
+    if (!agreeWithTerms) {
+  setRegError("Необходимо согласиться с пользовательским соглашением");
+  return;
+}
 
     if (formData.password.length < 6) {
       setRegError("Пароль должен содержать минимум 6 символов");
@@ -395,6 +402,30 @@ const AuthPage = () => {
                 }}
                 helperText="Пароль должен содержать минимум 6 символов"
               />
+
+              <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
+  <Checkbox
+    checked={agreeWithTerms}
+    onChange={(e) => setAgreeWithTerms(e.target.checked)}
+    name="terms"
+    sx={{ mr: 1 }}
+  />
+  <Typography
+    variant="body2"
+    color="primary"
+    component="a"
+    href="/Пользовательское_соглашение.docx"
+    download
+    target="_blank"
+    sx={{
+      textDecoration: "underline",
+      cursor: "pointer",
+    }}
+  >
+    Я согласен с пользовательским соглашением
+  </Typography>
+</Box>
+
 
               <Button
                 fullWidth
