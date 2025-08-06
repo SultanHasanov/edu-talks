@@ -27,51 +27,41 @@ import axios from "axios";
 const { Title, Text, Paragraph } = Typography;
 
 const SubscriptionPage = () => {
-  const [selectedPlan, setSelectedPlan] = useState("halfYear");
   const [loading, setLoading] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const access_token = localStorage.getItem("access_token");
 
+  const [selectedPlan, setSelectedPlan] = useState("monthly");
+
   const plans = {
-    month: {
-      title: "Месячная подписка",
+    monthly: {
+      title: "Месяц",
       price: 1250,
       period: "месяц",
-      // savings: null,
-      popular: false,
-      features: [
-        "Неограниченное скачивание документов",
-        "Доступ ко всем категориям",
-        "Приоритетная поддержка",
-        "Обновления в реальном времени",
-      ],
+      features: ["Полный доступ ко всем материалам", "Поддержка 24/7"],
     },
-    halfYear: {
-      title: "Подписка на полгода",
-      price: 7500,
+    halfyear: {
+      title: "6 месяцев",
+      price: 1990,
       period: "6 месяцев",
-      // savings: "Экономия 0 ₽",
-      popular: true,
+      savings: "выгода 400₽",
       features: [
-        "Все возможности месячной подписки",
-        "Равномерная оплата без переплат",
-        "Стабильная цена",
-        "Поддержка на всем периоде",
-        "Автоматические обновления",
+        "Полный доступ ко всем материалам",
+        "Поддержка 24/7",
+        "Скидка 17%",
       ],
+      popular: true,
     },
-    year: {
-      title: "Годовая подписка",
-      price: 15000,
+    yearly: {
+      title: "1 год",
+      price: 3490,
       period: "год",
-      // savings: "Без экономии",
-      popular: false,
+      savings: "выгода 1398₽",
       features: [
-        "Все возможности месячной подписки",
-        "Максимальный период доступа",
-        "Персональный менеджер",
-        "Расширенная аналитика",
-        "Бонусные материалы",
+        "Полный доступ ко всем материалам",
+        "Поддержка 24/7",
+        "Скидка 30%",
+        "Подарок 🎁",
       ],
     },
   };
@@ -80,33 +70,25 @@ const SubscriptionPage = () => {
     try {
       setLoading(true);
 
-      const planData = plans[selectedPlan];
-
-      // Отправляем запрос на создание платежа в ЮKassa
-      const response = await axios.post(
-        "https://edutalks.ru/api/create-payment",
-        {
-          amount: planData.price,
-          description: `Подписка на ${planData.period} - ${planData.title}`,
-          plan_type: selectedPlan,
-        },
+      const response = await axios.get(
+        `https://edutalks.ru/api/pay?plan=${selectedPlan}`,
         {
           headers: {
             Authorization: `Bearer ${access_token}`,
-            "Content-Type": "application/json",
+            Accept: "application/json",
           },
         }
       );
 
-      if (response.data.confirmation_url) {
-        // Перенаправляем пользователя на страницу оплаты ЮKassa
-        window.location.href = response.data.confirmation_url;
+      console.log(response.data);
+      if (response.data.data.confirmation_url) {
+        window.location.href = response.data.data.confirmation_url;
       } else {
-        message.error("Ошибка при создании платежа");
+        message.error("Не удалось получить ссылку на оплату");
       }
     } catch (error) {
       console.error("Ошибка при оформлении подписки:", error);
-      message.error("Не удалось оформить подписку. Попробуйте позже.");
+      message.error("Произошла ошибка. Попробуйте позже.");
     } finally {
       setLoading(false);
       setConfirmModalOpen(false);
@@ -295,13 +277,13 @@ const SubscriptionPage = () => {
           style={{ marginBottom: "48px" }}
         >
           <Col xs={24} md={8} lg={8}>
-            <PlanCard planKey="month" plan={plans.month} />
+            <PlanCard planKey="monthly" plan={plans.monthly} />
           </Col>
           <Col xs={24} md={8} lg={8}>
-            <PlanCard planKey="halfYear" plan={plans.halfYear} />
+            <PlanCard planKey="halfyear" plan={plans.halfyear} />
           </Col>
           <Col xs={24} md={8} lg={8}>
-            <PlanCard planKey="year" plan={plans.year} />
+            <PlanCard planKey="yearly" plan={plans.yearly} />
           </Col>
         </Row>
 

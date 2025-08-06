@@ -20,37 +20,37 @@ const PaymentSuccess = () => {
 
   const access_token = localStorage.getItem("access_token");
 
-  //   useEffect(() => {
-  //     // Получаем параметры из URL (ЮKassa передает их после успешного платежа)
-  //     const paymentId = searchParams.get('payment_id');
+    useEffect(() => {
+      // Получаем параметры из URL (ЮKassa передает их после успешного платежа)
+      const paymentId = searchParams.get('payment_id');
 
-  //     if (paymentId) {
-  //       checkPaymentStatus(paymentId);
-  //     } else {
-  //       setError("Не найден идентификатор платежа");
-  //       setLoading(false);
-  //     }
-  //   }, [searchParams]);
+      if (paymentId) {
+        checkPaymentStatus(paymentId);
+      } else {
+        setError("Не найден идентификатор платежа");
+        setLoading(false);
+      }
+    }, [searchParams]);
 
-  //   const checkPaymentStatus = async (paymentId) => {
-  //     try {
-  //       const response = await axios.get(
-  //         ` /api/payment-status/${paymentId}`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${access_token}`,
-  //           },
-  //         }
-  //       );
+    const checkPaymentStatus = async (paymentId) => {
+      try {
+        const response = await axios.get(
+          ` /api/payment-status/${paymentId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+            },
+          }
+        );
 
-  //       setPaymentStatus(response.data);
-  //     } catch (error) {
-  //       console.error("Ошибка при проверке статуса платежа:", error);
-  //       setError("Не удалось проверить статус платежа");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
+        setPaymentStatus(response.data);
+      } catch (error) {
+        console.error("Ошибка при проверке статуса платежа:", error);
+        setError("Не удалось проверить статус платежа");
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const handleGoHome = () => {
     navigate("/");
