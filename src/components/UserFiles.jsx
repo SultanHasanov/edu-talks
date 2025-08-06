@@ -59,7 +59,6 @@ const UserFiles = ({ queryParam }) => {
   const screens = useBreakpoint();
   const navigate = useNavigate();
 
-  
   const checkSubscription = async () => {
     try {
       setProfileLoading(true);
@@ -78,8 +77,10 @@ const UserFiles = ({ queryParam }) => {
   };
 
   useEffect(() => {
-    checkSubscription();
-    fetchFiles();
+    if (access_token) {
+      checkSubscription();
+      fetchFiles();
+    }
   }, []);
 
   const handleOpenDetails = async (file) => {
@@ -174,13 +175,10 @@ const UserFiles = ({ queryParam }) => {
     try {
       setLoadingFileId(fileId);
 
-      const response = await fetch(
-        `https://edutalks.ru/api/files/${fileId}`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${access_token}` },
-        }
-      );
+      const response = await fetch(`https://edutalks.ru/api/files/${fileId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
 
       if (response.ok) {
         const blob = await response.blob();
