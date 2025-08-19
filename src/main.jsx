@@ -17,6 +17,9 @@ import SubscriptionPage from "./components/SubscriptionPage.jsx";
 import PaymentSuccess from "./components/PaymentSuccess.jsx";
 import { RequisitesPage } from "./components/RequisitesPage.jsx";
 import VerifyEmail from "./components/VerifyEmail";
+import { Payment } from "@mui/icons-material";
+import PaymentsAndRefunds from "./pages/PaymentsAndRefunds.jsx";
+import OfferContractPage from "./pages/OfferContractPage.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -39,6 +42,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/subscription" element={<SubscriptionPage />} />
           <Route path="/requisites" element={<RequisitesPage />} />
           <Route path="/api/verify-email" element={<VerifyEmail />} />
+          <Route path="/payments-and-refunds" element={<PaymentsAndRefunds />} />
+          <Route path="/offer" element={<OfferContractPage />} />
+
         </Route>
         
         {/* Отдельные страницы */}

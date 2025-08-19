@@ -6,25 +6,16 @@ import {
   Space,
   Row,
   Col,
-  Divider,
   Button,
-  Menu,
   theme,
   Avatar,
-  Card,
-  Descriptions,
 } from "antd";
 import {
   GithubOutlined,
   TwitterOutlined,
   LinkedinOutlined,
   MailOutlined,
-  BankOutlined,
-  IdcardOutlined,
-  HomeOutlined,
-  PhoneOutlined,
 } from "@ant-design/icons";
-import { RequisitesPage } from "./RequisitesPage";
 
 const { Footer } = Layout;
 const { useToken } = theme;
@@ -85,11 +76,7 @@ const AppFooter = () => {
               <Space size="middle">
                 <Button type="text" shape="circle" icon={<GithubOutlined />} />
                 <Button type="text" shape="circle" icon={<TwitterOutlined />} />
-                <Button
-                  type="text"
-                  shape="circle"
-                  icon={<LinkedinOutlined />}
-                />
+                <Button type="text" shape="circle" icon={<LinkedinOutlined />} />
               </Space>
             </Space>
           </Col>
@@ -110,6 +97,16 @@ const AppFooter = () => {
                   Реквизиты
                 </Typography.Link>
               </Space>
+              <Space>
+                <Typography.Link onClick={() => navigate("/payments-and-refunds")}>
+                  Оплата и возвраты
+                </Typography.Link>
+              </Space>
+               <Space>
+                <Typography.Link onClick={() => navigate("/offer")}>
+                  Договор-оферта
+                </Typography.Link>
+              </Space>
               <Typography.Text type="secondary">
                 © {new Date().getFullYear()} EduTalks. Все права защищены.
               </Typography.Text>
@@ -122,6 +119,4 @@ const AppFooter = () => {
   );
 };
 
-// Новая страница с реквизитами
-<RequisitesPage/>
 export default AppFooter;

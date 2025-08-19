@@ -45,6 +45,7 @@ const Layout = ({ children }) => {
   const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const { full_name, logout, isAuthenticated, role } = useAuth();
+   const [searchQuery, setSearchQuery] = React.useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -59,6 +60,19 @@ const Layout = ({ children }) => {
   // Теперь может быть -1, но это не помешает переключению
   const handleTabChange = (event, newValue) => {
     navigate(tabRoutes[newValue]);
+  };
+
+   const handleSearchKeyPress = async (event) => {
+    if (event.key === "Enter" && searchQuery.trim() !== "") {
+      const url = `https://edutalks.ru/search?query=${encodeURIComponent(searchQuery)}`;
+      try {
+        const response = await fetch(url);
+        const text = await response.text(); // сервер отдаёт html, не json
+        console.log("Результат поиска:", text);
+      } catch (error) {
+        console.error("Ошибка при поиске:", error);
+      }
+    }
   };
 
   const handleUserMenuOpen = (event) => {
@@ -178,6 +192,9 @@ const Layout = ({ children }) => {
                 placeholder="Поиск по всем материалам"
                 variant="outlined"
                 size="small"
+                 value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
