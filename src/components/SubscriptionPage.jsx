@@ -31,38 +31,24 @@ const SubscriptionPage = () => {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const access_token = localStorage.getItem("access_token");
 
-  const [selectedPlan, setSelectedPlan] = useState("monthly");
+const [selectedPlan, setSelectedPlan] = useState("halfyear");
 
   const plans = {
     monthly: {
       title: "Месяц",
       price: 1250,
       period: "месяц",
-      features: ["Полный доступ ко всем материалам", "Поддержка 24/7"],
     },
     halfyear: {
       title: "6 месяцев",
-      price: 1990,
+      price: 7500,
       period: "6 месяцев",
-      savings: "выгода 400₽",
-      features: [
-        "Полный доступ ко всем материалам",
-        "Поддержка 24/7",
-        "Скидка 17%",
-      ],
       popular: true,
     },
     yearly: {
       title: "1 год",
-      price: 3490,
+      price: 15000,
       period: "год",
-      savings: "выгода 1398₽",
-      features: [
-        "Полный доступ ко всем материалам",
-        "Поддержка 24/7",
-        "Скидка 30%",
-        "Подарок 🎁",
-      ],
     },
   };
 
@@ -210,26 +196,7 @@ const SubscriptionPage = () => {
           )}
         </div>
 
-        <div style={{ marginBottom: "24px" }}>
-          <Space direction="vertical" size="small" style={{ width: "100%" }}>
-            {plan.features.map((feature, index) => (
-              <div
-                key={index}
-                style={{ display: "flex", alignItems: "center" }}
-              >
-                <CheckOutlined
-                  style={{
-                    color: "#52c41a",
-                    marginRight: "8px",
-                    fontSize: "16px",
-                  }}
-                />
-                <Text>{feature}</Text>
-              </div>
-            ))}
-          </Space>
-        </div>
-
+        
         <Radio
           checked={isSelected}
           style={{

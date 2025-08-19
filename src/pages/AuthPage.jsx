@@ -110,7 +110,7 @@ const [agreeWithTerms, setAgreeWithTerms] = useState(false);
         data.data.username,
         data.data.full_name
       );
-      navigate("/");
+      navigate("/recomm");
     } catch (error) {
       setAuthError(error.message || "Неверный логин или пароль");
     } finally {

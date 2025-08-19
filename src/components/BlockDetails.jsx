@@ -103,40 +103,53 @@ const parseContentWithFiles = (text, handleDownload) => {
 };
 
 const handleDownload = async (fileId, fileName) => {
-    console.log(fileId, fileName);
-    try {
-      setLoadingFileId(fileId);
+  console.log(fileId, fileName);
+  try {
+    setLoadingFileId(fileId);
 
-      const response = await fetch(
-        `https://edutalks.ru/api/files/${fileId}`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${access_token}` },
-        }
-      );
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = fileName;
-        link.click();
-        URL.revokeObjectURL(url);
-      } else {
-        const errorData = await response.json();
-         messageApi.open({
-          type: "error",
-          content: errorData.error,
-        });
+    const response = await fetch(
+      `https://edutalks.ru/api/files/${fileId}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${access_token}` },
       }
-    } catch (err) {
-      console.error("Ошибка сети:", err);
-      alert("Ошибка соединения с сервером");
-    } finally {
-      setLoadingFileId(null);
+    );
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+    } else if (response.status === 401) {
+      // Обработка статуса 401 - требуется авторизация
+      messageApi.open({
+        type: "error",
+        content: "Требуется авторизация. Пожалуйста, войдите в систему.",
+      });
+      // Дополнительно можно вызвать функцию для выхода или перенаправления на страницу входа
+      // handleLogout();
+      // или
+      // window.location.href = '/login';
+    } else {
+      const errorData = await response.json();
+      messageApi.open({
+        type: "error",
+        content: errorData.error || "Произошла ошибка при загрузке файла",
+      });
     }
-  };
+  } catch (err) {
+    console.error("Ошибка сети:", err);
+    messageApi.open({
+      type: "error",
+      content: "Ошибка соединения с сервером",
+    });
+  } finally {
+    setLoadingFileId(null);
+  }
+};
 
 
   const block = useMemo(() => {

@@ -51,7 +51,7 @@ const Layout = ({ children }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const tabLabels = ["Рекомендации", "Шаблоны", "Сценарии", "Правовая база"];
-  const tabRoutes = ["/", "/templates", "/scripts", "/legal"];
+  const tabRoutes = ["/recomm", "/templates", "/scripts", "/legal"];
   const currentTabIndex = tabRoutes.findIndex(
     (route) =>
       location.pathname === route || location.pathname.startsWith(route + "/")
@@ -124,7 +124,7 @@ const Layout = ({ children }) => {
             {/* Logo */}
             <Box
               sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/recomm")}
             >
               <Box
                 sx={{

@@ -101,8 +101,8 @@ const AppFooter = () => {
             <Space direction="vertical" size="middle">
               <Space>
                 <MailOutlined />
-                <Typography.Link href="mailto:info@edutalks.ru">
-                  info@edutalks.ru
+                <Typography.Link href="mailto:esutalks@mail.ru">
+                  esutalks@mail.ru
                 </Typography.Link>
               </Space>
               <Space>
