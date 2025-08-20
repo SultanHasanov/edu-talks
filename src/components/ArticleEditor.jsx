@@ -725,7 +725,6 @@ const ArticleEditor = () => {
             .quill-preview-content h5, 
             .quill-preview-content h6 {
               margin: 0.67em 0;
-              font-weight: bold;
             }
             
             .quill-preview-content h1 { font-size: 2em; }
