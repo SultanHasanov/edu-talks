@@ -82,3 +82,20 @@
   color: #1890ff;
   text-decoration: underline;
 }
+
+/* В вашем App.css добавьте */
+.ql-editor {
+  text-align: left;
+}
+
+.ql-editor .ql-align-center {
+  text-align: center;
+}
+
+.ql-editor .ql-align-right {
+  text-align: right;
+}
+
+.ql-editor .ql-align-justify {
+  text-align: justify;
+}

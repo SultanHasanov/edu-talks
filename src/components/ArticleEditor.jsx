@@ -45,10 +45,12 @@ const ArticleEditor = () => {
   const [articles, setArticles] = useState([]);
   const [articlesLoading, setArticlesLoading] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
+  // Добавляем ref для ReactQuill
+  const quillRef = useRef(null);
   const inputRef = useRef(null);
   const access_token = localStorage.getItem("access_token");
 
-  // Модули для редактора
+  // Модули для редактора с улучшенной конфигурацией
   const modules = {
     toolbar: [
       [{ header: [1, 2, 3, 4, 5, 6, false] }],
@@ -56,9 +58,14 @@ const ArticleEditor = () => {
       [{ list: "ordered" }, { list: "bullet" }],
       ["blockquote", "code-block"],
       ["link", "image"],
-      [{ align: [] }],
+      [{ align: [] }], // Убедимся что align поддерживается
+      [{ color: [] }, { background: [] }], // Добавляем цвета
       ["clean"],
     ],
+    clipboard: {
+      // Сохраняем форматирование при копировании
+      matchVisual: false,
+    }
   };
 
   const formats = [
@@ -74,6 +81,8 @@ const ArticleEditor = () => {
     "link",
     "image",
     "align",
+    "color",
+    "background"
   ];
 
   // Загрузка статей при монтировании компонента
@@ -256,14 +265,32 @@ const ArticleEditor = () => {
     }
   };
 
+  // Улучшенная функция редактирования с правильной синхронизацией
   const editArticle = (article) => {
     setEditingArticle(article);
+    
+    // Устанавливаем поля формы
     form.setFieldsValue({
       title: article.title,
       description: article.summary,
     });
-    setContent(article.bodyHtml);
+    
+    // Устанавливаем теги
     setTags(article.tags || []);
+    
+    // Устанавливаем содержимое с задержкой для правильной инициализации ReactQuill
+    setTimeout(() => {
+      setContent(article.bodyHtml || "");
+      
+      // Дополнительная проверка через ref, если нужно принудительно обновить
+      if (quillRef.current) {
+        const quill = quillRef.current.getEditor();
+        if (quill && article.bodyHtml) {
+          quill.clipboard.dangerouslyPasteHTML(article.bodyHtml);
+        }
+      }
+    }, 100);
+    
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -272,6 +299,11 @@ const ArticleEditor = () => {
     form.resetFields();
     setContent("");
     setTags([]);
+  };
+
+  // Обработчик изменения содержимого ReactQuill
+  const handleContentChange = (value) => {
+    setContent(value);
   };
 
   const renderTagInput = () => {
@@ -450,18 +482,20 @@ const ArticleEditor = () => {
             />
           </Form.Item>
 
-          {/* Основной контент */}
+          {/* Основной контент с улучшенной конфигурацией */}
           <Form.Item
             label="Содержание статьи"
             rules={[{ required: true, message: "Напишите содержание статьи" }]}
           >
             <ReactQuill
+              ref={quillRef}
               value={content}
-              onChange={setContent}
+              onChange={handleContentChange}
               modules={modules}
               formats={formats}
               style={{ height: "400px", marginBottom: "50px" }}
               placeholder="Начните писать вашу статью здесь..."
+              preserveWhitespace={true} // Сохраняем пробелы и форматирование
             />
           </Form.Item>
 
@@ -654,7 +688,12 @@ const ArticleEditor = () => {
           <Divider />
           <div
             dangerouslySetInnerHTML={{ __html: content }}
-            style={{ minHeight: "200px" }}
+            style={{ 
+              minHeight: "200px",
+              lineHeight: "1.6",
+              fontSize: "14px"
+            }}
+            className="quill-preview-content"
           />
           <Divider />
           <Space>
@@ -663,6 +702,112 @@ const ArticleEditor = () => {
             ))}
           </Space>
         </div>
+
+        {/* Добавляем встроенные стили для предпросмотра */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .quill-preview-content .ql-align-center {
+              text-align: center !important;
+            }
+            
+            .quill-preview-content .ql-align-right {
+              text-align: right !important;
+            }
+            
+            .quill-preview-content .ql-align-justify {
+              text-align: justify !important;
+            }
+            
+            .quill-preview-content h1, 
+            .quill-preview-content h2, 
+            .quill-preview-content h3, 
+            .quill-preview-content h4, 
+            .quill-preview-content h5, 
+            .quill-preview-content h6 {
+              margin: 0.67em 0;
+              font-weight: bold;
+            }
+            
+            .quill-preview-content h1 { font-size: 2em; }
+            .quill-preview-content h2 { font-size: 1.5em; }
+            .quill-preview-content h3 { font-size: 1.17em; }
+            .quill-preview-content h4 { font-size: 1em; }
+            .quill-preview-content h5 { font-size: 0.83em; }
+            .quill-preview-content h6 { font-size: 0.67em; }
+            
+            .quill-preview-content blockquote {
+              border-left: 4px solid #ccc;
+              margin-bottom: 5px;
+              margin-top: 5px;
+              padding-left: 16px;
+              color: #666;
+              font-style: italic;
+            }
+            
+            .quill-preview-content code {
+              background-color: #f5f5f5;
+              border-radius: 3px;
+              padding: 2px 4px;
+              font-family: 'Courier New', monospace;
+            }
+            
+            .quill-preview-content pre {
+              background-color: #f5f5f5;
+              border-radius: 3px;
+              overflow: visible;
+              padding: 8px 12px;
+              white-space: pre-wrap;
+              font-family: 'Courier New', monospace;
+              border: 1px solid #ddd;
+            }
+            
+            .quill-preview-content ul, 
+            .quill-preview-content ol {
+              margin: 0 0 0 2em;
+              padding: 0;
+            }
+            
+            .quill-preview-content li {
+              margin-bottom: 0.25em;
+            }
+            
+            .quill-preview-content img {
+              max-width: 100%;
+              height: auto;
+              display: block;
+              margin: 10px 0;
+            }
+            
+            .quill-preview-content a {
+              color: #1890ff;
+              text-decoration: none;
+            }
+            
+            .quill-preview-content a:hover {
+              text-decoration: underline;
+            }
+            
+            .quill-preview-content strong {
+              font-weight: bold;
+            }
+            
+            .quill-preview-content em {
+              font-style: italic;
+            }
+            
+            .quill-preview-content u {
+              text-decoration: underline;
+            }
+            
+            .quill-preview-content s {
+              text-decoration: line-through;
+            }
+            
+            .quill-preview-content p {
+              margin: 0 0 1em 0;
+            }
+          `
+        }} />
       </Modal>
     </div>
   );

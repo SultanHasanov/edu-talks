@@ -275,7 +275,7 @@ const UserFiles = ({ queryParam }) => {
     <div style={{ padding: screens.xs ? "8px" : "24px" }}>
       {contextHolder}
 
-      { !hasSubscription  && (
+      {role !== 'admin'  && !hasSubscription  && (
         <Alert
           message="У вас нет подписки"
           description="Чтобы скачивать документы, необходимо оформить подписку"
