@@ -1,375 +1,671 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Button, Card, Typography, Space, Input, Select, message } from 'antd';
-import { 
-  BoldOutlined, 
-  ItalicOutlined, 
-  UnderlineOutlined,
-  OrderedListOutlined,
-  UnorderedListOutlined,
-  LinkOutlined,
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Card,
+  Form,
+  Input,
+  Button,
+  Select,
+  Tag,
+  Space,
+  Divider,
+  message,
+  Typography,
+  Modal,
+  Tooltip,
+  Alert,
+  Spin,
+  List,
+  Popconfirm,
+  Empty,
+} from "antd";
+import {
+  PlusOutlined,
+  CloseOutlined,
+  InfoCircleOutlined,
   EyeOutlined,
-  SaveOutlined,
-  DeleteOutlined
-} from '@ant-design/icons';
+  EditOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+import "../App.css";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
+const { Option } = Select;
 
-const ArticleEditor = ({ 
-  initialTitle = '', 
-  initialContent = '', 
-  onSave = null,
-  showSavedArticles = true 
-}) => {
-  const [content, setContent] = useState(initialContent);
-  const [title, setTitle] = useState(initialTitle);
-  const [isPreview, setIsPreview] = useState(false);
-  const [savedArticles, setSavedArticles] = useState([]);
-  const textAreaRef = useRef(null);
-  const editorRef = useRef(null);
+const ArticleEditor = () => {
+  const [form] = Form.useForm();
+  const [content, setContent] = useState("");
+  const [tags, setTags] = useState([]);
+  const [inputVisible, setInputVisible] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [articles, setArticles] = useState([]);
+  const [articlesLoading, setArticlesLoading] = useState(false);
+  const [editingArticle, setEditingArticle] = useState(null);
+  const inputRef = useRef(null);
+  const access_token = localStorage.getItem("access_token");
 
-  // Обновляем значения при изменении пропсов
+  // Модули для редактора
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["blockquote", "code-block"],
+      ["link", "image"],
+      [{ align: [] }],
+      ["clean"],
+    ],
+  };
+
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "blockquote",
+    "code-block",
+    "link",
+    "image",
+    "align",
+  ];
+
+  // Загрузка статей при монтировании компонента
   useEffect(() => {
-    setTitle(initialTitle);
-    setContent(initialContent);
-  }, [initialTitle, initialContent]);
+    fetchArticles();
+  }, []);
 
-  // Функция для получения позиции курсора в contentEditable
-  const getCaretPosition = (element) => {
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0) return 0;
-    
-    const range = selection.getRangeAt(0);
-    const preCaretRange = range.cloneRange();
-    preCaretRange.selectNodeContents(element);
-    preCaretRange.setEnd(range.endContainer, range.endOffset);
-    return preCaretRange.toString().length;
-  };
+  const fetchArticles = async () => {
+    setArticlesLoading(true);
+    try {
+      const response = await fetch("https://edutalks.ru/api/articles", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
 
-  // Функция для установки позиции курсора
-  const setCaretPosition = (element, position) => {
-    const range = document.createRange();
-    const selection = window.getSelection();
-    
-    let charCount = 0;
-    const walker = document.createTreeWalker(
-      element,
-      NodeFilter.SHOW_TEXT,
-      null,
-      false
-    );
-    
-    let node;
-    while (node = walker.nextNode()) {
-      const nextCharCount = charCount + node.textContent.length;
-      if (nextCharCount >= position) {
-        range.setStart(node, position - charCount);
-        range.setEnd(node, position - charCount);
-        break;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      charCount = nextCharCount;
-    }
-    
-    selection.removeAllRanges();
-    selection.addRange(range);
-  };
 
-  // Функция для применения форматирования
-  const applyFormatting = (command, value = null) => {
-    document.execCommand(command, false, value);
-    
-    // Обновляем состояние с текущим содержимым
-    if (editorRef.current) {
-      setContent(editorRef.current.innerHTML);
+      const result = await response.json();
+      setArticles(result?.data || []);
+    } catch (error) {
+      console.error("Ошибка при загрузке статей:", error);
+      message.error("Произошла ошибка при загрузке статей");
+    } finally {
+      setArticlesLoading(false);
     }
   };
 
-  // Функции форматирования
-  const makeBold = () => applyFormatting('bold');
-  const makeItalic = () => applyFormatting('italic');
-  const makeUnderline = () => applyFormatting('underline');
-
-  const makeOrderedList = () => {
-    applyFormatting('insertOrderedList');
+  const handleTagClose = (removedTag) => {
+    const newTags = tags.filter((tag) => tag !== removedTag);
+    setTags(newTags);
   };
 
-  const makeUnorderedList = () => {
-    applyFormatting('insertUnorderedList');
+  const showInput = () => {
+    setInputVisible(true);
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 100);
   };
 
-  const makeLink = () => {
-    const selection = window.getSelection();
-    const selectedText = selection.toString();
-    
-    const url = prompt('Введите URL ссылки:', 'https://');
-    if (url) {
-      if (selectedText) {
-        applyFormatting('createLink', url);
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleInputConfirm = () => {
+    if (inputValue.trim()) {
+      const newTag = inputValue.trim();
+      if (tags?.length >= 5) {
+        message.warning("Можно добавить не более 5 тегов");
+        return;
+      }
+      if (tags.indexOf(newTag) === -1) {
+        setTags([...tags, newTag]);
       } else {
-        const linkText = prompt('Введите текст ссылки:', '');
-        if (linkText) {
-          document.execCommand('insertHTML', false, `<a href="${url}">${linkText}</a>`);
-          setContent(editorRef.current.innerHTML);
-        }
+        message.info("Этот тег уже добавлен");
       }
     }
+    setInputVisible(false);
+    setInputValue("");
   };
 
-  const insertHeading = (level) => {
-    applyFormatting('formatBlock', `h${level}`);
+  const handleInputBlur = () => {
+    handleInputConfirm();
   };
 
-  // Обработчик изменения содержимого редактора
-  const handleContentChange = () => {
-    if (editorRef.current) {
-      setContent(editorRef.current.innerHTML);
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleInputConfirm();
+    } else if (e.key === "Escape") {
+      setInputVisible(false);
+      setInputValue("");
+    } else if (e.key === "," || e.key === ";") {
+      e.preventDefault();
+      handleInputConfirm();
     }
   };
 
-  // Обработчик вставки содержимого
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text);
-    handleContentChange();
+  const saveArticle = async (articleData) => {
+    setLoading(true);
+    try {
+      const url = editingArticle
+        ? `https://edutalks.ru/api/admin/articles/${editingArticle.id}`
+        : "https://edutalks.ru/api/admin/articles";
+
+      const method = editingArticle ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+        body: JSON.stringify(articleData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      message.success(
+        editingArticle
+          ? "Статья успешно обновлена!"
+          : "Статья успешно сохранена!"
+      );
+
+      // Очистка формы после успешного сохранения
+      form.resetFields();
+      setContent("");
+      setTags([]);
+      setEditingArticle(null);
+
+      // Обновляем список статей
+      await fetchArticles();
+
+      return result;
+    } catch (error) {
+      console.error("Ошибка при сохранении статьи:", error);
+      message.error("Произошла ошибка при сохранении статьи");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Функция сохранения
-  const saveArticle = () => {
-    if (!title.trim() || !content.trim()) {
-      message.error('Пожалуйста, заполните заголовок и содержание статьи');
+  const deleteArticle = async (articleId) => {
+    try {
+      const response = await fetch(
+        `https://edutalks.ru/api/admin/articles/${articleId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      message.success("Статья успешно удалена!");
+      await fetchArticles();
+    } catch (error) {
+      console.error("Ошибка при удалении статьи:", error);
+      message.error("Произошла ошибка при удалении статьи");
+    }
+  };
+
+  const onFinish = async (values) => {
+    if (tags?.length === 0) {
+      message.warning("Добавьте хотя бы один тег");
+      return;
+    }
+
+    if (!content.trim()) {
+      message.warning("Напишите содержание статьи");
       return;
     }
 
     const articleData = {
-      title: title.trim(),
-      content: content.trim()
+      title: values.title,
+      summary: values.description,
+      bodyHtml: content,
+      tags: tags,
+      publish: true,
     };
 
-    // Если передан колбэк onSave, используем его
-    if (onSave) {
-      onSave(articleData);
-      message.success('Статья сохранена!');
-      return;
+    try {
+      await saveArticle(articleData);
+    } catch (error) {
+      // Ошибка уже обработана в saveArticle
     }
-
-    // Иначе сохраняем в локальное состояние (для демонстрации)
-    const newArticle = {
-      id: Date.now(),
-      ...articleData,
-      createdAt: new Date().toLocaleString('ru-RU')
-    };
-
-    setSavedArticles(prev => [...prev, newArticle]);
-    message.success('Статья сохранена!');
   };
 
-  const deleteArticle = (id) => {
-    setSavedArticles(prev => prev.filter(article => article.id !== id));
-    message.success('Статья удалена');
+  const editArticle = (article) => {
+    setEditingArticle(article);
+    form.setFieldsValue({
+      title: article.title,
+      description: article.summary,
+    });
+    setContent(article.bodyHtml);
+    setTags(article.tags || []);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const loadArticle = (article) => {
-    setTitle(article.title);
-    setContent(article.content);
-    if (editorRef.current) {
-      editorRef.current.innerHTML = article.content;
-    }
-    setIsPreview(false);
-    message.success('Статья загружена в редактор');
+  const cancelEdit = () => {
+    setEditingArticle(null);
+    form.resetFields();
+    setContent("");
+    setTags([]);
   };
 
-  return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
-      <Title level={1} className="text-center mb-8">Редактор статей</Title>
-      
-      <div className={`grid grid-cols-1 ${showSavedArticles ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-6`}>
-        {/* Редактор */}
-        <div className={showSavedArticles ? 'lg:col-span-2' : ''}>
-          <Card title="Создание статьи" className="mb-6">
-            <Space direction="vertical" className="w-full">
-              <Input
-                placeholder="Введите заголовок статьи"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="mb-4"
-                size="large"
-              />
-
-              {/* Панель инструментов */}
-              <Card size="small" className="mb-4">
-                <Space wrap>
-                  <Select
-                    placeholder="Заголовок"
-                    style={{ width: 120 }}
-                    onChange={insertHeading}
-                    value={undefined}
-                  >
-                    <Select.Option value={1}>H1</Select.Option>
-                    <Select.Option value={2}>H2</Select.Option>
-                    <Select.Option value={3}>H3</Select.Option>
-                  </Select>
-                  
-                  <Button icon={<BoldOutlined />} onClick={makeBold} title="Жирный">
-                    Жирный
-                  </Button>
-                  <Button icon={<ItalicOutlined />} onClick={makeItalic} title="Курсив">
-                    Курсив
-                  </Button>
-                  <Button icon={<UnderlineOutlined />} onClick={makeUnderline} title="Подчеркнутый">
-                    Подчерк.
-                  </Button>
-                  <Button icon={<OrderedListOutlined />} onClick={makeOrderedList} title="Нумерованный список">
-                    1,2,3
-                  </Button>
-                  <Button icon={<UnorderedListOutlined />} onClick={makeUnorderedList} title="Маркированный список">
-                    Список
-                  </Button>
-                  <Button icon={<LinkOutlined />} onClick={makeLink} title="Ссылка">
-                    Ссылка
-                  </Button>
-                </Space>
-              </Card>
-
-              {/* Редактор с живым форматированием */}
-              <div
-                ref={editorRef}
-                contentEditable
-                className="min-h-80 p-4 border border-gray-300 rounded-md bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                style={{ 
-                  minHeight: '400px',
-                  fontFamily: 'inherit',
-                  fontSize: '14px',
-                  lineHeight: '1.5'
-                }}
-                onInput={handleContentChange}
-                onPaste={handlePaste}
-                dangerouslySetInnerHTML={{ __html: content }}
-                placeholder="Начните писать вашу статью здесь..."
-              />
-
-              <Space>
-                <Button 
-                  type="primary" 
-                  icon={<SaveOutlined />} 
-                  onClick={saveArticle}
-                >
-                  Сохранить
-                </Button>
-                <Button 
-                  icon={<EyeOutlined />}
-                  onClick={() => setIsPreview(!isPreview)}
-                >
-                  {isPreview ? 'Скрыть предпросмотр' : 'Предпросмотр'}
-                </Button>
-              </Space>
-            </Space>
-          </Card>
-
-          {/* Предпросмотр */}
-          {isPreview && (
-            <Card title="Предпросмотр статьи">
-              <div className="prose max-w-none">
-                <h1 className="text-3xl font-bold text-gray-900 mb-6">{title || 'Заголовок статьи'}</h1>
-                <div 
-                  className="text-gray-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ 
-                    __html: content || '<p>Содержание статьи появится здесь...</p>'
+  const renderTagInput = () => {
+    if (inputVisible) {
+      return (
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            position: "relative",
+            background: "#fff",
+            borderRadius: "12px",
+            padding: "4px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <Input
+            ref={inputRef}
+            type="text"
+            size="small"
+            style={{
+              width: 140,
+              border: "2px solid #1890ff",
+              borderRadius: "8px",
+              padding: "8px 12px",
+              fontSize: "14px",
+              fontWeight: "500",
+              transition: "all 0.3s ease",
+              boxShadow: "0 2px 6px rgba(24, 144, 255, 0.2)",
+            }}
+            value={inputValue}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onKeyDown={handleKeyDown}
+            placeholder="Введите тег..."
+            suffix={
+              <Tooltip title="Enter - добавить, Esc - отмена">
+                <InfoCircleOutlined
+                  style={{
+                    color: "#1890ff",
+                    fontSize: "14px",
+                    cursor: "help",
                   }}
                 />
-              </div>
-            </Card>
-          )}
+              </Tooltip>
+            }
+          />
+          <Tag
+            onClick={handleInputConfirm}
+            style={{
+              background: "linear-gradient(135deg, #52c41a 0%, #73d13d 100%)",
+              border: "none",
+              color: "white",
+              cursor: "pointer",
+              borderRadius: "8px",
+              padding: "8px 12px",
+              fontWeight: "600",
+              fontSize: "14px",
+              height: "32px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 2px 8px rgba(82, 196, 26, 0.3)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-1px)";
+              e.target.style.boxShadow = "0 4px 12px rgba(82, 196, 26, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "none";
+              e.target.style.boxShadow = "0 2px 8px rgba(82, 196, 26, 0.3)";
+            }}
+            icon={<PlusOutlined style={{ fontSize: "12px" }} />}
+          >
+            Добавить
+          </Tag>
         </div>
+      );
+    }
 
-        {/* Сохраненные статьи */}
-        {showSavedArticles && (
-          <div>
-            <Card title={`Сохраненные статьи (${savedArticles.length})`}>
-              {savedArticles.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">Нет сохраненных статей</p>
-              ) : (
-                <Space direction="vertical" className="w-full">
-                  {savedArticles.map((article) => (
-                    <Card 
-                      key={article.id}
-                      size="small"
-                      className="cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => loadArticle(article)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 mr-2">
-                          <h4 className="font-medium text-gray-900 mb-1 line-clamp-2">
-                            {article.title}
-                          </h4>
-                          <p className="text-xs text-gray-500">{article.createdAt}</p>
-                          <div 
-                            className="text-sm text-gray-600 mt-1 line-clamp-2"
-                            dangerouslySetInnerHTML={{ __html: article.content.substring(0, 100) + '...' }}
-                          />
-                        </div>
-                        <Button 
-                          icon={<DeleteOutlined />} 
-                          size="small" 
-                          danger
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteArticle(article.id);
-                          }}
-                        />
-                      </div>
-                    </Card>
-                  ))}
-                </Space>
-              )}
-            </Card>
-
-            {/* Помощь по форматированию */}
-            <Card title="Справка по форматированию" className="mt-4" size="small">
-              <div className="text-sm space-y-2">
-                <div>Выделите текст и нажмите кнопку форматирования</div>
-                <div><strong>Жирный текст</strong> - кнопка "Жирный"</div>
-                <div><em>Курсив</em> - кнопка "Курсив"</div>
-                <div><u>Подчеркнутый</u> - кнопка "Подчерк."</div>
-                <div>
-                  <ol className="ml-4">
-                    <li>Нумерованный список</li>
-                  </ol>
-                  - кнопка "1,2,3"
-                </div>
-                <div>
-                  <ul className="ml-4 list-disc">
-                    <li>Маркированный список</li>
-                  </ul>
-                  - кнопка "Список"
-                </div>
-                <div><a href="#" className="text-blue-600 underline">Ссылка</a> - кнопка "Ссылка"</div>
-              </div>
-            </Card>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// Пример использования компонента
-const ExampleUsage = () => {
-  const handleSave = (articleData) => {
-    console.log('Сохраняем статью:', articleData);
-    // Здесь можно отправить данные на сервер или обработать их
+    return (
+      <Tag
+        onClick={showInput}
+        style={{
+          background: "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)",
+          border: "1.5px dashed #1890ff",
+          color: "#1890ff",
+          cursor: "pointer",
+          borderRadius: "4px",
+          padding: "3px 16px",
+          fontWeight: "600",
+          fontSize: "14px",
+          transition: "all 0.3s ease",
+          boxShadow: "0 2px 8px rgba(24, 144, 255, 0.1)",
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.background =
+            "linear-gradient(135deg, #e6f7ff 0%, #d0e8ff 100%)";
+          e.target.style.transform = "translateY(-1px)";
+          e.target.style.boxShadow = "0 4px 12px rgba(24, 144, 255, 0.15)";
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.background =
+            "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)";
+          e.target.style.transform = "none";
+          e.target.style.boxShadow = "0 2px 8px rgba(24, 144, 255, 0.1)";
+        }}
+        icon={<PlusOutlined style={{ fontSize: "12px" }} />}
+      >
+        Добавить тег
+      </Tag>
+    );
   };
 
   return (
-    <div>
-      <ArticleEditor 
-        initialTitle="Пример заголовка"
-        initialContent="<p>Пример начального содержания статьи</p>"
-        onSave={handleSave}
-        showSavedArticles={true}
-      />
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "20px" }}>
+      <Title level={2}>
+        {editingArticle ? "Редактирование статьи" : "Написание статьи"}
+      </Title>
+
+      {editingArticle && (
+        <Alert
+          message="Редактирование статьи"
+          description={`Вы редактируете статью "${editingArticle.title}". Изменения будут сохранены при нажатии кнопки "Обновить".`}
+          type="info"
+          showIcon
+          action={
+            <Button size="small" onClick={cancelEdit}>
+              Отменить
+            </Button>
+          }
+          style={{ marginBottom: 20 }}
+        />
+      )}
+
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onFinish}
+        initialValues={{
+          category: "development",
+          language: "ru",
+        }}
+      >
+        <Card>
+          {loading && (
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <Spin size="large" />
+              <div style={{ marginTop: 10 }}>Сохранение статьи...</div>
+            </div>
+          )}
+
+          {/* Заголовок */}
+          <Form.Item
+            name="title"
+            label="Заголовок статьи"
+            rules={[{ required: true, message: "Введите заголовок статьи" }]}
+          >
+            <Input
+              placeholder="Интересный заголовок, который привлечет внимание"
+              size="large"
+            />
+          </Form.Item>
+
+          {/* Краткое описание */}
+          <Form.Item
+            name="description"
+            label="Краткое описание"
+            rules={[{ required: true, message: "Введите краткое описание" }]}
+          >
+            <TextArea
+              rows={3}
+              placeholder="Краткое описание статьи, которое будет отображаться в preview"
+            />
+          </Form.Item>
+
+          {/* Основной контент */}
+          <Form.Item
+            label="Содержание статьи"
+            rules={[{ required: true, message: "Напишите содержание статьи" }]}
+          >
+            <ReactQuill
+              value={content}
+              onChange={setContent}
+              modules={modules}
+              formats={formats}
+              style={{ height: "400px", marginBottom: "50px" }}
+              placeholder="Начните писать вашу статью здесь..."
+            />
+          </Form.Item>
+
+          {/* Теги */}
+          <Form.Item
+            label={
+              <Space>
+                <span>Теги</span>
+                <Tooltip title="Теги помогают пользователям найти вашу статью">
+                  <InfoCircleOutlined
+                    style={{ color: "#999", fontSize: "14px" }}
+                  />
+                </Tooltip>
+              </Space>
+            }
+          >
+            <div
+              style={{
+                minHeight: "40px",
+                padding: "8px",
+                border: "1px solid #d9d9d9",
+                borderRadius: "6px",
+              }}
+            >
+              {tags?.length === 0 && !inputVisible && (
+                <Text
+                  type="secondary"
+                  style={{ fontSize: "14px", marginLeft: 8 }}
+                >
+                  Пока нет тегов. Нажмите "Добавить тег" чтобы начать.
+                </Text>
+              )}
+
+              <Space wrap size={[8, 8]} style={{ marginBottom: 8 }}>
+                {tags?.map((tag) => (
+                  <Tag
+                    key={tag}
+                    closable
+                    closeIcon={<CloseOutlined style={{ fontSize: "12px" }} />}
+                    onClose={() => handleTagClose(tag)}
+                    style={{
+                      background: "#e6f7ff",
+                      border: "1px solid #91d5ff",
+                      color: "#1890ff",
+                      borderRadius: "6px",
+                      padding: "4px 8px",
+                      fontSize: "13px",
+                    }}
+                  >
+                    {tag}
+                  </Tag>
+                ))}
+                {renderTagInput()}
+              </Space>
+            </div>
+
+            <div style={{ marginTop: 8 }}>
+              <Text type="secondary" style={{ fontSize: "12px" }}>
+                {tags?.length}/5 тегов добавлено • Используйте запятую или Enter
+                для быстрого добавления
+              </Text>
+            </div>
+          </Form.Item>
+
+          <Divider />
+
+          {/* Кнопки действий */}
+          <Space>
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              loading={loading}
+              disabled={loading}
+            >
+              {editingArticle ? "Обновить" : "Опубликовать"}
+            </Button>
+            <Button
+              type="default"
+              size="large"
+              onClick={() => setPreviewVisible(true)}
+              disabled={loading}
+            >
+              Предпросмотр
+            </Button>
+            {editingArticle && (
+              <Button
+                type="default"
+                size="large"
+                onClick={cancelEdit}
+                disabled={loading}
+              >
+                Отменить
+              </Button>
+            )}
+          </Space>
+        </Card>
+      </Form>
+
+      {/* Список статей */}
+      <Divider />
+      <Card title="Все статьи" style={{ marginTop: 40 }}>
+        {articlesLoading ? (
+          <div style={{ textAlign: "center", padding: 40 }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 10 }}>Загрузка статей...</div>
+          </div>
+        ) : articles?.length === 0 ? (
+          <Empty description="Статьи не найдены" />
+        ) : (
+          <List
+            itemLayout="vertical"
+            dataSource={articles}
+            renderItem={(article) => (
+              <List.Item
+                key={article?.id}
+                actions={[
+                  <Button
+                    type="text"
+                    icon={<EyeOutlined />}
+                    onClick={() => {
+                      setPreviewVisible(true);
+                      form.setFieldsValue({
+                        title: article?.title,
+                        description: article?.summary,
+                      });
+                      setContent(article?.bodyHtml);
+                      setTags(article?.tags || []);
+                    }}
+                  >
+                    Просмотр
+                  </Button>,
+                  <Button
+                    type="text"
+                    icon={<EditOutlined />}
+                    onClick={() => editArticle(article)}
+                  >
+                    Редактировать
+                  </Button>,
+                  <Popconfirm
+                    title="Удалить статью"
+                    description="Вы уверены, что хотите удалить эту статью?"
+                    onConfirm={() => deleteArticle(article.id)}
+                    okText="Да"
+                    cancelText="Нет"
+                  >
+                    <Button type="text" danger icon={<DeleteOutlined />}>
+                      Удалить
+                    </Button>
+                  </Popconfirm>,
+                ]}
+              >
+                <List.Item.Meta
+                  title={article?.title}
+                  description={
+                    <Space direction="vertical" size={0}>
+                     <Text type="secondary" ellipsis>
+  {article?.summary && article.summary?.length > 70 
+    ? `${article?.summary.substring(0, 70)}...` 
+    : article?.summary || "Описание отсутствует"
+  }
+</Text>
+                      <Space size={[0, 8]} wrap>
+                        {article.tags?.map((tag, index) => (
+                          <Tag key={index} color="blue">
+                            {tag}
+                          </Tag>
+                        ))}
+                      </Space>
+                    </Space>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        )}
+      </Card>
+
+      {/* Модальное окно предпросмотра */}
+      <Modal
+        title="Предпросмотр статьи"
+        open={previewVisible}
+        onCancel={() => setPreviewVisible(false)}
+        footer={null}
+        width={800}
+      >
+        <div style={{ padding: "20px" }}>
+          <Title>{form.getFieldValue("title")}</Title>
+          <Text type="secondary">{form.getFieldValue("description")}</Text>
+          <Divider />
+          <div
+            dangerouslySetInnerHTML={{ __html: content }}
+            style={{ minHeight: "200px" }}
+          />
+          <Divider />
+          <Space>
+            {tags?.map((tag) => (
+              <Tag key={tag}>{tag}</Tag>
+            ))}
+          </Space>
+        </div>
+      </Modal>
     </div>
   );
 };
 
-export default ExampleUsage;
+export default ArticleEditor;

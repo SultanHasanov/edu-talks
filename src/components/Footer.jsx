@@ -56,7 +56,7 @@ const AppFooter = () => {
                     strong
                     style={{ color: "white", fontSize: 18 }}
                   >
-                    B
+                    E
                   </Typography.Text>
                 </Avatar>
                 <Typography.Title

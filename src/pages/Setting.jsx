@@ -38,6 +38,7 @@ import {
   UserAddOutlined,
   BellOutlined,
   StopOutlined,
+  ReadOutlined,
 } from "@ant-design/icons";
 import UsersTable from "../components/UsersTable";
 import UserEditDialog from "../components/UserEditDialog";
@@ -46,6 +47,7 @@ import FileUploadSection from "../components/FileUploadSection";
 import { useAuth } from "../context/AuthContext";
 import { fetchWithAuth } from "../utils/fetchWithAuth";
 import NotificationSender from "../components/NotificationSender";
+import ArticleEditor from "../components/ArticleEditor";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -239,38 +241,46 @@ const Setting = () => {
   };
 
   const showDeleteConfirm = (user) => {
-  Modal.confirm({
-    title: 'Вы уверены, что хотите удалить пользователя?',
-    content:  <span>
-    Пользователь: <Typography.Text strong style={{fontSize: '16px'}}>{user.full_name}</Typography.Text> будет удален
-  </span>,
-    okText: 'Удалить',
-    okType: 'danger',
-    cancelText: 'Отмена',
-    async onOk() {
-      try {
-        const response = await fetch(`https://edutalks.ru/api/admin/users/${user.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${access_token}`
+    Modal.confirm({
+      title: "Вы уверены, что хотите удалить пользователя?",
+      content: (
+        <span>
+          Пользователь:{" "}
+          <Typography.Text strong style={{ fontSize: "16px" }}>
+            {user.full_name}
+          </Typography.Text>{" "}
+          будет удален
+        </span>
+      ),
+      okText: "Удалить",
+      okType: "danger",
+      cancelText: "Отмена",
+      async onOk() {
+        try {
+          const response = await fetch(
+            `https://edutalks.ru/api/admin/users/${user.id}`,
+            {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${access_token}`,
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Ошибка при удалении");
           }
-        });
 
-        if (!response.ok) {
-          throw new Error('Ошибка при удалении');
+          message.success("Пользователь успешно удален");
+          fetchUsers();
+        } catch (error) {
+          message.error("Не удалось удалить пользователя");
+          console.error("Ошибка:", error);
         }
-
-        message.success('Пользователь успешно удален');
-        fetchUsers()
-        
-      } catch (error) {
-        message.error('Не удалось удалить пользователя');
-        console.error('Ошибка:', error);
-      }
-    },
-  });
-};
+      },
+    });
+  };
 
   const handleSaveClick = async () => {
     try {
@@ -312,8 +322,6 @@ const Setting = () => {
     setCurrentUser(null);
     setEditDialogOpen(true);
   };
-
-
 
   const handleSaveUser = async (userData) => {
     setUserLoading(true);
@@ -363,129 +371,134 @@ const Setting = () => {
   };
 
   // Компонент статистики
-// Компонент статистики
-const StatisticsContent = () => {
-  const totalUsers = usersAll.length;
-  const adminCount = usersAll.filter((u) => u.role === "admin").length;
-  const userCount = usersAll.filter((u) => u.role === "user").length;
-  const subscribedCount = usersAll.filter((u) => u.has_subscription === true).length;
-  const notSubscribedCount = totalUsers - subscribedCount;
-  const subscribedPercentage = totalUsers > 0 ? Math.round((subscribedCount / totalUsers) * 100) : 0;
+  // Компонент статистики
+  const StatisticsContent = () => {
+    const totalUsers = usersAll.length;
+    const adminCount = usersAll.filter((u) => u.role === "admin").length;
+    const userCount = usersAll.filter((u) => u.role === "user").length;
+    const subscribedCount = usersAll.filter(
+      (u) => u.has_subscription === true
+    ).length;
+    const notSubscribedCount = totalUsers - subscribedCount;
+    const subscribedPercentage =
+      totalUsers > 0 ? Math.round((subscribedCount / totalUsers) * 100) : 0;
 
-  const dataSource = [
-    {
-      key: '1',
-      metric: 'Всего пользователей',
-      value: totalUsers,
-      icon: <TeamOutlined />,
-      color: '#3f8600'
-    },
-    {
-      key: '2',
-      metric: 'Администраторов',
-      value: adminCount,
-      icon: <CrownOutlined />,
-      color: '#cf1322'
-    },
-    {
-      key: '3',
-      metric: 'Обычных пользователей',
-      value: userCount,
-      icon: <UserOutlined />,
-      color: '#1890ff'
-    },
-    {
-      key: '4',
-      metric: 'С подпиской',
-      value: `${subscribedCount} (${subscribedPercentage}%)`,
-      icon: <SafetyOutlined />,
-      color: '#52c41a'
-    },
-    {
-      key: '5',
-      metric: 'Без подписки',
-      value: notSubscribedCount,
-      icon: <StopOutlined />,
-      color: '#fa8c16'
-    },
-    {
-      key: '6',
-      metric: 'Новостей',
-      value: news || 0,
-      icon: <NotificationOutlined />,
-      color: '#faad14'
-    }
-  ];
+    const dataSource = [
+      {
+        key: "1",
+        metric: "Всего пользователей",
+        value: totalUsers,
+        icon: <TeamOutlined />,
+        color: "#3f8600",
+      },
+      {
+        key: "2",
+        metric: "Администраторов",
+        value: adminCount,
+        icon: <CrownOutlined />,
+        color: "#cf1322",
+      },
+      {
+        key: "3",
+        metric: "Обычных пользователей",
+        value: userCount,
+        icon: <UserOutlined />,
+        color: "#1890ff",
+      },
+      {
+        key: "4",
+        metric: "С подпиской",
+        value: `${subscribedCount} (${subscribedPercentage}%)`,
+        icon: <SafetyOutlined />,
+        color: "#52c41a",
+      },
+      {
+        key: "5",
+        metric: "Без подписки",
+        value: notSubscribedCount,
+        icon: <StopOutlined />,
+        color: "#fa8c16",
+      },
+      {
+        key: "6",
+        metric: "Новостей",
+        value: news || 0,
+        icon: <NotificationOutlined />,
+        color: "#faad14",
+      },
+    ];
 
-  const columns = [
-    {
-      title: 'Метрика',
-      dataIndex: 'metric',
-      key: 'metric',
-      render: (text, record) => (
-        <Space>
-          {React.cloneElement(record.icon, { style: { color: record.color } })}
-          {text}
-        </Space>
-      ),
-    },
-    {
-      title: 'Значение',
-      dataIndex: 'value',
-      key: 'value',
-      render: (value, record) => (
-        <Text strong style={{ color: record.color, fontSize: '16px' }}>
-          {value}
-        </Text>
-      ),
-    },
-  ];
+    const columns = [
+      {
+        title: "Метрика",
+        dataIndex: "metric",
+        key: "metric",
+        render: (text, record) => (
+          <Space>
+            {React.cloneElement(record.icon, {
+              style: { color: record.color },
+            })}
+            {text}
+          </Space>
+        ),
+      },
+      {
+        title: "Значение",
+        dataIndex: "value",
+        key: "value",
+        render: (value, record) => (
+          <Text strong style={{ color: record.color, fontSize: "16px" }}>
+            {value}
+          </Text>
+        ),
+      },
+    ];
 
-  return (
-    <div style={{ padding: "0 0 24px" }}>
-      <Card 
-        title="Статистика системы" 
-        bordered={false}
-        style={{ marginBottom: 24 }}
-      >
-        <Table 
-          dataSource={dataSource} 
-          columns={columns} 
-          pagination={false}
-          showHeader={false}
-          size="middle"
-        />
-      </Card>
+    return (
+      <div style={{ padding: "0 0 24px" }}>
+        <Card
+          title="Статистика системы"
+          bordered={false}
+          style={{ marginBottom: 24 }}
+        >
+          <Table
+            dataSource={dataSource}
+            columns={columns}
+            pagination={false}
+            showHeader={false}
+            size="middle"
+          />
+        </Card>
 
-      <Card title="Детализация подписок">
-        <Row gutter={16}>
-          <Col span={12}>
-            <Progress
-              type="dashboard"
-              percent={subscribedPercentage}
-              strokeColor="#52c41a"
-              format={() => `${subscribedCount}/${totalUsers}`}
-            />
-            <div style={{ textAlign: 'center', marginTop: 16 }}>
-              <Text strong>Пользователей с подпиской</Text>
-            </div>
-          </Col>
-          <Col span={12}>
-            <Progress
-              type="dashboard"
-              percent={100 - subscribedPercentage}
-              strokeColor="#fa8c16"
-              format={() => `${notSubscribedCount}/${totalUsers}`}
-            />
-            <div style={{ textAlign: 'center', marginTop: 16 }}>
-              <Text strong>Пользователей без подписки</Text>
-            </div>
-          </Col>
-        </Row>
-      </Card>
-    </div>
-  );
-};
+        <Card title="Детализация подписок">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Progress
+                type="dashboard"
+                percent={subscribedPercentage}
+                strokeColor="#52c41a"
+                format={() => `${subscribedCount}/${totalUsers}`}
+              />
+              <div style={{ textAlign: "center", marginTop: 16 }}>
+                <Text strong>Пользователей с подпиской</Text>
+              </div>
+            </Col>
+            <Col span={12}>
+              <Progress
+                type="dashboard"
+                percent={100 - subscribedPercentage}
+                strokeColor="#fa8c16"
+                format={() => `${notSubscribedCount}/${totalUsers}`}
+              />
+              <div style={{ textAlign: "center", marginTop: 16 }}>
+                <Text strong>Пользователей без подписки</Text>
+              </div>
+            </Col>
+          </Row>
+        </Card>
+      </div>
+    );
+  };
 
   // Компонент настроек профиля
   const ProfileSettingsContent = () => (
@@ -649,6 +662,19 @@ const StatisticsContent = () => {
               >
                 <div>
                   <NotificationSender />
+                </div>
+              </TabPane>
+              <TabPane
+                tab={
+                  <Space>
+                    <ReadOutlined />
+                    Статьи
+                  </Space>
+                }
+                key="6"
+              >
+                <div>
+                  <ArticleEditor />
                 </div>
               </TabPane>
             </>

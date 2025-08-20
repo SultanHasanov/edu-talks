@@ -79,7 +79,7 @@ const UserFiles = ({ queryParam }) => {
   useEffect(() => {
     if (access_token) {
       checkSubscription();
-      fetchFiles();
+      
     }
   }, []);
 
@@ -145,16 +145,14 @@ const UserFiles = ({ queryParam }) => {
     return new Date(dateString).toLocaleDateString("ru-RU", options);
   };
 
+
+
   const fetchFiles = async () => {
     try {
       setLoading(true);
       const response = await fetch(
-        `https://edutalks.ru/api/files?category=${queryParam}`,
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
+        `https://edutalks.ru/api/documents/preview?category=${queryParam}`,
+        
       );
       const data = await response.json();
       setFiles(data.data.data);
@@ -166,12 +164,23 @@ const UserFiles = ({ queryParam }) => {
     }
   };
 
+   useEffect(() => {
+    
+      fetchFiles();
+    
+  }, []);
+
   const beforeUpload = (file) => {
     setSelectedFile(file);
     return false;
   };
 
   const handleDownload = async (fileId, fileName) => {
+    if(!access_token){
+      alert("Нужно авторизоваться")
+      return;
+    }
+  
     try {
       setLoadingFileId(fileId);
 
@@ -206,6 +215,10 @@ const UserFiles = ({ queryParam }) => {
   };
 
   const handleSubscribe = () => {
+     if(!access_token){
+      alert("Нужно сначала авторизоваться")
+      return;
+    }
     navigate("/subscription");
   };
 
@@ -217,7 +230,7 @@ const UserFiles = ({ queryParam }) => {
       render: (text) => (
         <Space>
           <FileOutlined />
-          <Text ellipsis style={{ maxWidth: 120 }}>
+          <Text ellipsis >
             {text}
           </Text>
         </Space>
@@ -262,7 +275,7 @@ const UserFiles = ({ queryParam }) => {
     <div style={{ padding: screens.xs ? "8px" : "24px" }}>
       {contextHolder}
 
-      {!profileLoading && !hasSubscription && role !== "admin" && (
+      { !hasSubscription  && (
         <Alert
           message="У вас нет подписки"
           description="Чтобы скачивать документы, необходимо оформить подписку"

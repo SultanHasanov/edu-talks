@@ -20,37 +20,44 @@ import VerifyEmail from "./components/VerifyEmail";
 import { Payment } from "@mui/icons-material";
 import PaymentsAndRefunds from "./pages/PaymentsAndRefunds.jsx";
 import OfferContractPage from "./pages/OfferContractPage.jsx";
+import ArticlesList from "./pages/ArticlesList.jsx";
+import ArticlePage from "./pages/ArticlePage.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-   <ErrorBoundary>
-    <AuthProvider>
-      <Routes>
-        {/* Лендинг-страница как главная */}
-        <Route path="/" element={<LandingPage />} />
-        
-        {/* Основные страницы сайта с Layout */}
-        <Route element={<Layout />}>
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/recomm" element={<ContainerRecomm />} /> {/* Переместили основной сайт на /app */}
-          <Route path="/recomm/:id" element={<BlockDetails />} />
-          <Route path="/templates" element={<TemplatesSection />} />
-          <Route path="/scripts" element={<ScriptSection />} />
-          <Route path="/legal" element={<LegalSection />} />
-          <Route path="/setting" element={<Setting />} />
-          <Route path="/subscription" element={<SubscriptionPage />} />
-          <Route path="/requisites" element={<RequisitesPage />} />
-          <Route path="/api/verify-email" element={<VerifyEmail />} />
-          <Route path="/payments-and-refunds" element={<PaymentsAndRefunds />} />
-          <Route path="/offer" element={<OfferContractPage />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <Routes>
+          {/* Лендинг-страница как главная */}
+          <Route path="/" element={<LandingPage />} />
 
-        </Route>
-        
-        {/* Отдельные страницы */}
-        <Route path="/payment-success" element={<PaymentSuccess />} />
-      </Routes>
-    </AuthProvider>
-   </ErrorBoundary>
+          {/* Основные страницы сайта с Layout */}
+          <Route element={<Layout />}>
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/recomm" element={<ContainerRecomm />} />{" "}
+            {/* Переместили основной сайт на /app */}
+            <Route path="/recomm/:id" element={<BlockDetails />} />
+            <Route path="/templates" element={<TemplatesSection />} />
+            <Route path="/scripts" element={<ScriptSection />} />
+            <Route path="/legal" element={<LegalSection />} />
+            <Route path="/setting" element={<Setting />} />
+            <Route path="/subscription" element={<SubscriptionPage />} />
+            <Route path="/requisites" element={<RequisitesPage />} />
+            <Route path="/api/verify-email" element={<VerifyEmail />} />
+            <Route
+              path="/payments-and-refunds"
+              element={<PaymentsAndRefunds />}
+            />
+            <Route path="/offer" element={<OfferContractPage />} />
+            <Route path="/zavuch" element={<ArticlesList />} />
+            <Route path="/zavuch/:id" element={<ArticlePage />} />
+          </Route>
+
+          {/* Отдельные страницы */}
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+        </Routes>
+      </AuthProvider>
+    </ErrorBoundary>
   </BrowserRouter>
 );

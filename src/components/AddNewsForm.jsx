@@ -24,6 +24,7 @@ import {
   Pagination,
   message,
   Divider,
+  Upload,
 } from "antd";
 import {
   DeleteOutlined,
@@ -37,7 +38,11 @@ import {
   PaperClipOutlined,
   CopyOutlined,
   FireOutlined,
+  PlusOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -79,7 +84,30 @@ const AddNewsForm = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [inputValue, setInputValue] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
+  const [loadingFileId, setLoadingFileId] = useState(null);
   const access_token = localStorage.getItem("access_token");
+
+  // Модули для редактора
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['blockquote', 'code-block'],
+      ['link', 'image'],
+      [{ 'align': [] }],
+      ['clean']
+    ],
+  };
+
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet',
+    'blockquote', 'code-block',
+    'link', 'image',
+    'align'
+  ];
 
   const stickerOptions = ["Новость", "Рекомендации", "Важно", "Обновление"];
 
@@ -133,6 +161,7 @@ const AddNewsForm = () => {
     fetchNews();
     fetchFiles();
   }, [page, pageSize]);
+
   const handleSubmit = async (values) => {
     setLoading(true);
 
@@ -323,7 +352,6 @@ const AddNewsForm = () => {
           position: "relative",
           cursor: clickable ? "pointer" : "default",
           transition: "all 0.3s ease",
-          // overflow: "hidden",
         }}
         bodyStyle={{
           padding: 0,
@@ -335,7 +363,6 @@ const AddNewsForm = () => {
         <Badge.Ribbon
           text={sticker}
           color={color}
-          //  placement="start"
           style={{
             fontSize: 14,
             fontWeight: 600,
@@ -399,16 +426,19 @@ const AddNewsForm = () => {
               {title || "Заголовок новости"}
             </Title>
             {clickable && content && (
-              <Paragraph
-                ellipsis={{ rows: 1, expandable: false }}
+              <div
                 style={{
                   marginBottom: 8,
                   color: "#666",
                   fontSize: 14,
+                  maxHeight: 40,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
-              >
-                {content}
-              </Paragraph>
+                dangerouslySetInnerHTML={{ 
+                  __html: content.replace(/<[^>]*>/g, '').substring(0, 100) + '...' 
+                }}
+              />
             )}
           </div>
 
@@ -440,50 +470,44 @@ const AddNewsForm = () => {
   };
 
   const parseContentWithFiles = (text, handleDownload) => {
-  const parts = [];
-  let lastIndex = 0;
+    const parts = [];
+    let lastIndex = 0;
 
-  const regex = /\[([^\]]+)]\(file:(\d+)\|((?:[^()\\]|\\.|[()])+)\)/g;
-  //        └── описание ┘ └── id ┘ └─────── filename ───────┘
+    const regex = /\[([^\]]+)]\(file:(\d+)\|((?:[^()\\]|\\.|[()])+)\)/g;
+    let match;
 
-  let match;
+    while ((match = regex.exec(text)) !== null) {
+      const [fullMatch, description, fileId, fileNameRaw] = match;
+      const matchStart = match.index;
 
-  while ((match = regex.exec(text)) !== null) {
-    const [fullMatch, description, fileId, fileNameRaw] = match;
-    const matchStart = match.index;
+      if (matchStart > lastIndex) {
+        parts.push(text.slice(lastIndex, matchStart));
+      }
 
-    // Добавить всё перед найденной ссылкой
-    if (matchStart > lastIndex) {
-      parts.push(text.slice(lastIndex, matchStart));
+      const fileName = fileNameRaw.trim();
+
+      parts.push(
+        <Button
+          key={`${fileId}-${matchStart}`}
+          type="link"
+          onClick={() => handleDownload(Number(fileId), fileName)}
+          style={{ padding: 0, fontSize: 16 }}
+        >
+          📎 Скачать {description}
+        </Button>
+      );
+
+      lastIndex = matchStart + fullMatch.length;
     }
 
-    const fileName = fileNameRaw.trim();
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
 
-    parts.push(
-      <Button
-        key={`${fileId}-${matchStart}`}
-        type="link"
-        onClick={() => handleDownload(Number(fileId), fileName)}
-        style={{ padding: 0, fontSize: 16 }}
-      >
-        📎 Скачать {description}
-      </Button>
-    );
+    return parts;
+  };
 
-    lastIndex = matchStart + fullMatch.length;
-  }
-
-  // Добавить остаток текста
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
-  return parts;
-};
-
-
-const handleDownload = async (fileId, fileName) => {
-    console.log(fileId, fileName);
+  const handleDownload = async (fileId, fileName) => {
     try {
       setLoadingFileId(fileId);
 
@@ -505,7 +529,7 @@ const handleDownload = async (fileId, fileName) => {
         URL.revokeObjectURL(url);
       } else {
         const errorData = await response.json();
-         messageApi.open({
+        messageApi.open({
           type: "error",
           content: errorData.error,
         });
@@ -515,6 +539,14 @@ const handleDownload = async (fileId, fileName) => {
       alert("Ошибка соединения с сервером");
     } finally {
       setLoadingFileId(null);
+    }
+  };
+
+  const handleUpload = (info) => {
+    if (info.file.status === 'done') {
+      message.success(`${info.file.name} файл загружен успешно`);
+    } else if (info.file.status === 'error') {
+      message.error(`${info.file.name} ошибка загрузки файла`);
     }
   };
 
@@ -565,6 +597,7 @@ const handleDownload = async (fileId, fileName) => {
                     disabled={loading}
                   />
                 </Form.Item>
+
                 <Form.Item
                   label="Содержание"
                   name="content"
@@ -575,22 +608,30 @@ const handleDownload = async (fileId, fileName) => {
                     },
                   ]}
                 >
-                  <TextArea
-                    placeholder="Введите содержание новости"
-                    rows={4}
-                    disabled={loading}
+                  <ReactQuill
+                    value={formData.content}
+                    onChange={(value) => {
+                      setFormData(prev => ({ ...prev, content: value }));
+                      form.setFieldsValue({ content: value });
+                    }}
+                    modules={modules}
+                    formats={formats}
+                    style={{ height: '300px', marginBottom: '50px' }}
+                    placeholder="Начните писать вашу новость здесь..."
                   />
                 </Form.Item>
-                <Space.Compact style={{ width: "100%" }}>
+
+                <Space.Compact style={{ width: "100%", marginBottom: 16 }}>
                   <Button
-                    block={false}
                     type="primary"
                     onClick={() => {
                       fetchFiles();
                       setFileModalVisible(true);
                     }}
                     icon={<PaperClipOutlined />}
-                  />
+                  >
+                    Прикрепить файл
+                  </Button>
                 </Space.Compact>
 
                 <Form.Item label="URL изображения" name="image_url">
@@ -621,9 +662,9 @@ const handleDownload = async (fileId, fileName) => {
                         style={{ width: "100%" }}
                         value={formData.color}
                         onChange={(color) => {
-                          const hex = color.toHexString(); // <-- получаем строку
+                          const hex = color.toHexString();
                           setFormData((prev) => ({ ...prev, color: hex }));
-                          form.setFieldsValue({ color: hex }); // <-- обновляем в форме
+                          form.setFieldsValue({ color: hex });
                         }}
                       />
                     </Form.Item>
@@ -695,6 +736,8 @@ const handleDownload = async (fileId, fileName) => {
                       color={item.color}
                       sticker={item.sticker}
                       date={item.date || item.created_at}
+                      clickable={true}
+                      newsItem={item}
                     />
 
                     {/* Панель действий */}
@@ -845,10 +888,16 @@ const handleDownload = async (fileId, fileName) => {
                     },
                   ]}
                 >
-                  <TextArea
-                    placeholder="Введите содержание новости"
-                    rows={4}
-                    disabled={loading}
+                  <ReactQuill
+                    value={editData.content}
+                    onChange={(value) => {
+                      setEditData(prev => ({ ...prev, content: value }));
+                      editForm.setFieldsValue({ content: value });
+                    }}
+                    modules={modules}
+                    formats={formats}
+                    style={{ height: '300px', marginBottom: '50px' }}
+                    placeholder="Редактируйте содержание новости..."
                   />
                 </Form.Item>
 
@@ -918,9 +967,7 @@ const handleDownload = async (fileId, fileName) => {
           width="80vw"
           style={{ top: 0, paddingBottom: 0, maxWidth: "none" }}
           bodyStyle={{
-            // height: "100vh",
             padding: 0,
-            
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1000,14 +1047,14 @@ const handleDownload = async (fileId, fileName) => {
               </Badge.Ribbon>
 
               <div style={{ padding: "24px" }}>
-                {selectedNews.content.split("\n").map((paragraph, i) => (
-                  <Paragraph
-                    key={i}
-                    style={{ fontSize: 16, lineHeight: 1.8, marginBottom: 16 }}
-                  >
-                    {parseContentWithFiles(paragraph, handleDownload)}
-                  </Paragraph>
-                ))}
+                <div 
+                  dangerouslySetInnerHTML={{ __html: selectedNews.content }} 
+                  style={{ 
+                    fontSize: 16, 
+                    lineHeight: 1.8,
+                    fontFamily: 'inherit'
+                  }}
+                />
               </div>
 
               <Divider />
@@ -1027,6 +1074,7 @@ const handleDownload = async (fileId, fileName) => {
             </div>
           )}
         </Modal>
+
         <Modal
           title="Выберите файл"
           open={fileModalVisible}
@@ -1034,8 +1082,7 @@ const handleDownload = async (fileId, fileName) => {
           onOk={() => {
             if (selectedFile) {
               const currentContent = form.getFieldValue("content") || "";
-              const displayText =
-                selectedFile.description || selectedFile.filename;
+              const displayText = selectedFile.description || selectedFile.filename;
               const newContent = `${currentContent}\n[${displayText}](file:${selectedFile.id}|${selectedFile.filename})`;
 
               form.setFieldsValue({

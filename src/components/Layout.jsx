@@ -51,8 +51,8 @@ const Layout = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  const tabLabels = ["Рекомендации", "Шаблоны", "Сценарии", "Правовая база"];
-  const tabRoutes = ["/recomm", "/templates", "/scripts", "/legal"];
+  const tabLabels = ["Рекомендации", "Шаблоны", "Сценарии", "Правовая база", "Для завучей"];
+  const tabRoutes = ["/recomm", "/templates", "/scripts", "/legal", "/zavuch"];
   const currentTabIndex = tabRoutes.findIndex(
     (route) =>
       location.pathname === route || location.pathname.startsWith(route + "/")
@@ -160,7 +160,7 @@ const Layout = ({ children }) => {
                     fontSize: "18px",
                   }}
                 >
-                  B
+                  E
                 </Typography>
               </Box>
               <Typography
