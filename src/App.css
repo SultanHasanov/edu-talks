@@ -99,3 +99,7 @@
 .ql-editor .ql-align-justify {
   text-align: justify;
 }
+
+.ql-snow .ql-tooltip{
+  left: 0 !important;
+}

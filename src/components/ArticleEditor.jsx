@@ -17,6 +17,7 @@ import {
   List,
   Popconfirm,
   Empty,
+  Switch,
 } from "antd";
 import {
   PlusOutlined,
@@ -25,6 +26,8 @@ import {
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
+  SaveOutlined,
+  SendOutlined,
 } from "@ant-design/icons";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -45,12 +48,11 @@ const ArticleEditor = () => {
   const [articles, setArticles] = useState([]);
   const [articlesLoading, setArticlesLoading] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
-  // Добавляем ref для ReactQuill
+  const [savingDraft, setSavingDraft] = useState(false);
   const quillRef = useRef(null);
   const inputRef = useRef(null);
   const access_token = localStorage.getItem("access_token");
 
-  // Модули для редактора с улучшенной конфигурацией
   const modules = {
     toolbar: [
       [{ header: [1, 2, 3, 4, 5, 6, false] }],
@@ -58,12 +60,11 @@ const ArticleEditor = () => {
       [{ list: "ordered" }, { list: "bullet" }],
       ["blockquote", "code-block"],
       ["link", "image"],
-      [{ align: [] }], // Убедимся что align поддерживается
-      [{ color: [] }, { background: [] }], // Добавляем цвета
+      [{ align: [] }],
+      [{ color: [] }, { background: [] }],
       ["clean"],
     ],
     clipboard: {
-      // Сохраняем форматирование при копировании
       matchVisual: false,
     }
   };
@@ -85,7 +86,6 @@ const ArticleEditor = () => {
     "background"
   ];
 
-  // Загрузка статей при монтировании компонента
   useEffect(() => {
     fetchArticles();
   }, []);
@@ -114,6 +114,38 @@ const ArticleEditor = () => {
       setArticlesLoading(false);
     }
   };
+
+  const unpublishArticle = async (articleId) => {
+  try {
+    const response = await fetch(
+      `https://edutalks.ru/api/admin/articles/${articleId}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    message.success("Статья переведена в черновик!");
+    
+    // Обновляем локальное состояние
+    setArticles(articles.map(article => 
+      article.id === articleId 
+        ? { ...article, isPublished: false }
+        : article
+    ));
+    
+  } catch (error) {
+    console.error("Ошибка при переводе в черновик:", error);
+    message.error("Произошла ошибка при переводе в черновик");
+  }
+};
 
   const handleTagClose = (removedTag) => {
     const newTags = tags.filter((tag) => tag !== removedTag);
@@ -167,7 +199,7 @@ const ArticleEditor = () => {
     }
   };
 
-  const saveArticle = async (articleData) => {
+  const saveArticle = async (articleData, isPublished = true) => {
     setLoading(true);
     try {
       const url = editingArticle
@@ -182,7 +214,10 @@ const ArticleEditor = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${access_token}`,
         },
-        body: JSON.stringify(articleData),
+        body: JSON.stringify({
+          ...articleData,
+          isPublished: isPublished,
+        }),
       });
 
       if (!response.ok) {
@@ -191,9 +226,9 @@ const ArticleEditor = () => {
 
       const result = await response.json();
       message.success(
-        editingArticle
-          ? "Статья успешно обновлена!"
-          : "Статья успешно сохранена!"
+        isPublished 
+          ? (editingArticle ? "Статья успешно обновлена и опубликована!" : "Статья успешно опубликована!")
+          : (editingArticle ? "Статья успешно обновлена как черновик!" : "Статья сохранена как черновик!")
       );
 
       // Очистка формы после успешного сохранения
@@ -212,6 +247,7 @@ const ArticleEditor = () => {
       throw error;
     } finally {
       setLoading(false);
+      setSavingDraft(false);
     }
   };
 
@@ -239,14 +275,14 @@ const ArticleEditor = () => {
     }
   };
 
-  const onFinish = async (values) => {
-    if (tags?.length === 0) {
-      message.warning("Добавьте хотя бы один тег");
+  const onFinish = async (values, isPublish = true) => {
+    if (isPublish && tags?.length === 0) {
+      message.warning("Для публикации добавьте хотя бы один тег");
       return;
     }
 
-    if (!content.trim()) {
-      message.warning("Напишите содержание статьи");
+    if (isPublish && !content.trim()) {
+      message.warning("Для публикации напишите содержание статьи");
       return;
     }
 
@@ -255,34 +291,65 @@ const ArticleEditor = () => {
       summary: values.description,
       bodyHtml: content,
       tags: tags,
-      publish: true,
     };
 
     try {
-      await saveArticle(articleData);
+      await saveArticle(articleData, isPublish);
     } catch (error) {
       // Ошибка уже обработана в saveArticle
     }
   };
 
-  // Улучшенная функция редактирования с правильной синхронизацией
+  const saveAsDraft = async () => {
+    setSavingDraft(true);
+    const values = form.getFieldsValue();
+    await onFinish(values, false);
+  };
+
+const publishArticle = async (articleId) => {
+  try {
+    const response = await fetch(
+      `https://edutalks.ru/api/admin/articles/${articleId}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    message.success("Статья успешно опубликована!");
+    
+    // Обновляем локальное состояние
+    setArticles(articles.map(article => 
+      article.id === articleId 
+        ? { ...article, isPublished: true }
+        : article
+    ));
+    
+  } catch (error) {
+    console.error("Ошибка при публикации статьи:", error);
+    message.error("Произошла ошибка при публикации статьи");
+  }
+};
   const editArticle = (article) => {
     setEditingArticle(article);
     
-    // Устанавливаем поля формы
     form.setFieldsValue({
       title: article.title,
       description: article.summary,
     });
     
-    // Устанавливаем теги
     setTags(article.tags || []);
     
-    // Устанавливаем содержимое с задержкой для правильной инициализации ReactQuill
     setTimeout(() => {
       setContent(article.bodyHtml || "");
       
-      // Дополнительная проверка через ref, если нужно принудительно обновить
       if (quillRef.current) {
         const quill = quillRef.current.getEditor();
         if (quill && article.bodyHtml) {
@@ -301,7 +368,6 @@ const ArticleEditor = () => {
     setTags([]);
   };
 
-  // Обработчик изменения содержимого ReactQuill
   const handleContentChange = (value) => {
     setContent(value);
   };
@@ -444,7 +510,7 @@ const ArticleEditor = () => {
       <Form
         form={form}
         layout="vertical"
-        onFinish={onFinish}
+        onFinish={(values) => onFinish(values, true)}
         initialValues={{
           category: "development",
           language: "ru",
@@ -454,7 +520,9 @@ const ArticleEditor = () => {
           {loading && (
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <Spin size="large" />
-              <div style={{ marginTop: 10 }}>Сохранение статьи...</div>
+              <div style={{ marginTop: 10 }}>
+                {savingDraft ? "Сохранение черновика..." : "Сохранение статьи..."}
+              </div>
             </div>
           )}
 
@@ -482,7 +550,7 @@ const ArticleEditor = () => {
             />
           </Form.Item>
 
-          {/* Основной контент с улучшенной конфигурацией */}
+          {/* Основной контент */}
           <Form.Item
             label="Содержание статьи"
             rules={[{ required: true, message: "Напишите содержание статьи" }]}
@@ -495,7 +563,7 @@ const ArticleEditor = () => {
               formats={formats}
               style={{ height: "400px", marginBottom: "50px" }}
               placeholder="Начните писать вашу статью здесь..."
-              preserveWhitespace={true} // Сохраняем пробелы и форматирование
+              preserveWhitespace={true}
             />
           </Form.Item>
 
@@ -568,11 +636,24 @@ const ArticleEditor = () => {
               type="primary"
               htmlType="submit"
               size="large"
-              loading={loading}
+              loading={loading && !savingDraft}
               disabled={loading}
+              icon={<SendOutlined />}
             >
-              {editingArticle ? "Обновить" : "Опубликовать"}
+              {editingArticle ? "Обновить и опубликовать" : "Опубликовать"}
             </Button>
+            
+            <Button
+              type="default"
+              size="large"
+              loading={loading && savingDraft}
+              disabled={loading}
+              onClick={saveAsDraft}
+              icon={<SaveOutlined />}
+            >
+              Сохранить как черновик
+            </Button>
+            
             <Button
               type="default"
               size="large"
@@ -581,6 +662,7 @@ const ArticleEditor = () => {
             >
               Предпросмотр
             </Button>
+            
             {editingArticle && (
               <Button
                 type="default"
@@ -613,6 +695,21 @@ const ArticleEditor = () => {
               <List.Item
                 key={article?.id}
                 actions={[
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>Опубликовано:</span>
+                    <Switch
+  size="small"
+  checked={article.isPublished}
+  onChange={(checked) => {
+    if (checked) {
+      publishArticle(article.id);
+    } else {
+      unpublishArticle(article.id);
+    }
+  }}
+  loading={loading} // можно добавить индикатор загрузки если нужно
+/>
+                  </div>,
                   <Button
                     type="text"
                     icon={<EyeOutlined />}
@@ -647,17 +744,22 @@ const ArticleEditor = () => {
                     </Button>
                   </Popconfirm>,
                 ]}
+                extra={
+                  <Tag color={article.isPublished ? "green" : "orange"}>
+                    {article.isPublished ? "Опубликовано" : "Черновик"}
+                  </Tag>
+                }
               >
                 <List.Item.Meta
                   title={article?.title}
                   description={
                     <Space direction="vertical" size={0}>
-                     <Text type="secondary" ellipsis>
-  {article?.summary && article.summary?.length > 70 
-    ? `${article?.summary.substring(0, 70)}...` 
-    : article?.summary || "Описание отсутствует"
-  }
-</Text>
+                      <Text type="secondary" ellipsis>
+                        {article?.summary && article.summary?.length > 70 
+                          ? `${article?.summary.substring(0, 70)}...` 
+                          : article?.summary || "Описание отсутствует"
+                        }
+                      </Text>
                       <Space size={[0, 8]} wrap>
                         {article.tags?.map((tag, index) => (
                           <Tag key={index} color="blue">
@@ -703,21 +805,17 @@ const ArticleEditor = () => {
           </Space>
         </div>
 
-        {/* Добавляем встроенные стили для предпросмотра */}
         <style dangerouslySetInnerHTML={{
           __html: `
             .quill-preview-content .ql-align-center {
               text-align: center !important;
             }
-            
             .quill-preview-content .ql-align-right {
               text-align: right !important;
             }
-            
             .quill-preview-content .ql-align-justify {
               text-align: justify !important;
             }
-            
             .quill-preview-content h1, 
             .quill-preview-content h2, 
             .quill-preview-content h3, 
@@ -726,14 +824,12 @@ const ArticleEditor = () => {
             .quill-preview-content h6 {
               margin: 0.67em 0;
             }
-            
             .quill-preview-content h1 { font-size: 2em; }
             .quill-preview-content h2 { font-size: 1.5em; }
             .quill-preview-content h3 { font-size: 1.17em; }
             .quill-preview-content h4 { font-size: 1em; }
             .quill-preview-content h5 { font-size: 0.83em; }
             .quill-preview-content h6 { font-size: 0.67em; }
-            
             .quill-preview-content blockquote {
               border-left: 4px solid #ccc;
               margin-bottom: 5px;
@@ -742,14 +838,12 @@ const ArticleEditor = () => {
               color: #666;
               font-style: italic;
             }
-            
             .quill-preview-content code {
               background-color: #f5f5f5;
               border-radius: 3px;
               padding: 2px 4px;
               font-family: 'Courier New', monospace;
             }
-            
             .quill-preview-content pre {
               background-color: #f5f5f5;
               border-radius: 3px;
@@ -759,49 +853,39 @@ const ArticleEditor = () => {
               font-family: 'Courier New', monospace;
               border: 1px solid #ddd;
             }
-            
             .quill-preview-content ul, 
             .quill-preview-content ol {
               margin: 0 0 0 2em;
               padding: 0;
             }
-            
             .quill-preview-content li {
               margin-bottom: 0.25em;
             }
-            
             .quill-preview-content img {
               max-width: 100%;
               height: auto;
               display: block;
               margin: 10px 0;
             }
-            
             .quill-preview-content a {
               color: #1890ff;
               text-decoration: none;
             }
-            
             .quill-preview-content a:hover {
               text-decoration: underline;
             }
-            
             .quill-preview-content strong {
               font-weight: bold;
             }
-            
             .quill-preview-content em {
               font-style: italic;
             }
-            
             .quill-preview-content u {
               text-decoration: underline;
             }
-            
             .quill-preview-content s {
               text-decoration: line-through;
             }
-            
             .quill-preview-content p {
               margin: 0 0 1em 0;
             }
