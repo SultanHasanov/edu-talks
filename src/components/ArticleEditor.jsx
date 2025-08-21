@@ -66,7 +66,7 @@ const ArticleEditor = () => {
     ],
     clipboard: {
       matchVisual: false,
-    }
+    },
   };
 
   const formats = [
@@ -83,7 +83,7 @@ const ArticleEditor = () => {
     "image",
     "align",
     "color",
-    "background"
+    "background",
   ];
 
   useEffect(() => {
@@ -116,36 +116,37 @@ const ArticleEditor = () => {
   };
 
   const unpublishArticle = async (articleId) => {
-  try {
-    const response = await fetch(
-      `https://edutalks.ru/api/admin/articles/${articleId}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access_token}`,
-        },
+    try {
+      const response = await fetch(
+        `https://edutalks.ru/api/admin/articles/${articleId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      message.success("Статья переведена в черновик!");
+
+      // Обновляем локальное состояние
+      setArticles(
+        articles.map((article) =>
+          article.id === articleId
+            ? { ...article, publish: false }
+            : article
+        )
+      );
+    } catch (error) {
+      console.error("Ошибка при переводе в черновик:", error);
+      message.error("Произошла ошибка при переводе в черновик");
     }
-
-    message.success("Статья переведена в черновик!");
-    
-    // Обновляем локальное состояние
-    setArticles(articles.map(article => 
-      article.id === articleId 
-        ? { ...article, isPublished: false }
-        : article
-    ));
-    
-  } catch (error) {
-    console.error("Ошибка при переводе в черновик:", error);
-    message.error("Произошла ошибка при переводе в черновик");
-  }
-};
+  };
 
   const handleTagClose = (removedTag) => {
     const newTags = tags.filter((tag) => tag !== removedTag);
@@ -199,7 +200,7 @@ const ArticleEditor = () => {
     }
   };
 
-  const saveArticle = async (articleData, isPublished = true) => {
+  const saveArticle = async (articleData, publish = true) => {
     setLoading(true);
     try {
       const url = editingArticle
@@ -216,7 +217,7 @@ const ArticleEditor = () => {
         },
         body: JSON.stringify({
           ...articleData,
-          isPublished: isPublished,
+          publish: publish,
         }),
       });
 
@@ -226,9 +227,13 @@ const ArticleEditor = () => {
 
       const result = await response.json();
       message.success(
-        isPublished 
-          ? (editingArticle ? "Статья успешно обновлена и опубликована!" : "Статья успешно опубликована!")
-          : (editingArticle ? "Статья успешно обновлена как черновик!" : "Статья сохранена как черновик!")
+        isPublished
+          ? editingArticle
+            ? "Статья успешно обновлена и опубликована!"
+            : "Статья успешно опубликована!"
+          : editingArticle
+          ? "Статья успешно обновлена как черновик!"
+          : "Статья сохранена как черновик!"
       );
 
       // Очистка формы после успешного сохранения
@@ -306,50 +311,49 @@ const ArticleEditor = () => {
     await onFinish(values, false);
   };
 
-const publishArticle = async (articleId) => {
-  try {
-    const response = await fetch(
-      `https://edutalks.ru/api/admin/articles/${articleId}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access_token}`,
-        },
+  const publishArticle = async (articleId) => {
+    try {
+      const response = await fetch(
+        `https://edutalks.ru/api/admin/articles/${articleId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      message.success("Статья успешно опубликована!");
+
+      // Обновляем локальное состояние
+      setArticles(
+        articles.map((article) =>
+          article.id === articleId ? { ...article, publish: true } : article
+        )
+      );
+    } catch (error) {
+      console.error("Ошибка при публикации статьи:", error);
+      message.error("Произошла ошибка при публикации статьи");
     }
-
-    message.success("Статья успешно опубликована!");
-    
-    // Обновляем локальное состояние
-    setArticles(articles.map(article => 
-      article.id === articleId 
-        ? { ...article, isPublished: true }
-        : article
-    ));
-    
-  } catch (error) {
-    console.error("Ошибка при публикации статьи:", error);
-    message.error("Произошла ошибка при публикации статьи");
-  }
-};
+  };
   const editArticle = (article) => {
     setEditingArticle(article);
-    
+
     form.setFieldsValue({
       title: article.title,
       description: article.summary,
     });
-    
+
     setTags(article.tags || []);
-    
+
     setTimeout(() => {
       setContent(article.bodyHtml || "");
-      
+
       if (quillRef.current) {
         const quill = quillRef.current.getEditor();
         if (quill && article.bodyHtml) {
@@ -357,7 +361,7 @@ const publishArticle = async (articleId) => {
         }
       }
     }, 100);
-    
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -521,7 +525,9 @@ const publishArticle = async (articleId) => {
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <Spin size="large" />
               <div style={{ marginTop: 10 }}>
-                {savingDraft ? "Сохранение черновика..." : "Сохранение статьи..."}
+                {savingDraft
+                  ? "Сохранение черновика..."
+                  : "Сохранение статьи..."}
               </div>
             </div>
           )}
@@ -642,7 +648,7 @@ const publishArticle = async (articleId) => {
             >
               {editingArticle ? "Обновить и опубликовать" : "Опубликовать"}
             </Button>
-            
+
             <Button
               type="default"
               size="large"
@@ -653,7 +659,7 @@ const publishArticle = async (articleId) => {
             >
               Сохранить как черновик
             </Button>
-            
+
             <Button
               type="default"
               size="large"
@@ -662,7 +668,7 @@ const publishArticle = async (articleId) => {
             >
               Предпросмотр
             </Button>
-            
+
             {editingArticle && (
               <Button
                 type="default"
@@ -695,20 +701,26 @@ const publishArticle = async (articleId) => {
               <List.Item
                 key={article?.id}
                 actions={[
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
                     <span>Опубликовано:</span>
                     <Switch
-  size="small"
-  checked={article.isPublished}
-  onChange={(checked) => {
-    if (checked) {
-      publishArticle(article.id);
-    } else {
-      unpublishArticle(article.id);
-    }
-  }}
-  loading={loading} // можно добавить индикатор загрузки если нужно
-/>
+                      size="small"
+                      checked={article.isPublished}
+                      onChange={(checked) => {
+                        if (checked) {
+                          publishArticle(article.id);
+                        } else {
+                          unpublishArticle(article.id);
+                        }
+                      }}
+                      loading={loading} // можно добавить индикатор загрузки если нужно
+                    />
                   </div>,
                   <Button
                     type="text"
@@ -755,10 +767,9 @@ const publishArticle = async (articleId) => {
                   description={
                     <Space direction="vertical" size={0}>
                       <Text type="secondary" ellipsis>
-                        {article?.summary && article.summary?.length > 70 
-                          ? `${article?.summary.substring(0, 70)}...` 
-                          : article?.summary || "Описание отсутствует"
-                        }
+                        {article?.summary && article.summary?.length > 70
+                          ? `${article?.summary.substring(0, 70)}...`
+                          : article?.summary || "Описание отсутствует"}
                       </Text>
                       <Space size={[0, 8]} wrap>
                         {article.tags?.map((tag, index) => (
@@ -790,10 +801,10 @@ const publishArticle = async (articleId) => {
           <Divider />
           <div
             dangerouslySetInnerHTML={{ __html: content }}
-            style={{ 
+            style={{
               minHeight: "200px",
               lineHeight: "1.6",
-              fontSize: "14px"
+              fontSize: "14px",
             }}
             className="quill-preview-content"
           />
@@ -805,8 +816,9 @@ const publishArticle = async (articleId) => {
           </Space>
         </div>
 
-        <style dangerouslySetInnerHTML={{
-          __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
             .quill-preview-content .ql-align-center {
               text-align: center !important;
             }
@@ -889,8 +901,9 @@ const publishArticle = async (articleId) => {
             .quill-preview-content p {
               margin: 0 0 1em 0;
             }
-          `
-        }} />
+          `,
+          }}
+        />
       </Modal>
     </div>
   );

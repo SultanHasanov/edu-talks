@@ -18,7 +18,7 @@ const ArticlesList = () => {
   const fetchArticles = async () => {
     try {
       setLoading(true);
-      const response = await fetch("https://edutalks.ru/api/articles");
+      const response = await fetch("https://edutalks.ru/api/articles?published=true");
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -66,7 +66,7 @@ const publishedArticles = articles.filter(article => article.isPublished !== fal
       <Title level={2}>Все статьи</Title>
 
       <List
-        dataSource={publishedArticles}
+        dataSource={articles}
         renderItem={(article) => (
           <List.Item>
             <Card
