@@ -115,39 +115,50 @@ const ArticleEditor = () => {
     }
   };
 
-  const unpublishArticle = async (articleId) => {
-    try {
-      const response = await fetch(
-        `https://edutalks.ru/api/admin/articles/${articleId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+const unpublishArticle = async (articleId) => {
+  try {
+    const response = await fetch(
+      `https://edutalks.ru/api/admin/articles/${articleId}`, // Используем относительный путь через прокси
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+        // Добавляем тело запроса
+        body: JSON.stringify({
+          publish: false
+          // Альтернативные варианты:
+          // status: "draft",
+          // is_published: false,
+          // action: "unpublish"
+        })
       }
+    );
 
-      message.success("Статья переведена в черновик!");
-
-      // Обновляем локальное состояние
-      setArticles(
-        articles.map((article) =>
-          article.id === articleId
-            ? { ...article, publish: false }
-            : article
-        )
-      );
-    } catch (error) {
-      console.error("Ошибка при переводе в черновик:", error);
-      message.error("Произошла ошибка при переводе в черновик");
+    if (!response.ok) {
+      // Получаем детальную информацию об ошибке
+      const errorData = await response.json();
+      console.error("Детали ошибки:", errorData);
+      throw new Error(`HTTP error! status: ${response.status}, details: ${JSON.stringify(errorData)}`);
     }
-  };
 
+    const result = await response.json();
+    console.log("Ответ сервера:", result);
+
+    message.success("Статья переведена в черновик!");
+
+    // Обновляем локальное состояние
+    setArticles(
+      articles.map((article) =>
+        article.id === articleId ? { ...article, isPublished: false } : article
+      )
+    );
+  } catch (error) {
+    console.error("Ошибка при переводе в черновик:", error);
+    message.error("Произошла ошибка при переводе в черновик");
+  }
+};
   const handleTagClose = (removedTag) => {
     const newTags = tags.filter((tag) => tag !== removedTag);
     setTags(newTags);
@@ -313,29 +324,34 @@ const ArticleEditor = () => {
 
   const publishArticle = async (articleId) => {
     try {
-      const response = await fetch(
-        `https://edutalks.ru/api/admin/articles/${articleId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
+      const response = await fetch(`https://edutalks.ru/api/admin/articles/${articleId}/publish`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+        body: JSON.stringify({
+          publish: true
+          
+        })
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        console.error("Детали ошибки:", errorData);
+        throw new Error(`HTTP error! status: ${response.status}, details: ${JSON.stringify(errorData)}`);
       }
 
+      const result = await response.json();
+      console.log("Ответ сервера:", result);
       message.success("Статья успешно опубликована!");
 
-      // Обновляем локальное состояние
       setArticles(
         articles.map((article) =>
-          article.id === articleId ? { ...article, publish: true } : article
+          article.id === articleId ? { ...article, isPublished: true } : article
         )
       );
+
     } catch (error) {
       console.error("Ошибка при публикации статьи:", error);
       message.error("Произошла ошибка при публикации статьи");
