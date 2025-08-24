@@ -155,8 +155,8 @@ const Layout = ({ children }) => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: 32, // Укажите нужную ширину
-                  height: 32, // Укажите нужную высоту
+                  width: 70, // Укажите нужную ширину
+                  height: 70, // Укажите нужную высоту
                   backgroundColor: "transparent", // Убираем фиолетовый фон
                 }}
               />
