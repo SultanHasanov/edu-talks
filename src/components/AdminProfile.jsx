@@ -58,7 +58,7 @@ const AdminProfile = () => {
     email_subscription: false,
     email_verified: false,
   });
-
+console.log({formData})
   // Загрузка пользователей для админа
   useEffect(() => {
     if (activeTab === "users") {

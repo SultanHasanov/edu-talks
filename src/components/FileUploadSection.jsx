@@ -182,6 +182,9 @@ const FileUploadSection = () => {
     try {
       const response = await fetch(`https://edutalks.ru/api/files/${fileId}`, {
         method: "GET",
+         headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
       });
 
       if (response.status === 200) {
