@@ -44,21 +44,17 @@ const AppFooter = () => {
             <Space direction="vertical" size="middle">
               <Space>
                 <Avatar
-                  shape="square"
-                  style={{
-                    backgroundColor: "#7c3aed",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography.Text
-                    strong
-                    style={{ color: "white", fontSize: 18 }}
-                  >
-                    E
-                  </Typography.Text>
-                </Avatar>
+  shape="square"
+  src="../logo.png" // Путь к изображению в папке public
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 32, // Укажите нужную ширину
+    height: 32, // Укажите нужную высоту
+    backgroundColor: "transparent" // Убираем фиолетовый фон
+  }}
+/>
                 <Typography.Title
                   level={4}
                   style={{

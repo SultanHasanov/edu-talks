@@ -45,13 +45,19 @@ const Layout = ({ children }) => {
   const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const { full_name, logout, isAuthenticated, role } = useAuth();
-   const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchQuery, setSearchQuery] = React.useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  const tabLabels = ["Рекомендации", "Шаблоны", "Сценарии", "Правовая база", "Для завучей"];
+  const tabLabels = [
+    "Рекомендации",
+    "Шаблоны",
+    "Сценарии",
+    "Правовая база",
+    "Для завучей",
+  ];
   const tabRoutes = ["/recomm", "/templates", "/scripts", "/legal", "/zavuch"];
   const currentTabIndex = tabRoutes.findIndex(
     (route) =>
@@ -62,9 +68,11 @@ const Layout = ({ children }) => {
     navigate(tabRoutes[newValue]);
   };
 
-   const handleSearchKeyPress = async (event) => {
+  const handleSearchKeyPress = async (event) => {
     if (event.key === "Enter" && searchQuery.trim() !== "") {
-      const url = `https://edutalks.ru/search?query=${encodeURIComponent(searchQuery)}`;
+      const url = `https://edutalks.ru/search?query=${encodeURIComponent(
+        searchQuery
+      )}`;
       try {
         const response = await fetch(url);
         const text = await response.text(); // сервер отдаёт html, не json
@@ -140,29 +148,18 @@ const Layout = ({ children }) => {
               sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
               onClick={() => navigate("/recomm")}
             >
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  backgroundColor: "#7c3aed",
-                  borderRadius: "8px",
+              <Avatar
+                shape="square"
+                src="../logo.png" // Путь к изображению в папке public
+                style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  mr: 1.5,
+                  width: 32, // Укажите нужную ширину
+                  height: 32, // Укажите нужную высоту
+                  backgroundColor: "transparent", // Убираем фиолетовый фон
                 }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "white",
-                    fontWeight: "bold",
-                    fontSize: "18px",
-                  }}
-                >
-                  E
-                </Typography>
-              </Box>
+              />
               <Typography
                 variant="h5"
                 sx={{
@@ -192,7 +189,7 @@ const Layout = ({ children }) => {
                 placeholder="Поиск по всем материалам"
                 variant="outlined"
                 size="small"
-                 value={searchQuery}
+                value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleSearchKeyPress}
                 InputProps={{
@@ -310,20 +307,6 @@ const Layout = ({ children }) => {
                         <ListItemText>Настройки</ListItemText>
                       </MenuItem>
                     )}
-
-                    <MenuItem>
-                      <ListItemIcon>
-                        <Notifications fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText>Уведомления</ListItemText>
-                    </MenuItem>
-
-                    <MenuItem>
-                      <ListItemIcon>
-                        <Help fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText>Помощь</ListItemText>
-                    </MenuItem>
 
                     <Divider />
 

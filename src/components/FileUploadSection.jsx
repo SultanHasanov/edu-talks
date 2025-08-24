@@ -208,6 +208,9 @@ const FileUploadSection = () => {
       setLoading(true);
       const response = await fetch(`https://edutalks.ru/api/admin/files/${file.id}`, {
         method: "DELETE",
+         headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
       });
 
       if (!response.ok) throw new Error("Delete failed");

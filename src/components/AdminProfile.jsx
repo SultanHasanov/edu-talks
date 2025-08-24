@@ -1,94 +1,85 @@
 import React, { useState, useEffect } from "react";
 import {
-  Box,
-  Container,
-  Typography,
-  Avatar,
-  Paper,
-  Tabs,
-  Tab,
-  Divider,
-  Button,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  TextField,
-  Chip,
-  Grid,
+  Row,
+  Col,
   Card,
-  CardContent,
-  CardHeader,
-  CircularProgress,
-  Snackbar,
+  Avatar,
+  Typography,
+  Descriptions,
+  Button,
+  Spin,
+  message,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from "@mui/material";
+  Checkbox,
+  Modal,
+} from "antd";
 import {
-  Person as PersonIcon,
-  Edit as EditIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  Home as HomeIcon,
-  AdminPanelSettings as AdminIcon,
-  LockReset as PasswordIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  Delete as DeleteIcon,
-  People as UsersIcon,
-  InsertDriveFile as FilesIcon,
-  Article as NewsIcon,
-  Equalizer as StatsIcon,
-  Settings as SettingsIcon,
-} from "@mui/icons-material";
+  UserOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  HomeOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  SyncOutlined,
+  EditOutlined,
+  SaveOutlined,
+  CloseOutlined,
+  DeleteOutlined,
+  LockOutlined,
+  DashboardOutlined,
+  TeamOutlined,
+  FileOutlined,
+  ReadOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
+import axios from "axios";
+
+const { Title, Text } = Typography;
+const { TabPane } = Card;
 
 const AdminProfile = () => {
   const { username, email, phone, address, full_name, access_token } =
     useAuth();
-  const [tabValue, setTabValue] = useState(0);
-  const [editMode, setEditMode] = useState(false);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [subLoading, setSubLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [checkingVerification, setCheckingVerification] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [activeTab, setActiveTab] = useState("profile");
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   const [formData, setFormData] = useState({
     full_name: full_name || "",
     email: email || "",
     phone: phone || "",
     address: address || "",
+    email_subscription: false,
+    email_verified: false,
   });
 
   // Загрузка пользователей для админа
   useEffect(() => {
-    if (tabValue === 1) {
+    if (activeTab === "users") {
       fetchUsers();
     }
-  }, [tabValue]);
+  }, [activeTab]);
 
   const fetchUsers = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const response = await fetch("https://edutalks.ru/api/admin/users", {
+      const response = await axios.get("https://edutalks.ru/api/admin/users", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
       });
 
-      if (!response.ok) {
-        throw new Error("Ошибка загрузки пользователей");
+      if (response.data.data) {
+        setUsers(response.data.data);
       }
-
-      const data = await response.json();
-      setUsers(data.data);
     } catch (err) {
-      setError(err.message);
+      message.error("Ошибка загрузки пользователей");
     } finally {
       setLoading(false);
     }
@@ -96,25 +87,27 @@ const AdminProfile = () => {
 
   const handleEditClick = () => {
     setEditMode(true);
-  };
-
-  const handleCancelEdit = () => {
-    setEditMode(false);
     setFormData({
       full_name: full_name || "",
       email: email || "",
       phone: phone || "",
       address: address || "",
+      email_subscription: formData.email_subscription,
+      email_verified: formData.email_verified,
     });
+  };
+
+  const handleCancelEdit = () => {
+    setEditMode(false);
   };
 
   const handleSaveClick = async () => {
     try {
-      // Здесь должна быть логика сохранения изменений через API
-      setSuccess("Изменения успешно сохранены");
+      // Логика сохранения изменений
       setEditMode(false);
+      message.success("Изменения успешно сохранены");
     } catch (err) {
-      setError("Ошибка при сохранении изменений");
+      message.error("Ошибка при сохранении изменений");
     }
   };
 
@@ -123,326 +116,161 @@ const AdminProfile = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDeleteAccount = () => {
-    // Логика удаления аккаунта
-    setOpenDeleteDialog(false);
+  const handleSubscriptionChange = async (e) => {
+    const checked = e.target.checked;
+    setSubLoading(true);
+    try {
+      setFormData((prev) => ({ ...prev, email_subscription: checked }));
+      message.success(
+        checked ? "Вы подписались на рассылку" : "Вы отписались от рассылки"
+      );
+    } catch (err) {
+      message.error("Не удалось изменить подписку");
+    } finally {
+      setSubLoading(false);
+    }
   };
 
-  const adminTabs = [
-    { label: "Статистика", icon: <StatsIcon /> },
-    { label: "Пользователи", icon: <UsersIcon /> },
-    { label: "Файлы", icon: <FilesIcon /> },
-    { label: "Новости", icon: <NewsIcon /> },
-    { label: "Настройки", icon: <SettingsIcon /> },
-  ];
+  const handleResendVerification = async () => {
+    try {
+      setVerificationSent(true);
+      message.success(
+        <span>
+          Письмо для подтверждения почты отправлено на{" "}
+          <strong>{formData.email}</strong>
+        </span>
+      );
+    } catch (error) {
+      message.error("Не удалось отправить письмо подтверждения");
+    }
+  };
+
+  const handleCheckVerification = async () => {
+    setCheckingVerification(true);
+    try {
+      // Логика проверки верификации
+      setCheckingVerification(false);
+    } catch (error) {
+      message.error("Не удалось проверить статус подтверждения");
+      setCheckingVerification(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    setDeleteModalVisible(false);
+    message.success("Аккаунт удален");
+  };
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      {/* Уведомления */}
-      {error && (
-        <Snackbar open autoHideDuration={6000} onClose={() => setError(null)}>
-          <Alert severity="error" onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        </Snackbar>
-      )}
-      {success && (
-        <Snackbar open autoHideDuration={6000} onClose={() => setSuccess(null)}>
-          <Alert severity="success" onClose={() => setSuccess(null)}>
-            {success}
-          </Alert>
-        </Snackbar>
-      )}
-
-      <Grid container spacing={3}>
-        {/* Левая колонка - информация о пользователе */}
-        <Grid item xs={12} md={4}>
-          <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                mb: 2,
+    <Row justify="center" style={{ marginTop: 50, marginBottom: 50 }}>
+      <Col xs={24} sm={22} md={20} lg={18} xl={16}>
+        <>
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <Avatar
+              size={96}
+              icon={<UserOutlined />}
+              style={{
+                backgroundColor: "#1890ff",
+                marginBottom: 16,
+                fontSize: 36,
               }}
-            >
-              <Avatar
-                sx={{
-                  width: 120,
-                  height: 120,
-                  fontSize: 48,
-                  bgcolor: "primary.main",
-                  mb: 2,
-                }}
-              >
-                {username?.charAt(0).toUpperCase()}
-              </Avatar>
+            />
+            <Title level={3}>
+              {editMode ? formData.full_name : full_name || username}
+            </Title>
+          </div>
 
-              <Typography variant="h5" component="h1" gutterBottom>
-                {full_name || username}
-              </Typography>
-
-              <Chip
-                icon={<AdminIcon />}
-                label="Администратор"
-                color="primary"
-                variant="outlined"
-                sx={{ mb: 2 }}
-              />
-
-              <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
-                {!editMode ? (
-                  <>
-                    <Button
-                      variant="outlined"
-                      startIcon={<EditIcon />}
-                      onClick={handleEditClick}
-                    >
-                      Редактировать
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<PasswordIcon />}
-                      onClick={() => console.log("Смена пароля")}
-                    >
-                      Пароль
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="contained"
-                      startIcon={<SaveIcon />}
-                      onClick={handleSaveClick}
-                    >
-                      Сохранить
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<CancelIcon />}
-                      onClick={handleCancelEdit}
-                    >
-                      Отмена
-                    </Button>
-                  </>
-                )}
-              </Box>
-            </Box>
-
-            <Divider sx={{ my: 2 }} />
-
-            <List>
-              <ListItem>
-                <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: "background.default" }}>
-                    <PersonIcon color="action" />
-                  </Avatar>
-                </ListItemAvatar>
-                {editMode ? (
-                  <TextField
-                    fullWidth
-                    label="Полное имя"
-                    name="full_name"
-                    value={formData.full_name}
-                    onChange={handleInputChange}
-                    size="small"
-                  />
-                ) : (
-                  <ListItemText
-                    primary="Имя"
-                    secondary={full_name || "Не указано"}
-                  />
-                )}
-              </ListItem>
-
-              <ListItem>
-                <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: "background.default" }}>
-                    <EmailIcon color="action" />
-                  </Avatar>
-                </ListItemAvatar>
-                {editMode ? (
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    size="small"
-                    type="email"
-                  />
-                ) : (
-                  <ListItemText
-                    primary="Email"
-                    secondary={email || "Не указан"}
-                  />
-                )}
-              </ListItem>
-
-              <ListItem>
-                <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: "background.default" }}>
-                    <PhoneIcon color="action" />
-                  </Avatar>
-                </ListItemAvatar>
-                {editMode ? (
-                  <TextField
-                    fullWidth
-                    label="Телефон"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    size="small"
-                  />
-                ) : (
-                  <ListItemText
-                    primary="Телефон"
-                    secondary={phone || "Не указан"}
-                  />
-                )}
-              </ListItem>
-
-              <ListItem>
-                <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: "background.default" }}>
-                    <HomeIcon color="action" />
-                  </Avatar>
-                </ListItemAvatar>
-                {editMode ? (
-                  <TextField
-                    fullWidth
-                    label="Адрес"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    size="small"
-                    multiline
-                    rows={2}
-                  />
-                ) : (
-                  <ListItemText
-                    primary="Адрес"
-                    secondary={address || "Не указан"}
-                  />
-                )}
-              </ListItem>
-            </List>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              fullWidth
-              onClick={() => setOpenDeleteDialog(true)}
-            >
-              Удалить аккаунт
-            </Button>
-          </Paper>
-        </Grid>
-
-        {/* Правая колонка - вкладки администратора */}
-        <Grid item xs={12} md={8}>
-          <Paper elevation={3} sx={{ borderRadius: 2 }}>
-            <Tabs
-              value={tabValue}
-              onChange={(e, newValue) => setTabValue(newValue)}
-              variant="scrollable"
-              scrollButtons="auto"
-            >
-              {adminTabs.map((tab, index) => (
-                <Tab key={index} label={tab.label} icon={tab.icon} />
-              ))}
-            </Tabs>
-
-            <Box sx={{ p: 3 }}>
-              {tabValue === 0 && (
-                <Card>
-                  <CardHeader title="Статистика системы" />
-                  <CardContent>
-                    <Typography>Здесь будет статистика</Typography>
-                  </CardContent>
-                </Card>
-              )}
-
-              {tabValue === 1 && (
-                <>
-                  <Typography variant="h6" gutterBottom>
-                    Управление пользователями
-                  </Typography>
-                  {loading ? (
-                    <CircularProgress />
-                  ) : (
-                    <List>
-                      {users.map((user) => (
-                        <ListItem key={user.id}>
-                          <ListItemText
-                            primary={user.username}
-                            secondary={user.email}
-                          />
-                        </ListItem>
-                      ))}
-                    </List>
-                  )}
-                </>
-              )}
-
-              {tabValue === 2 && (
-                <Card>
-                  <CardHeader title="Файлы системы" />
-                  <CardContent>
-                    <Typography>Здесь будут файлы</Typography>
-                  </CardContent>
-                </Card>
-              )}
-
-              {tabValue === 3 && (
-                <Card>
-                  <CardHeader title="Новости" />
-                  <CardContent>
-                    <Typography>Здесь будут новости</Typography>
-                  </CardContent>
-                </Card>
-              )}
-
-              {tabValue === 4 && (
-                <Card>
-                  <CardHeader title="Настройки системы" />
-                  <CardContent>
-                    <Typography>Здесь будут настройки</Typography>
-                  </CardContent>
-                </Card>
-              )}
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
-
-      {/* Диалог удаления аккаунта */}
-      <Dialog
-        open={openDeleteDialog}
-        onClose={() => setOpenDeleteDialog(false)}
-      >
-        <DialogTitle>Подтверждение удаления</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя
-            отменить.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)}>Отмена</Button>
-          <Button
-            onClick={handleDeleteAccount}
-            color="error"
-            variant="contained"
+          <Descriptions
+            title="Информация администратора"
+            column={1}
+            bordered
+            labelStyle={{ fontWeight: 500 }}
           >
-            Удалить
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+            <Descriptions.Item label="Имя">
+              {editMode ? (
+                <input
+                  type="text"
+                  name="full_name"
+                  value={formData.full_name}
+                  onChange={handleInputChange}
+                  style={{
+                    border: "1px solid #d9d9d9",
+                    borderRadius: 4,
+                    padding: "4px 8px",
+                    width: "100%",
+                  }}
+                />
+              ) : (
+                full_name || "Не указано"
+              )}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Email">
+              <MailOutlined />
+              {editMode ? (
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  style={{
+                    border: "1px solid #d9d9d9",
+                    borderRadius: 4,
+                    padding: "4px 8px",
+                    width: "100%",
+                    marginLeft: 8,
+                  }}
+                />
+              ) : (
+                <>{email || "Не указан"}</>
+              )}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Телефон">
+              <PhoneOutlined />
+              {editMode ? (
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  style={{
+                    border: "1px solid #d9d9d9",
+                    borderRadius: 4,
+                    padding: "4px 8px",
+                    width: "100%",
+                    marginLeft: 8,
+                  }}
+                />
+              ) : (
+                phone || "Не указан"
+              )}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Адрес">
+              <HomeOutlined />
+              {editMode ? (
+                <textarea
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  style={{
+                    border: "1px solid #d9d9d9",
+                    borderRadius: 4,
+                    padding: "4px 8px",
+                    width: "100%",
+                    marginLeft: 8,
+                    minHeight: 60,
+                  }}
+                />
+              ) : (
+                address || "Не указан"
+              )}
+            </Descriptions.Item>
+          </Descriptions>
+        </>
+      </Col>
+    </Row>
   );
 };
 
