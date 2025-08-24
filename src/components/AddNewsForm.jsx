@@ -166,7 +166,7 @@ const AddNewsForm = () => {
   }, [page, pageSize]);
 
   const handleSubmit = async (values) => {
-     console.log('Отправляемые данные:', values);
+    console.log("Отправляемые данные:", values);
     setLoading(true);
 
     try {
@@ -250,24 +250,24 @@ const AddNewsForm = () => {
     }
   };
 
-const handleImageUpload = (info) => {
-  if (info.file.status === "done") {
-    let imageUrl = info.file.response.data.url;
-    
-    // Добавляем префикс, если URL не абсолютный (не начинается с http)
-    if (!imageUrl.startsWith('http')) {
-      imageUrl = `https://edutalks.ru/${imageUrl}`;
+  const handleImageUpload = (info) => {
+    if (info.file.status === "done") {
+      let imageUrl = info.file.response.data.url;
+
+      // Добавляем префикс, если URL не абсолютный (не начинается с http)
+      if (!imageUrl.startsWith("http")) {
+        imageUrl = `https://edutalks.ru/${imageUrl}`;
+      }
+
+      console.log("Загруженный URL:", imageUrl);
+      form.setFieldsValue({ image_url: imageUrl });
+      setFormData((prev) => ({ ...prev, image_url: imageUrl }));
+      message.success("Изображение успешно загружено");
+    } else if (info.file.status === "error") {
+      console.error("Ошибка загрузки:", info.file.error);
+      message.error("Ошибка загрузки изображения");
     }
-    
-    console.log('Загруженный URL:', imageUrl);
-    form.setFieldsValue({ image_url: imageUrl });
-    setFormData((prev) => ({ ...prev, image_url: imageUrl }));
-    message.success("Изображение успешно загружено");
-  } else if (info.file.status === "error") {
-    console.error('Ошибка загрузки:', info.file.error);
-    message.error("Ошибка загрузки изображения");
-  }
-};
+  };
 
   const handleDelete = async (id) => {
     setLoading(true);
@@ -329,6 +329,12 @@ const handleImageUpload = (info) => {
     [formData]
   );
 
+  function decodeHtmlEntities(str) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = str;
+    return txt.value;
+  }
+
   const getStickerColor = (sticker) => {
     const colors = {
       Новость: "blue",
@@ -347,6 +353,12 @@ const handleImageUpload = (info) => {
       return dateString;
     }
   };
+
+  function decodeHtmlEntities(str) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = str;
+    return txt.value;
+  }
 
   const NewsCardPreview = React.memo(
     ({
@@ -453,8 +465,7 @@ const handleImageUpload = (info) => {
                   textOverflow: "ellipsis",
                 }}
                 dangerouslySetInnerHTML={{
-                  __html:
-                    content.replace(/<[^>]*>/g, "").substring(0, 100) + "...",
+                  __html: decodeHtmlEntities(content),
                 }}
               />
             )}
@@ -656,10 +667,7 @@ const handleImageUpload = (info) => {
                     disabled={loading}
                   />
                 </Form.Item>
-                <Form.Item
-                  label="Или загрузите изображение"
-                  
-                >
+                <Form.Item label="Или загрузите изображение">
                   <Upload
                     name="file"
                     action="https://edutalks.ru/api/admin/news/upload"
@@ -1079,7 +1087,9 @@ const handleImageUpload = (info) => {
 
               <div style={{ padding: "24px" }}>
                 <div
-                  dangerouslySetInnerHTML={{ __html: selectedNews.content }}
+                  dangerouslySetInnerHTML={{
+                    __html: decodeHtmlEntities(selectedNews.content),
+                  }}
                   style={{
                     fontSize: 16,
                     lineHeight: 1.8,
@@ -1089,19 +1099,6 @@ const handleImageUpload = (info) => {
               </div>
 
               <Divider />
-
-              <div style={{ textAlign: "center", paddingBottom: 24 }}>
-                <Tag
-                  icon={<FireOutlined />}
-                  color="red"
-                  style={{
-                    fontSize: 14,
-                    padding: "8px 16px",
-                  }}
-                >
-                  Актуальная новость
-                </Tag>
-              </div>
             </div>
           )}
         </Modal>

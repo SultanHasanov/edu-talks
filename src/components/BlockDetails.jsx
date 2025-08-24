@@ -206,19 +206,27 @@ const BlockDetails = () => {
     };
   }, [handleDownload]);
 
-  const block = useMemo(() => {
-    if (!newsItem) return null;
+  const decodeHtml = (html) => {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
+};
 
-    return {
-      id: newsItem.id,
-      title: newsItem.title,
-      type: newsItem.sticker,
-      content: processHtmlContent(newsItem.content),
-      date: newsItem.created_at,
-      image: newsItem.image_url,
-      color: newsItem.color,
-    };
-  }, [newsItem]);
+
+ const block = useMemo(() => {
+  if (!newsItem) return null;
+
+  return {
+    id: newsItem.id,
+    title: newsItem.title,
+    type: newsItem.sticker,
+    content: processHtmlContent(decodeHtml(newsItem.content)), // ✅ здесь декодируем
+    date: newsItem.created_at,
+    image: newsItem.image_url,
+    color: newsItem.color,
+  };
+}, [newsItem]);
+
 
   if (loading) {
     return (
@@ -356,18 +364,7 @@ const BlockDetails = () => {
 
           <Divider />
 
-          <div style={{ textAlign: "center" }}>
-            <Tag
-              icon={<FireOutlined />}
-              color="red"
-              style={{
-                fontSize: 14,
-                padding: "8px 16px",
-              }}
-            >
-              Актуальная новость
-            </Tag>
-          </div>
+          
         </Card>
       </Ribbon>
     </div>
