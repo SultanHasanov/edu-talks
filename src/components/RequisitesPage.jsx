@@ -142,7 +142,7 @@ export const RequisitesPage = () => {
         </Typography.Title>
         <Descriptions column={1} bordered>
           <Descriptions.Item label="Email">
-            {renderCopyableText("esutalks@mail.ru")}
+            {renderCopyableText("eset_dzhabrailova@vk.com")}
           </Descriptions.Item>
           <Descriptions.Item label="Телефон">
             {renderCopyableText("+7 (963) 777-50-13")}

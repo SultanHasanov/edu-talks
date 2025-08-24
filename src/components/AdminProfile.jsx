@@ -12,6 +12,7 @@ import {
   Alert,
   Checkbox,
   Modal,
+  Space,
 } from "antd";
 import {
   UserOutlined,
@@ -49,6 +50,7 @@ const AdminProfile = () => {
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState("profile");
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [userData, setUserData] = useState({});
 
   const [formData, setFormData] = useState({
     full_name: full_name || "",
@@ -58,7 +60,40 @@ const AdminProfile = () => {
     email_subscription: false,
     email_verified: false,
   });
-console.log({formData})
+
+  // Загрузка профиля пользователя
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get("https://edutalks.ru/api/profile", {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
+        setUserData(response.data.data);
+        // Обновляем formData данными из API
+        setFormData(prev => ({
+          ...prev,
+          full_name: response.data.data.full_name || full_name || "",
+          email: response.data.data.email || email || "",
+          phone: response.data.data.phone || phone || "",
+          address: response.data.data.address || address || "",
+          email_verified: response.data.data.email_verified || false,
+        }));
+      } catch (error) {
+        console.error("Ошибка при загрузке профиля:", error);
+        message.error("Не удалось загрузить профиль");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (access_token) {
+      fetchProfile();
+    }
+  }, [access_token]);
+
   // Загрузка пользователей для админа
   useEffect(() => {
     if (activeTab === "users") {
@@ -88,12 +123,12 @@ console.log({formData})
   const handleEditClick = () => {
     setEditMode(true);
     setFormData({
-      full_name: full_name || "",
-      email: email || "",
-      phone: phone || "",
-      address: address || "",
+      full_name: userData.full_name || full_name || "",
+      email: userData.email || email || "",
+      phone: userData.phone || phone || "",
+      address: userData.address || address || "",
       email_subscription: formData.email_subscription,
-      email_verified: formData.email_verified,
+      email_verified: userData.email_verified || false,
     });
   };
 
@@ -148,10 +183,24 @@ console.log({formData})
   const handleCheckVerification = async () => {
     setCheckingVerification(true);
     try {
-      // Логика проверки верификации
-      setCheckingVerification(false);
+      const response = await axios.get("https://edutalks.ru/api/profile", {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+      setUserData(response.data.data);
+      if (response.data.data.email_verified) {
+        message.success("Почта успешно подтверждена!");
+        setVerificationSent(false);
+      } else {
+        message.info(
+          "Почта еще не подтверждена. Пожалуйста, проверьте вашу почту."
+        );
+      }
     } catch (error) {
+      console.error("Ошибка при проверке подтверждения:", error);
       message.error("Не удалось проверить статус подтверждения");
+    } finally {
       setCheckingVerification(false);
     }
   };
@@ -160,6 +209,14 @@ console.log({formData})
     setDeleteModalVisible(false);
     message.success("Аккаунт удален");
   };
+
+  if (loading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <Row justify="center" style={{ marginTop: 50, marginBottom: 50 }}>
@@ -176,7 +233,7 @@ console.log({formData})
               }}
             />
             <Title level={3}>
-              {editMode ? formData.full_name : full_name || username}
+              {editMode ? formData.full_name : userData.full_name || full_name || username}
             </Title>
           </div>
 
@@ -201,7 +258,7 @@ console.log({formData})
                   }}
                 />
               ) : (
-                full_name || "Не указано"
+                userData.full_name || full_name || "Не указано"
               )}
             </Descriptions.Item>
 
@@ -222,7 +279,12 @@ console.log({formData})
                   }}
                 />
               ) : (
-                <>{email || "Не указан"}</>
+                <>{userData.email || email || "Не указан"}</>
+              )}
+              {userData.email_verified ? (
+                <CheckCircleOutlined style={{ color: "green", marginLeft: 8 }} />
+              ) : (
+                <CloseCircleOutlined style={{ color: "red", marginLeft: 8 }} />
               )}
             </Descriptions.Item>
 
@@ -243,7 +305,7 @@ console.log({formData})
                   }}
                 />
               ) : (
-                phone || "Не указан"
+                userData.phone || phone || "Не указан"
               )}
             </Descriptions.Item>
 
@@ -264,10 +326,47 @@ console.log({formData})
                   }}
                 />
               ) : (
-                address || "Не указан"
+                userData.address || address || "Не указан"
               )}
             </Descriptions.Item>
           </Descriptions>
+
+          {/* Кнопки действий */}
+          <div style={{ marginTop: 24, textAlign: "center" }}>
+            <Space size="middle">
+             
+              
+              <Button
+                icon={<SyncOutlined />}
+                loading={checkingVerification}
+                onClick={handleCheckVerification}
+              >
+                Проверить почту
+              </Button>
+            </Space>
+          </div>
+
+          {/* Статус верификации email */}
+          {!userData.email_verified && (
+            <Alert
+              message="Email не подтвержден"
+              description={
+                <div>
+                  <p>Для полного доступа к функциям подтвердите ваш email</p>
+                  <Button 
+                    type="link" 
+                    onClick={handleResendVerification}
+                    disabled={verificationSent}
+                  >
+                    Отправить письмо повторно
+                  </Button>
+                </div>
+              }
+              type="warning"
+              showIcon
+              style={{ marginTop: 24 }}
+            />
+          )}
         </>
       </Col>
     </Row>

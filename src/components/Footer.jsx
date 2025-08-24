@@ -44,17 +44,17 @@ const AppFooter = () => {
             <Space direction="vertical" size="middle">
               <Space>
                 <Avatar
-  shape="square"
-  src="../logo.png" // Путь к изображению в папке public
-  style={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 70, // Укажите нужную ширину
-    height: 70, // Укажите нужную высоту
-    backgroundColor: "transparent" // Убираем фиолетовый фон
-  }}
-/>
+                  shape="square"
+                  src="../logo.png" // Путь к изображению в папке public
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 70, // Укажите нужную ширину
+                    height: 70, // Укажите нужную высоту
+                    backgroundColor: "transparent", // Убираем фиолетовый фон
+                  }}
+                />
                 <Typography.Title
                   level={4}
                   style={{
@@ -72,7 +72,11 @@ const AppFooter = () => {
               <Space size="middle">
                 <Button type="text" shape="circle" icon={<GithubOutlined />} />
                 <Button type="text" shape="circle" icon={<TwitterOutlined />} />
-                <Button type="text" shape="circle" icon={<LinkedinOutlined />} />
+                <Button
+                  type="text"
+                  shape="circle"
+                  icon={<LinkedinOutlined />}
+                />
               </Space>
             </Space>
           </Col>
@@ -83,10 +87,18 @@ const AppFooter = () => {
             </Typography.Title>
             <Space direction="vertical" size="middle">
               <Space>
-                <MailOutlined />
-                <Typography.Link href="mailto:esutalks@mail.ru">
-                  esutalks@mail.ru
-                </Typography.Link>
+                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                
+                <Typography.Link href="mailto:eset_dzhabrailova@vk.com">
+                 <MailOutlined /> eset_dzhabrailova@vk.com
+                </Typography.Link>{" "}
+                <Typography.Link 
+                    href="tel:+79637775013"
+                    style={{ color: token.colorTextSecondary }}
+                  >
+                    +7 (963) 777-50-13
+                  </Typography.Link>
+                  </div>
               </Space>
               <Space>
                 <Typography.Link onClick={() => navigate("/requisites")}>
@@ -94,11 +106,13 @@ const AppFooter = () => {
                 </Typography.Link>
               </Space>
               <Space>
-                <Typography.Link onClick={() => navigate("/payments-and-refunds")}>
+                <Typography.Link
+                  onClick={() => navigate("/payments-and-refunds")}
+                >
                   Оплата и возвраты
                 </Typography.Link>
               </Space>
-               <Space>
+              <Space>
                 <Typography.Link onClick={() => navigate("/offer")}>
                   Договор-оферта
                 </Typography.Link>

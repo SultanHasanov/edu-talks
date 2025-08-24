@@ -12,7 +12,7 @@ import {
   IconButton,
   InputAdornment,
   Alert,
-  Checkbox
+  Checkbox,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -23,10 +23,8 @@ import {
   Home as HomeIcon,
   Phone as PhoneIcon,
 } from "@mui/icons-material";
-import BackButtonIcon from "../ui/BackButtonIcon";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-
 
 const AuthPage = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -42,7 +40,7 @@ const AuthPage = () => {
   const [authError, setAuthError] = useState("");
   const [regError, setRegError] = useState("");
   const [regSuccess, setRegSuccess] = useState(false);
-const [agreeWithTerms, setAgreeWithTerms] = useState(false);
+  const [agreeWithTerms, setAgreeWithTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login, logout, isAuthenticated, username } = useAuth();
   const [successMessage, setSuccessMessage] = useState("");
@@ -67,56 +65,66 @@ const [agreeWithTerms, setAgreeWithTerms] = useState(false);
     setShowPassword(!showPassword);
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setAuthError("");
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setAuthError("");
 
-    if (!formData.username || !formData.password) {
-      setAuthError("Пожалуйста, заполните все поля");
-      return;
+  if (!formData.username || !formData.password) {
+    setAuthError("Пожалуйста, заполните все поля");
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    console.log("Отправка запроса на авторизацию:", {
+      username: formData.username,
+      password: "***" // Не логируйте реальный пароль!
+    });
+
+    const response = await fetch("https://edutalks.ru/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: formData.username,
+        password: formData.password,
+      }),
+    });
+
+    console.log("Статус ответа:", response.status);
+    console.log("Заголовки ответа:", Object.fromEntries(response.headers.entries()));
+
+    // Читаем тело ответа безопасно
+    let data;
+    const contentType = response.headers.get("Content-Type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      data = { message: text };
     }
 
-    setIsLoading(true);
-    try {
-      const response = await fetch("https://edutalks.ru/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-        }),
-      });
+    console.log("Полный ответ сервера:", data);
 
-      // Читаем тело ответа безопасно
-      let data;
-      const contentType = response.headers.get("Content-Type");
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        data = { message: text };
-      }
-
-      if (!response.ok) {
-        throw new Error(data.message || "Ошибка авторизации");
-      }
-
-      console.log(data);
-      login(
-        data.data.access_token,
-        data.data.role,
-        data.data.username,
-        data.data.full_name
-      );
-      navigate("/recomm");
-    } catch (error) {
-      setAuthError(error.message || "Неверный логин или пароль");
-    } finally {
-      setIsLoading(false);
+    if (!response.ok) {
+      throw new Error(data.message || "Ошибка авторизации");
     }
-  };
+
+    console.log("Успешный ответ:", data);
+    login(
+      data.data.access_token,
+      data.data.role,
+      data.data.username,
+      data.data.full_name    );
+    navigate("/recomm");
+  } catch (error) {
+    console.error("Ошибка авторизации:", error);
+    setAuthError(error.message || "Неверный логин или пароль");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -136,9 +144,9 @@ const [agreeWithTerms, setAgreeWithTerms] = useState(false);
     }
 
     if (!agreeWithTerms) {
-  setRegError("Необходимо согласиться с пользовательским соглашением");
-  return;
-}
+      setRegError("Необходимо согласиться с пользовательским соглашением");
+      return;
+    }
 
     if (formData.password.length < 6) {
       setRegError("Пароль должен содержать минимум 6 символов");
@@ -160,8 +168,8 @@ const [agreeWithTerms, setAgreeWithTerms] = useState(false);
       const contentType = response.headers.get("Content-Type");
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
-        
-        console.log("Текстовый ответ:", data); 
+
+        console.log("Текстовый ответ:", data);
       } else {
         data = await response.json();
       }
@@ -404,28 +412,27 @@ const [agreeWithTerms, setAgreeWithTerms] = useState(false);
               />
 
               <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-  <Checkbox
-    checked={agreeWithTerms}
-    onChange={(e) => setAgreeWithTerms(e.target.checked)}
-    name="terms"
-    sx={{ mr: 1 }}
-  />
-  <Typography
-    variant="body2"
-    color="primary"
-    component="a"
-    href="/Пользовательское_соглашение.docx"
-    download
-    target="_blank"
-    sx={{
-      textDecoration: "underline",
-      cursor: "pointer",
-    }}
-  >
-    Я согласен с пользовательским соглашением
-  </Typography>
-</Box>
-
+                <Checkbox
+                  checked={agreeWithTerms}
+                  onChange={(e) => setAgreeWithTerms(e.target.checked)}
+                  name="terms"
+                  sx={{ mr: 1 }}
+                />
+                <Typography
+                  variant="body2"
+                  color="primary"
+                  component="a"
+                  href="/Пользовательское_соглашение.docx"
+                  download
+                  target="_blank"
+                  sx={{
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
+                >
+                  Я согласен с пользовательским соглашением
+                </Typography>
+              </Box>
 
               <Button
                 fullWidth

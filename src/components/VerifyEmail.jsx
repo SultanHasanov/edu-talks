@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Modal, Spin } from 'antd';
-import axios from 'axios';
 
 export default function VerifyEmail() {
   const location = useLocation();
@@ -14,7 +13,7 @@ export default function VerifyEmail() {
       title,
       content,
       okText: 'ОК',
-      onOk: () => navigate('/'), // редирект на главную
+      onOk: () => navigate('/profile'),
     });
   };
 
