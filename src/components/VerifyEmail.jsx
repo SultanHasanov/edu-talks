@@ -18,29 +18,21 @@ export default function VerifyEmail() {
     });
   };
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const token = params.get('token');
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const status = params.get('status');
+  const reason = params.get('reason');
 
-    if (!token) {
-      showModal('Ошибка', 'Токен не найден в ссылке', false);
-      setLoading(false);
-      return;
-    }
-
-    axios
-      .post('https://edutalks.ru/api/verify-email', { token }) // Или GET: `/api/auth/verify-email?token=${token}`
-      .then(() => {
-        showModal('Почта подтверждена', 'Вы успешно подтвердили свою почту ✅', true);
-      })
-      .catch((error) => {
-        console.error('Ошибка подтверждения:', error);
-        showModal('Ошибка', 'Ссылка недействительна или уже использована', false);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [location.search]);
+  if (status === 'success') {
+    showModal('Почта подтверждена', 'Вы успешно подтвердили почту ✅', true);
+  } else {
+    let message = 'Ссылка недействительна или уже использована';
+    if (reason === 'expired') message = 'Срок действия ссылки истёк';
+    if (reason === 'missing') message = 'Токен не найден в ссылке';
+    showModal('Ошибка', message, false);
+  }
+  setLoading(false);
+}, [location.search]);
 
   return (
     <div style={{ textAlign: 'center', marginTop: 100 }}>

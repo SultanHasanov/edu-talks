@@ -44,7 +44,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <Route path="/setting" element={<Setting />} />
             <Route path="/subscription" element={<SubscriptionPage />} />
             <Route path="/requisites" element={<RequisitesPage />} />
-            <Route path="/api/verify-email" element={<VerifyEmail />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route
               path="/payments-and-refunds"
               element={<PaymentsAndRefunds />}
