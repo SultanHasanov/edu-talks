@@ -55,7 +55,9 @@ const { confirm } = Modal;
 
 const Setting = () => {
   const { role, email, phone, address, full_name } = useAuth();
-  const [activeTab, setActiveTab] = useState("1");
+  const [activeTab, setActiveTab] = useState(
+    localStorage.getItem("settingsActiveTab") || "1"
+  );
   const [editMode, setEditMode] = useState(false);
   const [users, setUsers] = useState([]);
   const [usersAll, setUsersAll] = useState([]);
@@ -224,6 +226,8 @@ const Setting = () => {
 
   const handleTabChange = (key) => {
     setActiveTab(key);
+    // Сохраняем активную вкладку в localStorage
+    localStorage.setItem("settingsActiveTab", key);
   };
 
   const handleEditClick = () => {

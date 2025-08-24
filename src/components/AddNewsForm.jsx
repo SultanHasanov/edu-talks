@@ -41,8 +41,8 @@ import {
   PlusOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -90,37 +90,40 @@ const AddNewsForm = () => {
   // Модули для редактора
   const modules = {
     toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['blockquote', 'code-block'],
-      ['link', 'image'],
-      [{ 'align': [] }],
-      ['clean']
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["blockquote", "code-block"],
+      ["link", "image"],
+      [{ align: [] }],
+      ["clean"],
     ],
   };
 
   const formats = [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet',
-    'blockquote', 'code-block',
-    'link', 'image',
-    'align'
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "blockquote",
+    "code-block",
+    "link",
+    "image",
+    "align",
   ];
 
   const stickerOptions = ["Новость", "Рекомендации", "Важно", "Обновление"];
 
   const fetchFiles = async () => {
     try {
-      const response = await fetch(
-        "https://edutalks.ru/api/admin/files",
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
+      const response = await fetch("https://edutalks.ru/api/admin/files", {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
       const data = await response.json();
       setFiles(data.data);
     } catch (error) {
@@ -163,20 +166,18 @@ const AddNewsForm = () => {
   }, [page, pageSize]);
 
   const handleSubmit = async (values) => {
+     console.log('Отправляемые данные:', values);
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "https://edutalks.ru/api/admin/news",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access_token}`,
-          },
-          body: JSON.stringify(values),
-        }
-      );
+      const response = await fetch("https://edutalks.ru/api/admin/news", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+        body: JSON.stringify(values),
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -249,19 +250,35 @@ const AddNewsForm = () => {
     }
   };
 
+const handleImageUpload = (info) => {
+  if (info.file.status === "done") {
+    let imageUrl = info.file.response.data.url;
+    
+    // Добавляем префикс, если URL не абсолютный (не начинается с http)
+    if (!imageUrl.startsWith('http')) {
+      imageUrl = `https://edutalks.ru/${imageUrl}`;
+    }
+    
+    console.log('Загруженный URL:', imageUrl);
+    form.setFieldsValue({ image_url: imageUrl });
+    setFormData((prev) => ({ ...prev, image_url: imageUrl }));
+    message.success("Изображение успешно загружено");
+  } else if (info.file.status === "error") {
+    console.error('Ошибка загрузки:', info.file.error);
+    message.error("Ошибка загрузки изображения");
+  }
+};
+
   const handleDelete = async (id) => {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `https://edutalks.ru/api/admin/news/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
+      const response = await fetch(`https://edutalks.ru/api/admin/news/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -435,8 +452,9 @@ const AddNewsForm = () => {
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                 }}
-                dangerouslySetInnerHTML={{ 
-                  __html: content.replace(/<[^>]*>/g, '').substring(0, 100) + '...' 
+                dangerouslySetInnerHTML={{
+                  __html:
+                    content.replace(/<[^>]*>/g, "").substring(0, 100) + "...",
                 }}
               />
             )}
@@ -511,13 +529,10 @@ const AddNewsForm = () => {
     try {
       setLoadingFileId(fileId);
 
-      const response = await fetch(
-        `https://edutalks.ru/api/files/${fileId}`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${access_token}` },
-        }
-      );
+      const response = await fetch(`https://edutalks.ru/api/files/${fileId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
 
       if (response.ok) {
         const blob = await response.blob();
@@ -543,9 +558,9 @@ const AddNewsForm = () => {
   };
 
   const handleUpload = (info) => {
-    if (info.file.status === 'done') {
+    if (info.file.status === "done") {
       message.success(`${info.file.name} файл загружен успешно`);
-    } else if (info.file.status === 'error') {
+    } else if (info.file.status === "error") {
       message.error(`${info.file.name} ошибка загрузки файла`);
     }
   };
@@ -611,12 +626,12 @@ const AddNewsForm = () => {
                   <ReactQuill
                     value={formData.content}
                     onChange={(value) => {
-                      setFormData(prev => ({ ...prev, content: value }));
+                      setFormData((prev) => ({ ...prev, content: value }));
                       form.setFieldsValue({ content: value });
                     }}
                     modules={modules}
                     formats={formats}
-                    style={{ height: '300px', marginBottom: '50px' }}
+                    style={{ height: "300px", marginBottom: "50px" }}
                     placeholder="Начните писать вашу новость здесь..."
                   />
                 </Form.Item>
@@ -640,6 +655,22 @@ const AddNewsForm = () => {
                     prefix={<PictureOutlined />}
                     disabled={loading}
                   />
+                </Form.Item>
+                <Form.Item
+                  label="Или загрузите изображение"
+                  
+                >
+                  <Upload
+                    name="file"
+                    action="https://edutalks.ru/api/admin/news/upload"
+                    headers={{
+                      Authorization: `Bearer ${access_token}`,
+                    }}
+                    showUploadList={false}
+                    onChange={handleImageUpload}
+                  >
+                    <Button icon={<UploadOutlined />}>Выбрать</Button>
+                  </Upload>
                 </Form.Item>
 
                 <Row gutter={16}>
@@ -891,12 +922,12 @@ const AddNewsForm = () => {
                   <ReactQuill
                     value={editData.content}
                     onChange={(value) => {
-                      setEditData(prev => ({ ...prev, content: value }));
+                      setEditData((prev) => ({ ...prev, content: value }));
                       editForm.setFieldsValue({ content: value });
                     }}
                     modules={modules}
                     formats={formats}
-                    style={{ height: '300px', marginBottom: '50px' }}
+                    style={{ height: "300px", marginBottom: "50px" }}
                     placeholder="Редактируйте содержание новости..."
                   />
                 </Form.Item>
@@ -1047,12 +1078,12 @@ const AddNewsForm = () => {
               </Badge.Ribbon>
 
               <div style={{ padding: "24px" }}>
-                <div 
-                  dangerouslySetInnerHTML={{ __html: selectedNews.content }} 
-                  style={{ 
-                    fontSize: 16, 
+                <div
+                  dangerouslySetInnerHTML={{ __html: selectedNews.content }}
+                  style={{
+                    fontSize: 16,
                     lineHeight: 1.8,
-                    fontFamily: 'inherit'
+                    fontFamily: "inherit",
                   }}
                 />
               </div>
@@ -1082,7 +1113,8 @@ const AddNewsForm = () => {
           onOk={() => {
             if (selectedFile) {
               const currentContent = form.getFieldValue("content") || "";
-              const displayText = selectedFile.description || selectedFile.filename;
+              const displayText =
+                selectedFile.description || selectedFile.filename;
               const newContent = `${currentContent}\n[${displayText}](file:${selectedFile.id}|${selectedFile.filename})`;
 
               form.setFieldsValue({

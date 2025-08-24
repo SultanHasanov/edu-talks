@@ -175,14 +175,18 @@ const Layout = ({ children }) => {
             {/* Search */}
             <Box
               sx={{
-                flex: 1,
-                maxWidth: "400px",
-                mx: 4,
-                transition: "max-width 0.3s ease-in-out",
-                "&:focus-within": {
-                  maxWidth: "500px",
-                },
-              }}
+    flex: 1,
+    maxWidth: "400px",
+    mx: 4,
+    transition: "max-width 0.3s ease-in-out",
+    "&:focus-within": {
+      maxWidth: "500px",
+    },
+    // Медиа-запрос для скрытия при max-width: 500px
+    "@media (max-width: 500px)": {
+      display: "none",
+    },
+  }}
             >
               <TextField
                 fullWidth
