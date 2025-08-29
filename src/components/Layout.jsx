@@ -92,7 +92,7 @@ const Layout = ({ children }) => {
 
     if (response.ok) {
       const data = await response.json();
-      const items = data.data?.items || [];
+      const items = data.data?.data || [];
       
       // Извлекаем объекты tab из каждого элемента и фильтруем активные
       const serverTabs = items

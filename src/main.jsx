@@ -12,7 +12,6 @@ import ScriptSection from "./pages/ScriptSection.jsx";
 import BlockDetails from "./components/BlockDetails.jsx";
 import Setting from "./pages/Setting.jsx";
 import LegalSection from "./pages/LegalSection.jsx";
-import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
 import SubscriptionPage from "./components/SubscriptionPage.jsx";
 import PaymentSuccess from "./components/PaymentSuccess.jsx";
 import { RequisitesPage } from "./components/RequisitesPage.jsx";
@@ -26,7 +25,6 @@ import DynamicRoutes from "./components/DynamicRoutes.jsx";
 const TabPage = ({ title }) => <h2>{title}</h2>;
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <ErrorBoundary>
       <AuthProvider>
         <Routes>
           {/* Лендинг-страница как главная */}
@@ -59,6 +57,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/payment-success" element={<PaymentSuccess />} />
         </Routes>
       </AuthProvider>
-    </ErrorBoundary>
   </BrowserRouter>
 );

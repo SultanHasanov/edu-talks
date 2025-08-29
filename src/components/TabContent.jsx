@@ -35,7 +35,7 @@ const TabContent = ({ tabSlug }) => {
         const data = await response.json();
         
         // Находим нужный таб по slug
-        const foundTab = data.data.items.find(item => 
+        const foundTab = data.data.data.find(item => 
           item.tab.slug === tabSlug
         );
         

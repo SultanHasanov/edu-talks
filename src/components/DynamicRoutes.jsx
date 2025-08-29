@@ -22,7 +22,7 @@ const DynamicRoutes = () => {
         const data = await response.json();
         
         // Извлекаем активные табы
-        const activeTabs = data.data.items
+        const activeTabs = data.data.data
           .filter(item => item.tab.is_active)
           .map(item => item.tab);
 

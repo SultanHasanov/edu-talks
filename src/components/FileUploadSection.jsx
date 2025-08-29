@@ -47,9 +47,55 @@ const FileUploadSection = () => {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [category, setCategory] = useState(null);
+  const [sectionId, setSectionId] = useState(null);
+  const [sections, setSections] = useState([]);
+  const [sectionsLoading, setSectionsLoading] = useState(false);
   const access_token = localStorage.getItem("access_token");
   const { role } = useAuth();
   const [previewLoading, setPreviewLoading] = useState(false);
+  console.log(Array.isArray(files), files);
+
+
+  // Функция для получения секций с API
+  const fetchSections = async () => {
+    try {
+      setSectionsLoading(true);
+      const response = await axios.get("https://edutalks.ru/api/taxonomy/tree", {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+      
+      // Извлекаем все секции из структуры данных
+      const allSections = [];
+      response.data.data.data.forEach(tab => {
+        if (tab.sections && tab.sections.length > 0) {
+          tab.sections.forEach(sectionItem => {
+            if (sectionItem.section && sectionItem.section.is_active) {
+              allSections.push({
+                id: sectionItem.section.id,
+                title: sectionItem.section.title,
+                tabTitle: tab.tab.title
+              });
+            }
+          });
+        }
+      });
+      
+      setSections(allSections);
+    } catch (error) {
+      console.error("Ошибка при загрузке секций:", error);
+      message.error("Не удалось загрузить список секций");
+    } finally {
+      setSectionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFiles();
+    fetchSections();
+  }, []);
+
   const handleOpenDetails = async (file) => {
     setSelectedFileDetails(file);
     setDetailsModalOpen(true);
@@ -120,7 +166,7 @@ const FileUploadSection = () => {
         },
       });
       const data = await response.json();
-      setFiles(data.data);
+     setFiles(data.data.data || []);
     } catch (error) {
       console.error("Error fetching files:", error);
       message.error("Ошибка при загрузке списка файлов");
@@ -128,10 +174,6 @@ const FileUploadSection = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchFiles();
-  }, []);
 
   const beforeUpload = (file) => {
     setSelectedFile(file);
@@ -149,6 +191,11 @@ const FileUploadSection = () => {
     formData.append("description", description);
     formData.append("is_public", isPublic);
     formData.append("category", category);
+    
+    // Добавляем section_id, если выбран
+    if (sectionId) {
+      formData.append("section_id", sectionId);
+    }
 
     try {
       setLoading(true);
@@ -169,6 +216,8 @@ const FileUploadSection = () => {
       setSelectedFile(null);
       setDescription("");
       setIsPublic(false);
+      setSectionId(null);
+      setCategory(null);
     } catch (err) {
       console.error("Ошибка загрузки:", err);
       message.error("Ошибка при загрузке файла");
@@ -266,6 +315,15 @@ const FileUploadSection = () => {
       },
     },
     {
+      title: "Секция",
+      dataIndex: "section_id",
+      key: "section",
+      render: (sectionId) => {
+        const section = sections.find(s => s.id === sectionId);
+        return section ? section.title : "Не указана";
+      },
+    },
+    {
       title: "Действия",
       key: "actions",
       align: "right",
@@ -347,12 +405,26 @@ const FileUploadSection = () => {
           <Select
             placeholder="Выберите категорию"
             style={{ width: "100%", marginBottom: 16 }}
+            value={category}
             onChange={(value) => setCategory(value)}
             options={[
               { value: "order", label: "Приказ" },
               { value: "template", label: "Шаблон" },
               { value: "scenario", label: "Сценарий" },
             ]}
+          />
+
+          <Select
+            placeholder="Выберите секцию"
+            style={{ width: "100%", marginBottom: 16 }}
+            value={sectionId}
+            onChange={(value) => setSectionId(value)}
+            loading={sectionsLoading}
+            options={sections.map(section => ({
+              value: section.id,
+              label: `${section.title} (${section.tabTitle})`
+            }))}
+            allowClear
           />
 
           <Checkbox
@@ -507,6 +579,11 @@ const FileUploadSection = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Категория">
                 {selectedFileDetails.category || "Не указана"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Секция">
+                {selectedFileDetails.section_id ? 
+                  (sections.find(s => s.id === selectedFileDetails.section_id)?.title || selectedFileDetails.section_id)
+                  : "Не указана"}
               </Descriptions.Item>
               <Descriptions.Item label="Статус">
                 <Tag
