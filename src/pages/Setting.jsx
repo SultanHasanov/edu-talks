@@ -48,6 +48,8 @@ import { useAuth } from "../context/AuthContext";
 import { fetchWithAuth } from "../utils/fetchWithAuth";
 import NotificationSender from "../components/NotificationSender";
 import ArticleEditor from "../components/ArticleEditor";
+import TabCreator from "../components/TabManager";
+import TabManager from "../components/TabManager";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -679,6 +681,19 @@ const Setting = () => {
               >
                 <div>
                   <ArticleEditor />
+                </div>
+              </TabPane>
+               <TabPane
+                tab={
+                  <Space>
+                    <ReadOutlined />
+                    Табы
+                  </Space>
+                }
+                key="7"
+              >
+                <div>
+                  <TabManager />
                 </div>
               </TabPane>
             </>

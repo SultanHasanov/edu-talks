@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -50,15 +50,11 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const [dynamicTabs, setDynamicTabs] = useState([]);
 
-  const tabLabels = [
-    "Рекомендации",
-    "Шаблоны",
-    "Сценарии",
-    "Правовая база",
-    "Для завучей",
-  ];
-  const tabRoutes = ["/recomm", "/templates", "/scripts", "/legal", "/zavuch"];
+  const tabRoutes = dynamicTabs.map((tab) => `${tab.slug}`);
+  const tabLabels = dynamicTabs.map((tab) => tab.title);
+
   const currentTabIndex = tabRoutes.findIndex(
     (route) =>
       location.pathname === route || location.pathname.startsWith(route + "/")
@@ -67,6 +63,82 @@ const Layout = ({ children }) => {
   const handleTabChange = (event, newValue) => {
     navigate(tabRoutes[newValue]);
   };
+
+  useEffect(() => {
+    fetchDynamicTabs();
+  }, []);
+
+ const fetchDynamicTabs = async () => {
+  try {
+    const response = await fetch("https://edutalks.ru/api/taxonomy/tree");
+    
+    // Постоянные табы по умолчанию
+    const defaultTabs = [
+      {
+        id: -1, // Уникальный отрицательный ID чтобы не конфликтовать с серверными
+        slug: "/recomm",
+        title: "Рекомендации",
+        position: 0, // Первая позиция
+        is_active: true
+      },
+      {
+        id: -2,
+        slug: "/zavuch", 
+        title: "Завуч",
+        position: 1, // Вторая позиция
+        is_active: true
+      }
+    ];
+
+    if (response.ok) {
+      const data = await response.json();
+      const items = data.data?.items || [];
+      
+      // Извлекаем объекты tab из каждого элемента и фильтруем активные
+      const serverTabs = items
+        .map((item) => item.tab)
+        .filter((tab) => tab && tab.is_active);
+      
+      // Объединяем постоянные табы с серверными
+      // Серверные табы идут после постоянных (position + 2)
+      const allTabs = [
+        ...defaultTabs,
+        ...serverTabs.map(tab => ({
+          ...tab,
+          position: tab.position + 2 // Сдвигаем позиции серверных табов
+        }))
+      ];
+      
+      // Сортируем по position для правильного порядка
+      allTabs.sort((a, b) => a.position - b.position);
+      
+      setDynamicTabs(allTabs);
+    } else {
+      // Если сервер не отвечает, используем только постоянные табы
+      setDynamicTabs(defaultTabs);
+      console.error("Ошибка загрузки табов:", response.status);
+    }
+  } catch (error) {
+    // При ошибке сети используем постоянные табы
+    setDynamicTabs([
+      {
+        id: -1,
+        slug: "/recomm",
+        title: "Рекомендации",
+        position: 0,
+        is_active: true
+      },
+      {
+        id: -2,
+        slug: "/zavuch",
+        title: "Завуч", 
+        position: 1,
+        is_active: true
+      }
+    ]);
+    console.error("Ошибка загрузки табов:", error);
+  }
+};
 
   const handleSearchKeyPress = async (event) => {
     if (event.key === "Enter" && searchQuery.trim() !== "") {
@@ -175,18 +247,18 @@ const Layout = ({ children }) => {
             {/* Search */}
             <Box
               sx={{
-    flex: 1,
-    maxWidth: "400px",
-    mx: 4,
-    transition: "max-width 0.3s ease-in-out",
-    "&:focus-within": {
-      maxWidth: "500px",
-    },
-    // Медиа-запрос для скрытия при max-width: 500px
-    "@media (max-width: 500px)": {
-      display: "none",
-    },
-  }}
+                flex: 1,
+                maxWidth: "400px",
+                mx: 4,
+                transition: "max-width 0.3s ease-in-out",
+                "&:focus-within": {
+                  maxWidth: "500px",
+                },
+                // Медиа-запрос для скрытия при max-width: 500px
+                "@media (max-width: 500px)": {
+                  display: "none",
+                },
+              }}
             >
               <TextField
                 fullWidth
@@ -363,11 +435,10 @@ const Layout = ({ children }) => {
               }}
             >
               <Tabs
-                value={currentTabIndex}
+                value={currentTabIndex >= 0 ? currentTabIndex : false}
                 onChange={handleTabChange}
                 sx={{
                   margin: "0 auto",
-
                   "& .MuiTab-root": {
                     fontSize: "15px",
                     textTransform: "none",

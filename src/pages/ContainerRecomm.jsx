@@ -173,9 +173,7 @@ const ContainerRecomm = () => {
 
   return (
     <Container maxWidth="xl" style={{ padding: '24px 0' }}>
-      <Title level={2} style={{ marginBottom: 24, fontWeight: 600, padding: 10 }}>
-        Актуальное
-      </Title>
+     
 
       {blocks.length === 0 ? (
         <Alert message="Нет доступных новостей" type="info" showIcon />

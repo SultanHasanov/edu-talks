@@ -11,6 +11,7 @@ import {
   Spin,
   Button,
   Alert,
+  DatePicker,
 } from "antd";
 import {
   UserOutlined,
@@ -20,10 +21,11 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   SyncOutlined,
+  CrownOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
-
+import dayjs from "dayjs";
 const { Title, Text } = Typography;
 
 const UserProfile = () => {
@@ -41,6 +43,14 @@ const UserProfile = () => {
   const [subLoading, setSubLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [checkingVerification, setCheckingVerification] = useState(false);
+  const handleSubscribe = () => {
+    if (!access_token) {
+      alert("Нужно сначала авторизоваться");
+      return;
+    }
+    navigate("/subscription");
+  };
+  const { role } = useAuth();
 
   // Получение данных профиля
   useEffect(() => {
@@ -140,6 +150,8 @@ const UserProfile = () => {
       setCheckingVerification(false);
     }
   };
+
+  const expiresDate = dayjs(userData.subscription_expires_at);
 
   return (
     <Row justify="center" style={{ marginTop: 50 }}>
@@ -248,7 +260,41 @@ const UserProfile = () => {
               </div>
             </>
           )}
+          {!loading && role !== "admin" && !userData.is_subscription_active && (
+            <Alert
+              message="У вас нет подписки"
+              description="Чтобы скачивать документы, необходимо оформить подписку"
+              type="warning"
+              showIcon
+              action={
+                <Button
+                  type="primary"
+                  size="middle"
+                  icon={<CrownOutlined />}
+                  onClick={handleSubscribe}
+                >
+                  Оформить подписку
+                </Button>
+              }
+              style={{
+                marginTop: 30,
+                width: "100%",
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            />
+          )}
         </Card>
+        {userData.is_subscription_active && (
+          <Card style={{ marginTop: 30 }} title="Информация о подписке">
+            <p>
+              <strong>Дата окончания подписки:</strong>{" "}
+              {expiresDate.format("DD.MM.YYYY HH:mm")}
+            </p>
+          </Card>
+        )}
       </Col>
     </Row>
   );

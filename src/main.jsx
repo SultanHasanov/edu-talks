@@ -22,7 +22,8 @@ import PaymentsAndRefunds from "./pages/PaymentsAndRefunds.jsx";
 import OfferContractPage from "./pages/OfferContractPage.jsx";
 import ArticlesList from "./pages/ArticlesList.jsx";
 import ArticlePage from "./pages/ArticlePage.jsx";
-
+import DynamicRoutes from "./components/DynamicRoutes.jsx";
+const TabPage = ({ title }) => <h2>{title}</h2>;
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <ErrorBoundary>
@@ -36,7 +37,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/recomm" element={<ContainerRecomm />} />{" "}
-            {/* Переместили основной сайт на /app */}
+            <Route path="/*" element={<DynamicRoutes />} />
             <Route path="/recomm/:id" element={<BlockDetails />} />
             <Route path="/templates" element={<TemplatesSection />} />
             <Route path="/scripts" element={<ScriptSection />} />
