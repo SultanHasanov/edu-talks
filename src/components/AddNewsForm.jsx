@@ -116,7 +116,7 @@ const AddNewsForm = () => {
   ];
 
   const stickerOptions = ["Новость", "Рекомендации", "Важно", "Обновление"];
-
+console.log("--")
   const fetchFiles = async () => {
     try {
       const response = await fetch("https://edutalks.ru/api/admin/files", {
