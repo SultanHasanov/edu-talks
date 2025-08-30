@@ -26,6 +26,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 
 const UserProfile = () => {
@@ -43,6 +44,8 @@ const UserProfile = () => {
   const [subLoading, setSubLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [checkingVerification, setCheckingVerification] = useState(false);
+
+   const navigate = useNavigate();
   const handleSubscribe = () => {
     if (!access_token) {
       alert("Нужно сначала авторизоваться");

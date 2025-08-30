@@ -1,177 +1,255 @@
 // components/UserEditDialog.jsx
 import React, { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Grid,
-  MenuItem,
-  FormControl,
-  InputLabel,
+  Modal,
+  Form,
+  Input,
   Select,
-  CircularProgress,
-  Alert,
+  Button,
   Switch,
-  FormControlLabel,
-} from "@mui/material";
+  Alert,
+  Spin,
+  Row,
+  Col,
+  DatePicker,
+  Radio
+} from "antd";
+import {
+  UserOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  HomeOutlined
+} from "@ant-design/icons";
+
+const { Option } = Select;
+const { TextArea } = Input;
 
 const UserEditDialog = ({ open, user, onClose, onSave, loading, error }) => {
-  const [formData, setFormData] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    address: "",
-    role: "user",
-  });
-
-  const [subscriptionActive, setSubscriptionActive] = useState(false);
+  const [form] = Form.useForm();
+  const [subscriptionAction, setSubscriptionAction] = useState("none");
+  const [subscriptionDuration, setSubscriptionDuration] = useState("");
   const [subscriptionUpdating, setSubscriptionUpdating] = useState(false);
 
   useEffect(() => {
     if (user) {
-      setFormData({
+      form.setFieldsValue({
         full_name: user.full_name || "",
         email: user.email || "",
         phone: user.phone || "",
         address: user.address || "",
         role: user.role || "user",
       });
-      setSubscriptionActive(user.has_subscription || false); // предполагаем, что есть это поле
+      
+      // Сбрасываем состояние подписки при открытии
+      setSubscriptionAction(user.has_subscription ? "extend" : "none");
+      setSubscriptionDuration("");
     }
-  }, [user]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  }, [user, form]);
 
   const handleSubmit = async () => {
     try {
-      // Сначала вызываем основной onSave
+      const values = await form.validateFields();
+      
+      // Сохраняем основные данные пользователя
       await onSave({
         id: user.id,
-        ...formData,
+        ...values,
       });
 
-      // Затем отдельный запрос на подписку
-      setSubscriptionUpdating(true);
-      await fetch(`https://edutalks.ru/api/admin/users/${user.id}/subscription`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-        body: JSON.stringify({ active: subscriptionActive }),
-      });
+      // Отдельный запрос для управления подпиской
+      if (subscriptionAction !== "none") {
+        setSubscriptionUpdating(true);
+        
+        let requestBody = {};
+        
+        switch (subscriptionAction) {
+          case "grant":
+            requestBody = { 
+              action: "grant", 
+              duration: subscriptionDuration 
+            };
+            break;
+          case "extend":
+            requestBody = { 
+              action: "extend", 
+              duration: subscriptionDuration || "7d" 
+            };
+            break;
+          case "revoke":
+            requestBody = { action: "revoke" };
+            break;
+          default:
+            break;
+        }
 
-      setSubscriptionUpdating(false);
-      onClose(); // Закрываем после обоих запросов
+        await fetch(`https://edutalks.ru/api/admin/users/${user.id}/subscription`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        setSubscriptionUpdating(false);
+      }
+
+      onClose();
     } catch (err) {
-      console.error("Ошибка при сохранении или подписке:", err);
+      console.error("Ошибка при сохранении:", err);
       setSubscriptionUpdating(false);
     }
   };
 
+  const handleCancel = () => {
+    form.resetFields();
+    setSubscriptionAction("none");
+    setSubscriptionDuration("");
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        {user ? "Редактирование пользователя" : "Создание пользователя"}
-      </DialogTitle>
-      <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Полное имя"
-              name="full_name"
-              value={formData.full_name}
-              onChange={handleChange}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              type="email"
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Телефон"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Адрес"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              multiline
-              rows={2}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel>Роль</InputLabel>
-              <Select
-                name="role"
-                value={formData.role}
-                label="Роль"
-                onChange={handleChange}
-              >
-                <MenuItem value="user">Пользователь</MenuItem>
-                <MenuItem value="admin">Администратор</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={subscriptionActive}
-                  onChange={(e) => setSubscriptionActive(e.target.checked)}
-                  name="has_subscription"
-                  color="primary"
-                />
-              }
-              label="Активная подписка"
-            />
-          </Grid>
-        </Grid>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Отмена</Button>
+    <Modal
+      title={user ? "Редактирование пользователя" : "Создание пользователя"}
+      open={open}
+      onCancel={handleCancel}
+      footer={[
+        <Button key="cancel" onClick={handleCancel}>
+          Отмена
+        </Button>,
         <Button
+          key="submit"
+          type="primary"
           onClick={handleSubmit}
-          variant="contained"
-          disabled={loading || subscriptionUpdating}
+          loading={loading || subscriptionUpdating}
         >
-          {loading || subscriptionUpdating ? (
-            <CircularProgress size={24} />
-          ) : (
-            "Сохранить"
-          )}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          Сохранить
+        </Button>,
+      ]}
+      width={600}
+    >
+      {error && (
+        <Alert
+          message="Ошибка"
+          description={error}
+          type="error"
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{
+          role: "user",
+        }}
+      >
+        <Row gutter={16}>
+          <Col span={24}>
+            <Form.Item
+              name="full_name"
+              label="Полное имя"
+              rules={[{ required: true, message: "Введите полное имя" }]}
+            >
+              <Input prefix={<UserOutlined />} placeholder="Введите полное имя" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: "Введите email" },
+                { type: "email", message: "Введите корректный email" },
+              ]}
+            >
+              <Input prefix={<MailOutlined />} placeholder="Email" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="phone"
+              label="Телефон"
+            >
+              <Input prefix={<PhoneOutlined />} placeholder="Телефон" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={24}>
+            <Form.Item
+              name="address"
+              label="Адрес"
+            >
+              <TextArea
+                rows={2}
+                prefix={<HomeOutlined />}
+                placeholder="Адрес"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="role"
+              label="Роль"
+              rules={[{ required: true, message: "Выберите роль" }]}
+            >
+              <Select placeholder="Выберите роль">
+                <Option value="user">Пользователь</Option>
+                <Option value="admin">Администратор</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={24}>
+            <Form.Item label="Управление подпиской">
+              <Radio.Group
+                value={subscriptionAction}
+                onChange={(e) => setSubscriptionAction(e.target.value)}
+                style={{ width: "100%" }}
+              >
+                <Radio value="none">Не изменять</Radio>
+                <Radio value="grant">Выдать подписку</Radio>
+                <Radio value="extend">Продлить подписку</Radio>
+                <Radio value="revoke">Отключить подписку</Radio>
+              </Radio.Group>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {(subscriptionAction === "grant" || subscriptionAction === "extend") && (
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="Длительность подписки">
+                <Select
+                  value={subscriptionDuration}
+                  onChange={setSubscriptionDuration}
+                  placeholder="Выберите длительность"
+                >
+                  <Option value="7d">7 дней</Option>
+                  <Option value="monthly">1 месяц</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+        )}
+      </Form>
+
+      {(loading || subscriptionUpdating) && (
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <Spin tip="Сохранение..." />
+        </div>
+      )}
+    </Modal>
   );
 };
 

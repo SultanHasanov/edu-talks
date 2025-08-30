@@ -17,14 +17,14 @@ import {
   Typography,
   Row,
   Col,
-  Popconfirm
+  Popconfirm,
 } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
   CaretDownOutlined,
-  CaretUpOutlined
+  CaretUpOutlined,
 } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -73,7 +73,7 @@ const TabManager = () => {
   // Tab Operations
   const handleOpenTabModal = (tab = null) => {
     setEditingTab(tab);
-    
+
     if (tab) {
       tabForm.setFieldsValue({
         title: tab.title,
@@ -82,10 +82,11 @@ const TabManager = () => {
         is_active: tab.is_active,
       });
     } else {
-      const nextPosition = tabs.length > 0 
-        ? Math.max(...tabs.map(t => t.tab?.position || 0)) + 1 
-        : 0;
-      
+      const nextPosition =
+        tabs.length > 0
+          ? Math.max(...tabs.map((t) => t.tab?.position || 0)) + 1
+          : 0;
+
       tabForm.setFieldsValue({
         title: "",
         slug: "",
@@ -99,7 +100,7 @@ const TabManager = () => {
   const handleTabSubmit = async (values) => {
     try {
       setLoading(true);
-      
+
       const url = editingTab
         ? `https://edutalks.ru/api/admin/tabs/${editingTab.id}`
         : "https://edutalks.ru/api/admin/tabs";
@@ -116,7 +117,7 @@ const TabManager = () => {
       });
 
       if (response.ok) {
-        message.success(editingTab ? "Таб обновлен" : "Таб создан");
+        message.success(editingTab ? "вкладка обновлен" : "вкладка создан");
         fetchTabs();
         setTabModalVisible(false);
         setEditingTab(null);
@@ -145,7 +146,7 @@ const TabManager = () => {
       );
 
       if (response.ok) {
-        message.success("Таб удален");
+        message.success("вкладка удален");
         fetchTabs();
       } else {
         throw new Error("Ошибка удаления");
@@ -171,11 +172,11 @@ const TabManager = () => {
         is_active: section.is_active,
       });
     } else {
-      const tab = tabs.find(t => t.tab.id === tabId);
+      const tab = tabs.find((t) => t.tab.id === tabId);
       const maxPosition = tab.sections
-        ? Math.max(...tab.sections.map(s => s.position || 0), 0)
+        ? Math.max(...tab.sections.map((s) => s.position || 0), 0)
         : 0;
-      
+
       sectionForm.setFieldsValue({
         title: "",
         slug: "",
@@ -251,9 +252,7 @@ const TabManager = () => {
       title: "Название",
       dataIndex: ["tab", "title"],
       key: "title",
-      render: (text, record) => (
-        <Text strong>{text}</Text>
-      ),
+      render: (text, record) => <Text strong>{text}</Text>,
     },
     {
       title: "Slug",
@@ -265,7 +264,7 @@ const TabManager = () => {
       title: "Позиция",
       dataIndex: ["tab", "position"],
       key: "position",
-      align: 'center',
+      align: "center",
     },
     {
       title: "Статус",
@@ -280,9 +279,7 @@ const TabManager = () => {
     {
       title: "Кол-во секций",
       key: "sectionsCount",
-      render: (_, record) => (
-        <Tag>{record.sections?.length || 0}</Tag>
-      ),
+      render: (_, record) => <Tag>{record.sections?.length || 0}</Tag>,
     },
     {
       title: "Действия",
@@ -298,19 +295,15 @@ const TabManager = () => {
             >
               Редактировать
             </Button>
-            
+
             <Popconfirm
-              title="Удалить таб?"
-              description="Все секции этого таба также будут удалены. Продолжить?"
+              title="Удалить вкладка?"
+              description="Все секции этой вкладки также будут удалены. Продолжить?"
               onConfirm={() => handleDeleteTab(tab.id)}
               okText="Да"
               cancelText="Нет"
             >
-              <Button
-                icon={<DeleteOutlined />}
-                danger
-                size="small"
-              >
+              <Button icon={<DeleteOutlined />} danger size="small">
                 Удалить
               </Button>
             </Popconfirm>
@@ -331,14 +324,17 @@ const TabManager = () => {
 
   const expandableRender = (record) => {
     const sections = record.sections || [];
-    
+
     return (
-      <Card size="small" title={`Секции таба "${record.tab.title}"`}>
+      <Card size="small" title={`Секции вкладки "${record.tab.title}"`}>
         {sections.length === 0 ? (
           <Text type="secondary">Нет секций</Text>
         ) : (
           <Table
-            dataSource={sections.map(s => ({ ...s.section, key: s.section.id }))}
+            dataSource={sections.map((s) => ({
+              ...s.section,
+              key: s.section.id,
+            }))}
             pagination={false}
             size="small"
             columns={[
@@ -357,7 +353,7 @@ const TabManager = () => {
                 title: "Позиция",
                 dataIndex: "position",
                 key: "position",
-                align: 'center',
+                align: "center",
               },
               {
                 title: "Статус",
@@ -377,7 +373,9 @@ const TabManager = () => {
                     <Button
                       size="small"
                       icon={<EditOutlined />}
-                      onClick={() => handleOpenSectionModal(record.tab.id, section)}
+                      onClick={() =>
+                        handleOpenSectionModal(record.tab.id, section)
+                      }
                     >
                       Редактировать
                     </Button>
@@ -387,11 +385,7 @@ const TabManager = () => {
                       okText="Да"
                       cancelText="Нет"
                     >
-                      <Button
-                        size="small"
-                        icon={<DeleteOutlined />}
-                        danger
-                      >
+                      <Button size="small" icon={<DeleteOutlined />} danger>
                         Удалить
                       </Button>
                     </Popconfirm>
@@ -409,9 +403,9 @@ const TabManager = () => {
     <div style={{ padding: 24 }}>
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Col>
-          <Title level={2}>Управление табами и секциями</Title>
+          <Title level={2}>Управление вкладками и секциями</Title>
           <Text type="secondary">
-            Создавайте и редактируйте табы и их секции для организации контента
+            Создавайте и редактируйте вкладкаы и их секции для организации контента
           </Text>
         </Col>
         <Col>
@@ -421,7 +415,7 @@ const TabManager = () => {
             onClick={() => handleOpenTabModal()}
             size="large"
           >
-            Добавить таб
+            Добавить вкладку
           </Button>
         </Col>
       </Row>
@@ -429,15 +423,15 @@ const TabManager = () => {
       <Card>
         <Table
           columns={columns}
-          dataSource={tabs.map(tab => ({ ...tab, key: tab.tab.id }))}
+          dataSource={tabs.map((tab) => ({ ...tab, key: tab.tab.id }))}
           loading={loading}
           expandable={{
             expandedRowRender: expandableRender,
             expandIcon: ({ expanded, onExpand, record }) =>
               expanded ? (
-                <CaretUpOutlined onClick={e => onExpand(record, e)} />
+                <CaretUpOutlined onClick={(e) => onExpand(record, e)} />
               ) : (
-                <CaretDownOutlined onClick={e => onExpand(record, e)} />
+                <CaretDownOutlined onClick={(e) => onExpand(record, e)} />
               ),
           }}
           pagination={{ pageSize: 10 }}
@@ -446,32 +440,28 @@ const TabManager = () => {
 
       {/* Tab Modal */}
       <Modal
-        title={editingTab ? "Редактировать таб" : "Создать таб"}
+        title={editingTab ? "Редактировать вкладка" : "Создать вкладка"}
         open={tabModalVisible}
         onCancel={() => setTabModalVisible(false)}
         footer={null}
         width={500}
       >
-        <Form
-          form={tabForm}
-          layout="vertical"
-          onFinish={handleTabSubmit}
-        >
+        <Form form={tabForm} layout="vertical" onFinish={handleTabSubmit}>
           <Form.Item
             name="title"
-            label="Название таба"
-            rules={[{ required: true, message: "Введите название таба" }]}
+            label="Название вкладки"
+            rules={[{ required: true, message: "Введите название вкладки" }]}
           >
-            <Input placeholder="Введите название таба" />
+            <Input placeholder="Введите название вкладки" />
           </Form.Item>
 
           <Form.Item
             name="slug"
             label="Slug"
-            rules={[{ required: true, message: "Введите slug" }]}
-            tooltip="Уникальный идентификатор для URL"
+            rules={[{ required: false }]} // Изменить required: true на false
+            tooltip="Уникальный идентификатор для URL (необязательно)"
           >
-            <Input placeholder="Введите slug" />
+            <Input placeholder="Введите slug (необязательно)" />
           </Form.Item>
 
           <Form.Item
@@ -482,24 +472,14 @@ const TabManager = () => {
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
 
-          <Form.Item
-            name="is_active"
-            label="Статус"
-            valuePropName="checked"
-          >
+          <Form.Item name="is_active" label="Статус" valuePropName="checked">
             <Switch checkedChildren="Активен" unCheckedChildren="Неактивен" />
           </Form.Item>
 
           <Form.Item>
             <Space>
-              <Button onClick={() => setTabModalVisible(false)}>
-                Отмена
-              </Button>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
-                loading={loading}
-              >
+              <Button onClick={() => setTabModalVisible(false)}>Отмена</Button>
+              <Button type="primary" htmlType="submit" loading={loading}>
                 {editingTab ? "Обновить" : "Создать"}
               </Button>
             </Space>
@@ -531,15 +511,15 @@ const TabManager = () => {
           <Form.Item
             name="slug"
             label="Slug"
-            rules={[{ required: true, message: "Введите slug" }]}
+            rules={[{ required: false }]} // Изменить required: true на false
+            tooltip="Уникальный идентификатор для URL (необязательно)"
           >
-            <Input placeholder="Введите slug" />
+            <Input placeholder="Введите slug (необязательно)" />
           </Form.Item>
-
           <Form.Item name="description" label="Описание">
-            <Input.TextArea 
-              rows={3} 
-              placeholder="Введите описание секции (необязательно)" 
+            <Input.TextArea
+              rows={3}
+              placeholder="Введите описание секции (необязательно)"
             />
           </Form.Item>
 
@@ -551,11 +531,7 @@ const TabManager = () => {
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
 
-          <Form.Item
-            name="is_active"
-            label="Статус"
-            valuePropName="checked"
-          >
+          <Form.Item name="is_active" label="Статус" valuePropName="checked">
             <Switch checkedChildren="Активна" unCheckedChildren="Неактивна" />
           </Form.Item>
 
