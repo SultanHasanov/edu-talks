@@ -62,33 +62,6 @@ const SectionContent = ({ section }) => {
     }
   };
 
-  const handlePreview = async (fileId) => {
-    try {
-      setLoadingFileId(fileId);
-
-      const response = await fetch(`https://edutalks.ru/api/files/${fileId}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`${errorText}`);
-      }
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        setPreviewUrl(url);
-        setPreviewVisible(true);
-      }
-    } catch (err) {
-      console.log(err.message);
-      message.error(err.message);
-    } finally {
-      setLoadingFileId(null);
-    }
-  };
-
   const handleDownload = async (fileId, fileName) => {
     try {
       setLoadingFileId(fileId);
@@ -195,15 +168,6 @@ const SectionContent = ({ section }) => {
               <List.Item
                 actions={[
                   <Button
-                    key="preview"
-                    icon={<EyeOutlined />}
-                    onClick={() => handlePreview(file.id)}
-                    size="small"
-                    loading={loadingFileId === file.id}
-                  >
-                    Превью
-                  </Button>,
-                  <Button
                     key="download"
                     type="primary"
                     icon={<DownloadOutlined />}
@@ -244,29 +208,6 @@ const SectionContent = ({ section }) => {
           />
         )}
       </Card>
-
-      {/* Модалка превью */}
-      <Modal
-        open={previewVisible}
-        onCancel={() => {
-          setPreviewVisible(false);
-          if (previewUrl) {
-            window.URL.revokeObjectURL(previewUrl);
-            setPreviewUrl(null);
-          }
-        }}
-        footer={null}
-        width="80%"
-        style={{ top: 20 }}
-      >
-        {previewUrl && (
-          <iframe
-            src={previewUrl}
-            title="Превью документа"
-            style={{ width: "100%", height: "80vh", border: "none" }}
-          />
-        )}
-      </Modal>
     </div>
   );
 };
