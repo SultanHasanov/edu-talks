@@ -13,7 +13,7 @@ import {
   Modal,
 } from "antd";
 import { DownloadOutlined, FileOutlined, EyeOutlined } from "@ant-design/icons";
-
+import fileIcon from '../../public/fileIcon.png'
 const { Title, Paragraph, Text } = Typography;
 
 const SectionContent = ({ section }) => {
@@ -180,8 +180,13 @@ const SectionContent = ({ section }) => {
               >
                 <List.Item.Meta
                   avatar={
-                    <FileOutlined
-                      style={{ fontSize: "24px", color: "#1890ff" }}
+                     <img 
+                      src={fileIcon} 
+                      alt="File icon" 
+                      style={{ 
+                        width: "44px", 
+                        height: "44px" 
+                      }}
                     />
                   }
                   title={
