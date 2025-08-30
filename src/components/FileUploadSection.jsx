@@ -50,6 +50,7 @@ const FileUploadSection = () => {
   const [sectionId, setSectionId] = useState(null);
   const [sections, setSections] = useState([]);
   const [sectionsLoading, setSectionsLoading] = useState(false);
+  const [title, setTitle] = useState("");
   const access_token = localStorage.getItem("access_token");
   const { role } = useAuth();
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -191,7 +192,7 @@ const FileUploadSection = () => {
     formData.append("description", description);
     formData.append("is_public", isPublic);
     formData.append("category", category);
-    
+    formData.append("title", title);
     // Добавляем section_id, если выбран
     if (sectionId) {
       formData.append("section_id", sectionId);
@@ -218,6 +219,7 @@ const FileUploadSection = () => {
       setIsPublic(false);
       setSectionId(null);
       setCategory(null);
+      setTitle("");
     } catch (err) {
       console.error("Ошибка загрузки:", err);
       message.error("Ошибка при загрузке файла");
@@ -278,19 +280,19 @@ const FileUploadSection = () => {
   };
 
   const columns = [
-    {
-      title: "Имя файла",
-      dataIndex: "description",
-      key: "description",
-      render: (text) => (
-        <Space>
-          <FileOutlined />
-          <Text ellipsis style={{ maxWidth: 200 }}>
-            {text}
-          </Text>
-        </Space>
-      ),
-    },
+   {
+  title: "Имя файла",
+  dataIndex: "title", // меняем с description на title
+  key: "title",
+  render: (text) => (
+    <Space>
+      <FileOutlined />
+      <Text ellipsis style={{ maxWidth: 200 }}>
+        {text}
+      </Text>
+    </Space>
+  ),
+},
     {
       title: "Статус",
       dataIndex: "is_public",
@@ -393,6 +395,12 @@ const FileUploadSection = () => {
               style={{ marginBottom: 16 }}
             />
           )}
+          <Input
+  placeholder="Название файла"
+  value={title}
+  onChange={(e) => setTitle(e.target.value)}
+  style={{ marginBottom: 16 }}
+/>
 
           <TextArea
             placeholder="Описание файла"
@@ -568,12 +576,9 @@ const FileUploadSection = () => {
             )}
 
             <Descriptions bordered column={1}>
-              <Descriptions.Item label="Название">
-                <Space>
-                  <FileOutlined />
-                  {selectedFileDetails.filename}
-                </Space>
-              </Descriptions.Item>
+             <Descriptions.Item label="Название">
+  {selectedFileDetails.title || selectedFileDetails.filename}
+</Descriptions.Item>
               <Descriptions.Item label="Описание">
                 {selectedFileDetails.description || "Описание отсутствует"}
               </Descriptions.Item>

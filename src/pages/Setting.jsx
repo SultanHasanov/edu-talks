@@ -687,7 +687,7 @@ const Setting = () => {
                 tab={
                   <Space>
                     <ReadOutlined />
-                    Табы
+                    Вкладки
                   </Space>
                 }
                 key="7"

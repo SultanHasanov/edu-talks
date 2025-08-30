@@ -117,7 +117,7 @@ const handleLogin = async (e) => {
       data.data.role,
       data.data.username,
       data.data.full_name    );
-    navigate("/recomm");
+    navigate("/profile");
   } catch (error) {
     console.error("Ошибка авторизации:", error);
     setAuthError(error.message || "Неверный логин или пароль");

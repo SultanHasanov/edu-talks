@@ -33,14 +33,18 @@ const SectionContent = ({ section }) => {
         },
       });
       
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`${errorText}`);
+    }
+    
       
       const result = await response.json();
       const filteredFiles = result.data.data.filter(file => file.section_id === section.id);
       setFiles(filteredFiles);
     } catch (err) {
       setError(err.message);
-      message.error('Ошибка при загрузке файлов');
+      message.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -185,7 +189,7 @@ const SectionContent = ({ section }) => {
               >
                 <List.Item.Meta
                   avatar={<FileOutlined style={{ fontSize: '24px', color: '#1890ff' }} />}
-                  title={<Text strong style={{ fontSize: '16px' }}>{file.filename}</Text>}
+                  title={<Text strong style={{ fontSize: '16px' }}>{file.title}</Text>}
                   description={
                     <Space direction="vertical" size="small" style={{ fontSize: '14px' }}>
                       {file.description && <Text>{file.description}</Text>}
