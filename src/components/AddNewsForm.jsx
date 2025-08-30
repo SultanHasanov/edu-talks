@@ -125,7 +125,7 @@ const AddNewsForm = () => {
         },
       });
       const data = await response.json();
-      setFiles(data.data);
+      setFiles(data.data.data);
     } catch (error) {
       console.error("Error fetching files:", error);
       notification.error({
