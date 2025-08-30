@@ -21,8 +21,7 @@ const SectionContent = ({ section }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingFileId, setLoadingFileId] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [previewVisible, setPreviewVisible] = useState(false);
+
 
   const access_token = localStorage.getItem("access_token");
 

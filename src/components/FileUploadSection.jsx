@@ -29,6 +29,7 @@ import {
   EyeOutlined,
   CloseOutlined,
   ExclamationCircleOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
@@ -46,7 +47,7 @@ const FileUploadSection = () => {
   const [selectedFileDetails, setSelectedFileDetails] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [category, setCategory] = useState(null);
+
   const [sectionId, setSectionId] = useState(null);
   const [sections, setSections] = useState([]);
   const [sectionsLoading, setSectionsLoading] = useState(false);
@@ -54,35 +55,40 @@ const FileUploadSection = () => {
   const access_token = localStorage.getItem("access_token");
   const { role } = useAuth();
   const [previewLoading, setPreviewLoading] = useState(false);
-  console.log(Array.isArray(files), files);
-
-
+  const [selectedTab, setSelectedTab] = useState(null);
+  const [tabs, setTabs] = useState([]);
   // Функция для получения секций с API
   const fetchSections = async () => {
     try {
       setSectionsLoading(true);
-      const response = await axios.get("https://edutalks.ru/api/taxonomy/tree", {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
-      
-      // Извлекаем все секции из структуры данных
+      const response = await axios.get(
+        "https://edutalks.ru/api/taxonomy/tree",
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+
+      setTabs(response.data.data.data); // Сохраняем структуру табов
+
+      // Извлекаем все секции для обратной совместимости
       const allSections = [];
-      response.data.data.data.forEach(tab => {
+      response.data.data.data.forEach((tab) => {
         if (tab.sections && tab.sections.length > 0) {
-          tab.sections.forEach(sectionItem => {
+          tab.sections.forEach((sectionItem) => {
             if (sectionItem.section && sectionItem.section.is_active) {
               allSections.push({
                 id: sectionItem.section.id,
                 title: sectionItem.section.title,
-                tabTitle: tab.tab.title
+                tabTitle: tab.tab.title,
+                tabId: tab.tab.id,
               });
             }
           });
         }
       });
-      
+
       setSections(allSections);
     } catch (error) {
       console.error("Ошибка при загрузке секций:", error);
@@ -102,12 +108,15 @@ const FileUploadSection = () => {
     setDetailsModalOpen(true);
     setPreviewLoading(true);
     try {
-      const response = await axios.get(`https://edutalks.ru/api/files/${file.id}`, {
-        responseType: "blob",
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
+      const response = await axios.get(
+        `https://edutalks.ru/api/files/${file.id}`,
+        {
+          responseType: "blob",
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
 
       let fileType = response.headers["content-type"];
 
@@ -167,7 +176,7 @@ const FileUploadSection = () => {
         },
       });
       const data = await response.json();
-     setFiles(data.data.data || []);
+      setFiles(data.data.data || []);
     } catch (error) {
       console.error("Error fetching files:", error);
       message.error("Ошибка при загрузке списка файлов");
@@ -191,7 +200,7 @@ const FileUploadSection = () => {
     formData.append("file", selectedFile);
     formData.append("description", description);
     formData.append("is_public", isPublic);
-    formData.append("category", category);
+
     formData.append("title", title);
     // Добавляем section_id, если выбран
     if (sectionId) {
@@ -202,13 +211,16 @@ const FileUploadSection = () => {
       setLoading(true);
       setUploadProgress(0);
 
-      const response = await fetch("https://edutalks.ru/api/admin/files/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
+      const response = await fetch(
+        "https://edutalks.ru/api/admin/files/upload",
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
 
       if (!response.ok) throw new Error("Upload failed");
 
@@ -216,9 +228,8 @@ const FileUploadSection = () => {
       fetchFiles();
       setSelectedFile(null);
       setDescription("");
-      setIsPublic(false);
       setSectionId(null);
-      setCategory(null);
+
       setTitle("");
     } catch (err) {
       console.error("Ошибка загрузки:", err);
@@ -233,7 +244,7 @@ const FileUploadSection = () => {
     try {
       const response = await fetch(`https://edutalks.ru/api/files/${fileId}`, {
         method: "GET",
-         headers: {
+        headers: {
           Authorization: `Bearer ${access_token}`,
         },
       });
@@ -260,12 +271,15 @@ const FileUploadSection = () => {
   const handleDeleteFile = async (file) => {
     try {
       setLoading(true);
-      const response = await fetch(`https://edutalks.ru/api/admin/files/${file.id}`, {
-        method: "DELETE",
-         headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
+      const response = await fetch(
+        `https://edutalks.ru/api/admin/files/${file.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
 
       if (!response.ok) throw new Error("Delete failed");
 
@@ -280,19 +294,19 @@ const FileUploadSection = () => {
   };
 
   const columns = [
-   {
-  title: "Имя файла",
-  dataIndex: "title", // меняем с description на title
-  key: "title",
-  render: (text) => (
-    <Space>
-      <FileOutlined />
-      <Text ellipsis style={{ maxWidth: 200 }}>
-        {text}
-      </Text>
-    </Space>
-  ),
-},
+    {
+      title: "Имя файла",
+      dataIndex: "title", // меняем с description на title
+      key: "title",
+      render: (text) => (
+        <Space>
+          <FileOutlined />
+          <Text ellipsis style={{ maxWidth: 200 }}>
+            {text}
+          </Text>
+        </Space>
+      ),
+    },
     {
       title: "Статус",
       dataIndex: "is_public",
@@ -303,26 +317,16 @@ const FileUploadSection = () => {
         </Tag>
       ),
     },
-    {
-      title: "Категория",
-      dataIndex: "category",
-      key: "category",
-      render: (category) => {
-        const categoryNames = {
-          order: "Приказ",
-          template: "Шаблон",
-          scenario: "Сценарий",
-        };
-        return categoryNames[category] || category;
-      },
-    },
+
     {
       title: "Секция",
       dataIndex: "section_id",
       key: "section",
       render: (sectionId) => {
-        const section = sections.find(s => s.id === sectionId);
-        return section ? section.title : "Не указана";
+        const section = sections.find((s) => s.id === sectionId);
+        return section
+          ? `${section.title} (${section.tabTitle})`
+          : "Не указана";
       },
     },
     {
@@ -376,6 +380,16 @@ const FileUploadSection = () => {
             accept="*"
             maxCount={1}
             style={{ marginBottom: 16 }}
+            onChange={(info) => {
+              const file = info.fileList[0]?.originFileObj;
+              if (file) {
+                const fileNameWithoutExtension = file.name.replace(
+                  /\.[^/.]+$/,
+                  ""
+                );
+                setTitle(fileNameWithoutExtension);
+              }
+            }}
           >
             <p className="ant-upload-drag-icon">
               <UploadOutlined />
@@ -396,11 +410,11 @@ const FileUploadSection = () => {
             />
           )}
           <Input
-  placeholder="Название файла"
-  value={title}
-  onChange={(e) => setTitle(e.target.value)}
-  style={{ marginBottom: 16 }}
-/>
+            placeholder="Название файла"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            style={{ marginBottom: 16 }}
+          />
 
           <TextArea
             placeholder="Описание файла"
@@ -410,30 +424,52 @@ const FileUploadSection = () => {
             style={{ marginBottom: 16 }}
           />
 
-          <Select
-            placeholder="Выберите категорию"
-            style={{ width: "100%", marginBottom: 16 }}
-            value={category}
-            onChange={(value) => setCategory(value)}
-            options={[
-              { value: "order", label: "Приказ" },
-              { value: "template", label: "Шаблон" },
-              { value: "scenario", label: "Сценарий" },
-            ]}
-          />
-
-          <Select
-            placeholder="Выберите секцию"
-            style={{ width: "100%", marginBottom: 16 }}
-            value={sectionId}
-            onChange={(value) => setSectionId(value)}
-            loading={sectionsLoading}
-            options={sections.map(section => ({
-              value: section.id,
-              label: `${section.title} (${section.tabTitle})`
-            }))}
-            allowClear
-          />
+          {!selectedTab ? (
+            // Показываем выбор таба
+            <Select
+              placeholder="Сначала выберите таб"
+              style={{ width: "100%", marginBottom: 16 }}
+              value={null}
+              onChange={(value) => setSelectedTab(value)}
+              options={tabs.map((tab) => ({
+                value: tab.tab.id,
+                label: tab.tab.title,
+              }))}
+            />
+          ) : (
+            // Показываем выбор секции для выбранного таба
+            <div style={{ marginBottom: 16 }}>
+              <Space style={{ marginBottom: 8 }}>
+                <Button
+                  icon={<ArrowLeftOutlined />}
+                  size="small"
+                  onClick={() => setSelectedTab(null)}
+                >
+                  Назад
+                </Button>
+                <Text>
+                  Вкладка:{" "}
+                  <b>{tabs.find((t) => t.tab.id === selectedTab)?.tab.title}</b>
+                </Text>
+              </Space>
+              <Select
+                placeholder="Выберите секцию"
+                style={{ width: "100%" }}
+                value={sectionId}
+                onChange={(value) => setSectionId(value)}
+                options={
+                  tabs
+                    .find((t) => t.tab.id === selectedTab)
+                    ?.sections.filter((s) => s.section.is_active)
+                    .map((section) => ({
+                      value: section.section.id,
+                      label: section.section.title,
+                    })) || []
+                }
+                allowClear
+              />
+            </div>
+          )}
 
           <Checkbox
             checked={isPublic}
@@ -576,18 +612,18 @@ const FileUploadSection = () => {
             )}
 
             <Descriptions bordered column={1}>
-             <Descriptions.Item label="Название">
-  {selectedFileDetails.title || selectedFileDetails.filename}
-</Descriptions.Item>
+              <Descriptions.Item label="Название">
+                {selectedFileDetails.title || selectedFileDetails.filename}
+              </Descriptions.Item>
               <Descriptions.Item label="Описание">
                 {selectedFileDetails.description || "Описание отсутствует"}
               </Descriptions.Item>
-              <Descriptions.Item label="Категория">
-                {selectedFileDetails.category || "Не указана"}
-              </Descriptions.Item>
+
               <Descriptions.Item label="Секция">
-                {selectedFileDetails.section_id ? 
-                  (sections.find(s => s.id === selectedFileDetails.section_id)?.title || selectedFileDetails.section_id)
+                {selectedFileDetails.section_id
+                  ? sections.find(
+                      (s) => s.id === selectedFileDetails.section_id
+                    )?.title || selectedFileDetails.section_id
                   : "Не указана"}
               </Descriptions.Item>
               <Descriptions.Item label="Статус">
