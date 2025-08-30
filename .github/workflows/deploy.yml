@@ -1,56 +1,54 @@
-name: 🚀 Deploy Front (Vite, dist only)
+name: 🚀 Deploy Full Project to Server
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "package.json"
-      - "package-lock.json"
-      - "vite.config.*"
-      - "src/"
-      - "public/"
-
-concurrency:
-  group: deploy-front
-  cancel-in-progress: true
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
+      - name: 📥 Checkout репозитория
+        uses: actions/checkout@v3
 
-      - name: 🟢 Node 18 + npm cache
-        uses: actions/setup-node@v4
+      - name: 🟢 Установить Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: 18
-          cache: npm
-          cache-dependency-path: package-lock.json
+          node-version: '18'
 
-      - name: 🛠 Build
+      - name: 🛠 Сборка проекта
         run: |
-          npm ci --prefer-offline --no-audit --no-fund
-          npm run build  # создаст dist/
+          npm ci
+          npm run build
 
-      - name: 📦 Rsync dist → server
-        uses: burnett01/rsync-deployments@7.0.1
-        with:
-          switches: -az --delete
-          path: dist/
-          remote_path: /edu-talks/        # твоя текущая папка на сервере (не меняем)
-          remote_host: ${{ secrets.SSH_HOST }}
-          remote_user: ${{ secrets.SSH_USER }}
-          remote_key: ${{ secrets.SSH_KEY }}
-
-      # Если SPA раздаётся через pm2 serve — оставь шаг; если nginx — удали
-      - name: 🔁 (Опционально) pm2 reload
-        if: ${{ success() }}
+      - name: 🧹 Очистить старую версию на сервере
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            pm2 reload edutalks || true
+            rm -rf /edu-talks/*
+
+      - name: 📤 Скопировать проект на сервер (scp -r)
+        uses: appleboy/scp-action@v0.1.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "."                # копируем всё, как scp -r .
+          target: "/edu-talks"           # куда копировать на сервере
+
+      - name: 🚀 Запустить билд и старт на сервере
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /edu-talks
+            npm ci
+            npm run build
+            pm2 restart app || pm2 start npm --name "app" -- run start
