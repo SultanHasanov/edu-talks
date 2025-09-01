@@ -237,6 +237,8 @@ const UserEditDialog = ({ open, user, onClose, onSave, loading, error }) => {
                 >
                   <Option value="7d">7 дней</Option>
                   <Option value="monthly">1 месяц</Option>
+                  <Option value="halfyear">6 месяцев</Option>
+                  <Option value="yearly">1 год</Option>
                 </Select>
               </Form.Item>
             </Col>

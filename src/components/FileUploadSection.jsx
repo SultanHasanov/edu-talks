@@ -427,7 +427,7 @@ const FileUploadSection = () => {
           {!selectedTab ? (
             // Показываем выбор таба
             <Select
-              placeholder="Сначала выберите таб"
+              placeholder="Сначала выберите вкладку"
               style={{ width: "100%", marginBottom: 16 }}
               value={null}
               onChange={(value) => setSelectedTab(value)}

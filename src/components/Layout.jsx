@@ -84,7 +84,7 @@ const Layout = ({ children }) => {
       {
         id: -2,
         slug: "/zavuch", 
-        title: "Завуч",
+        title: "Методичка",
         position: 1, // Вторая позиция
         is_active: true
       }
@@ -131,7 +131,7 @@ const Layout = ({ children }) => {
       {
         id: -2,
         slug: "/zavuch",
-        title: "Завуч", 
+        title: "Методичка", 
         position: 1,
         is_active: true
       }

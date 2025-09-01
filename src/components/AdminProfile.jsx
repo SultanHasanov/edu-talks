@@ -73,7 +73,7 @@ const AdminProfile = () => {
         });
         setUserData(response.data.data);
         // Обновляем formData данными из API
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           full_name: response.data.data.full_name || full_name || "",
           email: response.data.data.email || email || "",
@@ -212,7 +212,14 @@ const AdminProfile = () => {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "50vh",
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -233,7 +240,9 @@ const AdminProfile = () => {
               }}
             />
             <Title level={3}>
-              {editMode ? formData.full_name : userData.full_name || full_name || username}
+              {editMode
+                ? formData.full_name
+                : userData.full_name || full_name || username}
             </Title>
           </div>
 
@@ -282,9 +291,23 @@ const AdminProfile = () => {
                 <>{userData.email || email || "Не указан"}</>
               )}
               {userData.email_verified ? (
-                <CheckCircleOutlined style={{ color: "green", marginLeft: 8 }} />
+                <Text type="success" style={{ marginLeft: 8 }}>
+                  <CheckCircleOutlined /> Подтвержден
+                </Text>
               ) : (
-                <CloseCircleOutlined style={{ color: "red", marginLeft: 8 }} />
+                <>
+                  <Text type="danger" style={{ marginLeft: 8 }}>
+                    <CloseCircleOutlined /> Не подтвержден
+                  </Text>
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={handleResendVerification}
+                    style={{ marginLeft: 8 }}
+                  >
+                    Подтвердить почту
+                  </Button>
+                </>
               )}
             </Descriptions.Item>
 
@@ -331,21 +354,6 @@ const AdminProfile = () => {
             </Descriptions.Item>
           </Descriptions>
 
-          {/* Кнопки действий */}
-          <div style={{ marginTop: 24, textAlign: "center" }}>
-            <Space size="middle">
-             
-              
-              <Button
-                icon={<SyncOutlined />}
-                loading={checkingVerification}
-                onClick={handleCheckVerification}
-              >
-                Проверить почту
-              </Button>
-            </Space>
-          </div>
-
           {/* Статус верификации email */}
           {!userData.email_verified && (
             <Alert
@@ -353,8 +361,8 @@ const AdminProfile = () => {
               description={
                 <div>
                   <p>Для полного доступа к функциям подтвердите ваш email</p>
-                  <Button 
-                    type="link" 
+                  <Button
+                    type="link"
                     onClick={handleResendVerification}
                     disabled={verificationSent}
                   >
