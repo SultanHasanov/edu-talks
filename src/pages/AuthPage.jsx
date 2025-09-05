@@ -234,38 +234,37 @@ const AuthPage = () => {
 
   // Функция для отправки запроса на восстановление пароля
   const handleForgotPassword = async () => {
-    if (!forgotPasswordEmail) {
-      setAuthError("Пожалуйста, введите email");
-      return;
-    }
+  if (!forgotPasswordEmail) {
+    setAuthError("Пожалуйста, введите email");
+    return;
+  }
 
-    setForgotPasswordLoading(true);
-    try {
-      const response = await fetch("https://edutalks.ru/api/password/forgot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: forgotPasswordEmail,
-        }),
-      });
+  setForgotPasswordLoading(true);
+  try {
+    const response = await fetch("https://edutalks.ru/api/password/forgot", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: forgotPasswordEmail,
+      }),
+    });
 
-      // Ответ всегда одинаковый, даже если email не найден
-      setForgotPasswordSuccess(true);
-      setForgotPasswordOpen(false);
-      setAuthError("");
-      
-      message.success(
-        "Если email зарегистрирован в системе, письмо со ссылкой для сброса пароля будет отправлено."
-      );
-    } catch (error) {
-      console.error("Ошибка при отправке запроса на восстановление:", error);
-      setAuthError("Произошла ошибка при отправке запроса");
-    } finally {
-      setForgotPasswordLoading(false);
-    }
-  };
+    // Ответ всегда одинаковый, даже если email не найден
+    setForgotPasswordSuccess(true);
+    setForgotPasswordOpen(false);
+    setAuthError("");
+    
+    // Показываем сообщение об успехе
+    setSuccessMessage("Если email зарегистрирован в системе, письмо со ссылкой для сброса пароля будет отправлено.");
+  } catch (error) {
+    console.error("Ошибка при отправке запроса на восстановление:", error);
+    setAuthError("Произошла ошибка при отправке запроса");
+  } finally {
+    setForgotPasswordLoading(false);
+  }
+};
 
   // Функция для установки нового пароля
   const handleResetPassword = async () => {

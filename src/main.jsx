@@ -22,6 +22,7 @@ import OfferContractPage from "./pages/OfferContractPage.jsx";
 import ArticlesList from "./pages/ArticlesList.jsx";
 import ArticlePage from "./pages/ArticlePage.jsx";
 import DynamicRoutes from "./components/DynamicRoutes.jsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 const TabPage = ({ title }) => <h2>{title}</h2>;
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -51,6 +52,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <Route path="/offer" element={<OfferContractPage />} />
             <Route path="/zavuch" element={<ArticlesList />} />
             <Route path="/zavuch/:id" element={<ArticlePage />} />
+            <Route path="/reset" element={<ResetPasswordPage />} />
           </Route>
 
           {/* Отдельные страницы */}
