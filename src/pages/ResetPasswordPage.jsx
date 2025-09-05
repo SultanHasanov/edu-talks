@@ -3,26 +3,27 @@ import {
   Container,
   Paper,
   Typography,
-  TextField,
-  Button,
   Alert,
   Box,
-  InputAdornment,
-  IconButton,
 } from "@mui/material";
 import {
-  Lock as LockIcon,
-  Visibility,
-  VisibilityOff,
-} from "@mui/icons-material";
+  LockOutlined,
+  EyeInvisibleOutlined,
+  EyeTwoTone,
+} from "@ant-design/icons";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import {
+  Form,
+  Input,
+  Button,
+  message,
+} from "antd";
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [form] = Form.useForm();
   const [formData, setFormData] = useState({
     newPassword: "",
     confirmPassword: "",
@@ -42,28 +43,8 @@ const ResetPasswordPage = () => {
     }
   }, [searchParams]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (values) => {
     setError("");
-
-    // Валидация
-    if (formData.newPassword.length < 6) {
-      setError("Пароль должен содержать минимум 6 символов");
-      return;
-    }
-
-    if (formData.newPassword !== formData.confirmPassword) {
-      setError("Пароли не совпадают");
-      return;
-    }
 
     if (!formData.token) {
       setError("Неверный токен для сброса пароля");
@@ -74,18 +55,19 @@ const ResetPasswordPage = () => {
 
     try {
       const response = await axios.post("https://edutalks.ru/api/password/reset", {
-        new_password: formData.newPassword,
+        new_password: values.newPassword,
         token: formData.token,
       });
 
       if (response.status === 200) {
         setSuccess(true);
         setError("");
+        message.success("Пароль успешно изменен!");
         
         // Автоматический переход на страницу входа через 3 секунды
         setTimeout(() => {
           navigate("/auth");
-        }, 8000);
+        }, 3000);
       }
     } catch (error) {
       console.error("Ошибка при сбросе пароля:", error);
@@ -97,6 +79,7 @@ const ResetPasswordPage = () => {
       } else {
         setError("Произошла ошибка при сбросе пароля. Пожалуйста, попробуйте позже.");
       }
+      message.error("Ошибка при смене пароля");
     } finally {
       setLoading(false);
     }
@@ -115,7 +98,7 @@ const ResetPasswordPage = () => {
             </Typography>
           </Alert>
           <Button
-            variant="contained"
+            type="primary"
             onClick={() => navigate("/auth")}
           >
             Перейти к входу
@@ -138,79 +121,64 @@ const ResetPasswordPage = () => {
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Новый пароль"
+        <Form
+          form={form}
+          name="reset-password"
+          onFinish={handleSubmit}
+          layout="vertical"
+          autoComplete="off"
+        >
+          <Form.Item
             name="newPassword"
-            type={showPassword ? "text" : "password"}
-            value={formData.newPassword}
-            onChange={handleInputChange}
-            margin="normal"
-            required
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon color="action" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    edge="end"
-                    onClick={() => setShowPassword(!showPassword)}
-                    size="small"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-            helperText="Пароль должен содержать минимум 6 символов"
-          />
+            label="Новый пароль"
+            rules={[
+              { required: true, message: 'Пожалуйста, введите новый пароль' },
+              { min: 8, message: 'Пароль должен содержать минимум 8 символов' }
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Введите новый пароль"
+              iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+            />
+          </Form.Item>
 
-          <TextField
-            fullWidth
-            label="Подтверждение пароля"
+          <Form.Item
             name="confirmPassword"
-            type={showConfirmPassword ? "text" : "password"}
-            value={formData.confirmPassword}
-            onChange={handleInputChange}
-            margin="normal"
-            required
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon color="action" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    edge="end"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    size="small"
-                  >
-                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+            label="Подтверждение пароля"
+            dependencies={['newPassword']}
+            rules={[
+              { required: true, message: 'Пожалуйста, подтвердите пароль' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('Пароли не совпадают'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Подтвердите новый пароль"
+              iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+            />
+          </Form.Item>
 
-          <Box sx={{ mt: 3 }}>
+          <Form.Item>
             <Button
-              fullWidth
-              variant="contained"
-              color="primary"
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              disabled={!formData.token}
+              style={{ width: '100%' }}
               size="large"
-              type="submit"
-              disabled={loading || !formData.token}
             >
               {loading ? "Установка пароля..." : "Установить новый пароль"}
             </Button>
-          </Box>
-        </form>
+          </Form.Item>
+        </Form>
 
         {!formData.token && (
           <Alert severity="warning" sx={{ mt: 2 }}>
