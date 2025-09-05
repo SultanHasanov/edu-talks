@@ -84,8 +84,8 @@ const ResetPasswordPage = () => {
         
         // Автоматический переход на страницу входа через 3 секунды
         setTimeout(() => {
-          navigate("/login");
-        }, 3000);
+          navigate("/auth");
+        }, 8000);
       }
     } catch (error) {
       console.error("Ошибка при сбросе пароля:", error);
@@ -116,7 +116,7 @@ const ResetPasswordPage = () => {
           </Alert>
           <Button
             variant="contained"
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/auth")}
           >
             Перейти к входу
           </Button>
