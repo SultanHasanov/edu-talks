@@ -9,18 +9,11 @@ import {
   Card,
   Spin,
   Avatar,
-  Tooltip,
   Row,
   Col,
-  Divider,
   Pagination,
   Select,
   Badge,
-  Progress,
-  Statistic,
-  Popover,
-  Modal,
-  message,
 } from "antd";
 import {
   MoreOutlined,
@@ -40,18 +33,7 @@ import {
   CalendarOutlined,
   PhoneOutlined,
 } from "@ant-design/icons";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as ChartTooltip,
-  Legend,
-} from "recharts";
+import { CheckCircle, XCircle } from 'lucide-react';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -159,24 +141,35 @@ const UsersTable = ({
       ),
     },
     {
-      title: "Контакты",
-      key: "contacts",
-      width: 200,
-      render: (_, record) => (
+  title: "Контакты",
+  key: "contacts",
+  width: 200,
+  render: (_, record) => (
+    <div>
+      <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center' }}>
+        <MailOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+        <Text>{record.email || "Не указан"}</Text>
+        {record.email_verified ? (
+          <CheckCircle 
+            size={16} 
+            style={{ marginLeft: 8, color: "#52c41a" }} 
+          />
+        ) : (
+          <XCircle 
+            size={16} 
+            style={{ marginLeft: 8, color: "#ff4d4f" }} 
+          />
+        )}
+      </div>
+      {record.phone && (
         <div>
-          <div style={{ marginBottom: 4 }}>
-            <MailOutlined style={{ marginRight: 8, color: "#1890ff" }} />
-            <Text>{record.email || "Не указан"}</Text>
-          </div>
-          {record.phone && (
-            <div>
-              <PhoneOutlined style={{ marginRight: 8, color: "#52c41a" }} />
-              <Text>{record.phone}</Text>
-            </div>
-          )}
+          <PhoneOutlined style={{ marginRight: 8, color: "#52c41a" }} />
+          <Text>{record.phone}</Text>
         </div>
-      ),
-    },
+      )}
+    </div>
+  ),
+},
     {
       title: "Статус",
       key: "status",
@@ -290,9 +283,7 @@ const UsersTable = ({
         }}
         bodyStyle={{ padding: 0 }}
       >
-        {/* Заголовок и статистика */}
 
-        {/* Фильтры */}
         <div
           style={{
             padding: "16px 24px",

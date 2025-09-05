@@ -12,6 +12,10 @@ import {
   Button,
   Alert,
   DatePicker,
+  Form,
+  Input,
+  Modal,
+  Space,
 } from "antd";
 import {
   UserOutlined,
@@ -22,6 +26,9 @@ import {
   CloseCircleOutlined,
   SyncOutlined,
   CrownOutlined,
+  LockOutlined,
+  EyeInvisibleOutlined,
+  EyeTwoTone,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
@@ -44,8 +51,12 @@ const UserProfile = () => {
   const [subLoading, setSubLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [checkingVerification, setCheckingVerification] = useState(false);
+  const [changePasswordModalVisible, setChangePasswordModalVisible] =
+    useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [form] = Form.useForm();
 
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const handleSubscribe = () => {
     if (!access_token) {
       alert("Нужно сначала авторизоваться");
@@ -154,6 +165,57 @@ const UserProfile = () => {
     }
   };
 
+  const handleChangePassword = async (values) => {
+    setChangingPassword(true);
+    try {
+      await axios.post(
+        "https://edutalks.ru/api/password/change",
+        {
+          old_password: values.oldPassword,
+          new_password: values.newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      message.success("Пароль успешно изменен");
+      setChangePasswordModalVisible(false);
+      form.resetFields();
+
+      // Опционально: разлогинить пользователя для повторного входа
+      // localStorage.removeItem("access_token");
+      // window.location.reload();
+    } catch (error) {
+      console.error("Ошибка при смене пароля:", error);
+
+      if (error.response?.status === 400) {
+        if (error.response.data?.message?.includes("old password")) {
+          message.error("Текущий пароль неверный");
+        } else if (
+          error.response.data?.message?.includes("password too short")
+        ) {
+          message.error("Новый пароль слишком короткий");
+        } else {
+          message.error(
+            "Не удалось изменить пароль. Проверьте введенные данные"
+          );
+        }
+      } else if (error.response?.status === 401) {
+        message.error("Сессия истекла. Пожалуйста, войдите снова");
+        localStorage.removeItem("access_token");
+        window.location.reload();
+      } else {
+        message.error("Произошла ошибка при изменении пароля");
+      }
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const expiresDate = dayjs(userData.subscription_expires_at);
 
   return (
@@ -179,6 +241,15 @@ const UserProfile = () => {
                 <Title level={3}>
                   {userData.full_name || userData.username}
                 </Title>
+
+                <Button
+                  type="primary"
+                  icon={<LockOutlined />}
+                  onClick={() => setChangePasswordModalVisible(true)}
+                  style={{ marginTop: 16 }}
+                >
+                  Сменить пароль
+                </Button>
               </div>
 
               {verificationSent && !userData.email_verified && (
@@ -298,6 +369,107 @@ const UserProfile = () => {
             </p>
           </Card>
         )}
+
+        {/* Модальное окно смены пароля */}
+        <Modal
+          title="Смена пароля"
+          open={changePasswordModalVisible}
+          onCancel={() => {
+            setChangePasswordModalVisible(false);
+            form.resetFields();
+          }}
+          footer={null}
+          destroyOnClose
+        >
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleChangePassword}
+            autoComplete="off"
+          >
+            <Form.Item
+              name="oldPassword"
+              label="Текущий пароль"
+              rules={[
+                {
+                  required: true,
+                  message: "Пожалуйста, введите текущий пароль",
+                },
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder="Введите текущий пароль"
+                iconRender={(visible) =>
+                  visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+                }
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="newPassword"
+              label="Новый пароль"
+              rules={[
+                { required: true, message: "Пожалуйста, введите новый пароль" },
+              ]}
+             
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder="Введите новый пароль"
+                iconRender={(visible) =>
+                  visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+                }
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="confirmPassword"
+              label="Подтверждение пароля"
+              dependencies={["newPassword"]}
+              rules={[
+                { required: true, message: "Пожалуйста, подтвердите пароль" },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue("newPassword") === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error("Пароли не совпадают"));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder="Подтвердите новый пароль"
+                iconRender={(visible) =>
+                  visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+                }
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Space>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={changingPassword}
+                  disabled={changingPassword}
+                >
+                  Сменить пароль
+                </Button>
+                <Button
+                  onClick={() => {
+                    setChangePasswordModalVisible(false);
+                    form.resetFields();
+                  }}
+                >
+                  Отмена
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Modal>
       </Col>
     </Row>
   );

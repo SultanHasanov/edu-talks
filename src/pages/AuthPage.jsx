@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -13,6 +13,11 @@ import {
   InputAdornment,
   Alert,
   Checkbox,
+  Modal,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -22,8 +27,9 @@ import {
   VisibilityOff,
   Home as HomeIcon,
   Phone as PhoneIcon,
+  Key as KeyIcon,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const AuthPage = () => {
@@ -45,6 +51,34 @@ const AuthPage = () => {
   const { login, logout, isAuthenticated, username } = useAuth();
   const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Состояния для восстановления пароля
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState(false);
+  const [resetPasswordData, setResetPasswordData] = useState({
+    newPassword: "",
+    confirmPassword: "",
+    token: "",
+  });
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  const [resetPasswordError, setResetPasswordError] = useState("");
+
+  // Проверяем наличие токена в URL при загрузке компонента
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) {
+      setResetPasswordData(prev => ({ ...prev, token }));
+      setResetPasswordOpen(true);
+      // Очищаем параметр из URL
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete("token");
+      setSearchParams(newSearchParams);
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -65,66 +99,67 @@ const AuthPage = () => {
     setShowPassword(!showPassword);
   };
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setAuthError("");
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setAuthError("");
 
-  if (!formData.username || !formData.password) {
-    setAuthError("Пожалуйста, заполните все поля");
-    return;
-  }
+    if (!formData.username || !formData.password) {
+      setAuthError("Пожалуйста, заполните все поля");
+      return;
+    }
 
-  setIsLoading(true);
-  try {
-    console.log("Отправка запроса на авторизацию:", {
-      username: formData.username,
-      password: "***" // Не логируйте реальный пароль!
-    });
-
-    const response = await fetch("https://edutalks.ru/api/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    setIsLoading(true);
+    try {
+      console.log("Отправка запроса на авторизацию:", {
         username: formData.username,
-        password: formData.password,
-      }),
-    });
+        password: "***" // Не логируйте реальный пароль!
+      });
 
-    console.log("Статус ответа:", response.status);
-    console.log("Заголовки ответа:", Object.fromEntries(response.headers.entries()));
+      const response = await fetch("https://edutalks.ru/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password,
+        }),
+      });
 
-    // Читаем тело ответа безопасно
-    let data;
-    const contentType = response.headers.get("Content-Type");
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
-      data = { message: text };
+      console.log("Статус ответа:", response.status);
+      console.log("Заголовки ответа:", Object.fromEntries(response.headers.entries()));
+
+      // Читаем тело ответа безопасно
+      let data;
+      const contentType = response.headers.get("Content-Type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = { message: text };
+      }
+
+      console.log("Полный ответ сервера:", data);
+
+      if (!response.ok) {
+        throw new Error(data.message || "Ошибка авторизации");
+      }
+
+      console.log("Успешный ответ:", data);
+      login(
+        data.data.access_token,
+        data.data.role,
+        data.data.username,
+        data.data.full_name
+      );
+      navigate("/profile");
+    } catch (error) {
+      console.error("Ошибка авторизации:", error);
+      setAuthError(error.message || "Неверный логин или пароль");
+    } finally {
+      setIsLoading(false);
     }
-
-    console.log("Полный ответ сервера:", data);
-
-    if (!response.ok) {
-      throw new Error(data.message || "Ошибка авторизации");
-    }
-
-    console.log("Успешный ответ:", data);
-    login(
-      data.data.access_token,
-      data.data.role,
-      data.data.username,
-      data.data.full_name    );
-    navigate("/profile");
-  } catch (error) {
-    console.error("Ошибка авторизации:", error);
-    setAuthError(error.message || "Неверный логин или пароль");
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -197,10 +232,100 @@ const handleLogin = async (e) => {
     }
   };
 
+  // Функция для отправки запроса на восстановление пароля
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      setAuthError("Пожалуйста, введите email");
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    try {
+      const response = await fetch("https://edutalks.ru/api/password/forgot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: forgotPasswordEmail,
+        }),
+      });
+
+      // Ответ всегда одинаковый, даже если email не найден
+      setForgotPasswordSuccess(true);
+      setForgotPasswordOpen(false);
+      setAuthError("");
+      
+      message.success(
+        "Если email зарегистрирован в системе, письмо со ссылкой для сброса пароля будет отправлено."
+      );
+    } catch (error) {
+      console.error("Ошибка при отправке запроса на восстановление:", error);
+      setAuthError("Произошла ошибка при отправке запроса");
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
+  // Функция для установки нового пароля
+  const handleResetPassword = async () => {
+    if (resetPasswordData.newPassword !== resetPasswordData.confirmPassword) {
+      setResetPasswordError("Пароли не совпадают");
+      return;
+    }
+
+    if (resetPasswordData.newPassword.length < 6) {
+      setResetPasswordError("Пароль должен содержать минимум 6 символов");
+      return;
+    }
+
+    if (!resetPasswordData.token) {
+      setResetPasswordError("Токен отсутствует");
+      return;
+    }
+
+    setResetPasswordLoading(true);
+    setResetPasswordError("");
+
+    try {
+      const response = await fetch("https://edutalks.ru/api/password/reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          new_password: resetPasswordData.newPassword,
+          token: resetPasswordData.token,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Ошибка при сбросе пароля");
+      }
+
+      // Успешный сброс пароля
+      setResetPasswordOpen(false);
+      setResetPasswordData({
+        newPassword: "",
+        confirmPassword: "",
+        token: "",
+      });
+      
+      message.success("Пароль успешно изменен. Теперь вы можете войти с новым паролем.");
+      
+      // Переключаем на вкладку входа
+      setTabValue(0);
+    } catch (error) {
+      setResetPasswordError(error.message || "Произошла ошибка при сбросе пароля");
+    } finally {
+      setResetPasswordLoading(false);
+    }
+  };
+
   return (
     <Container maxWidth="sm" sx={{ mt: 3 }}>
-      {/* <BackButtonIcon /> */}
-
       <Paper elevation={3} sx={{ borderRadius: 2 }}>
         <Tabs
           value={tabValue}
@@ -285,6 +410,16 @@ const handleLogin = async (e) => {
               >
                 {isLoading ? "Вход..." : "Войти"}
               </Button>
+
+              <Box sx={{ textAlign: "center", mt: 2 }}>
+                <Button
+                  color="primary"
+                  onClick={() => setForgotPasswordOpen(true)}
+                  startIcon={<KeyIcon />}
+                >
+                  Забыли пароль?
+                </Button>
+              </Box>
             </form>
           ) : (
             // Форма регистрации
@@ -449,6 +584,108 @@ const handleLogin = async (e) => {
           )}
         </Box>
       </Paper>
+
+      {/* Модальное окно восстановления пароля */}
+      <Dialog open={forgotPasswordOpen} onClose={() => setForgotPasswordOpen(false)}>
+        <DialogTitle>Восстановление пароля</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Email"
+            type="email"
+            fullWidth
+            variant="outlined"
+            value={forgotPasswordEmail}
+            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <EmailIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          {forgotPasswordSuccess && (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              Если email зарегистрирован, письмо со ссылкой для сброса будет отправлено.
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setForgotPasswordOpen(false)}>Отмена</Button>
+          <Button 
+            onClick={handleForgotPassword} 
+            disabled={forgotPasswordLoading}
+            variant="contained"
+          >
+            {forgotPasswordLoading ? "Отправка..." : "Отправить"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Модальное окно установки нового пароля */}
+      <Dialog open={resetPasswordOpen} onClose={() => setResetPasswordOpen(false)}>
+        <DialogTitle>Установка нового пароля</DialogTitle>
+        <DialogContent>
+          {resetPasswordError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {resetPasswordError}
+            </Alert>
+          )}
+          
+          <TextField
+            margin="dense"
+            label="Новый пароль"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={resetPasswordData.newPassword}
+            onChange={(e) => setResetPasswordData(prev => ({
+              ...prev,
+              newPassword: e.target.value
+            }))}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <LockIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+            helperText="Пароль должен содержать минимум 6 символов"
+          />
+          
+          <TextField
+            margin="dense"
+            label="Подтверждение пароля"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={resetPasswordData.confirmPassword}
+            onChange={(e) => setResetPasswordData(prev => ({
+              ...prev,
+              confirmPassword: e.target.value
+            }))}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <LockIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetPasswordOpen(false)}>Отмена</Button>
+          <Button 
+            onClick={handleResetPassword} 
+            disabled={resetPasswordLoading}
+            variant="contained"
+          >
+            {resetPasswordLoading ? "Сохранение..." : "Сохранить"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
