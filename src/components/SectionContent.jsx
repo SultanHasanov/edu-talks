@@ -12,8 +12,9 @@ import {
   message,
   Modal,
 } from "antd";
-import { DownloadOutlined, FileOutlined, EyeOutlined } from "@ant-design/icons";
-import fileIcon from '../../public/fileIcon.png'
+import { DownloadOutlined, FileOutlined, EyeOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import fileIcon from "../../public/fileIcon.png";
+import { useNavigate } from "react-router-dom";
 const { Title, Paragraph, Text } = Typography;
 
 const SectionContent = ({ section }) => {
@@ -21,8 +22,8 @@ const SectionContent = ({ section }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingFileId, setLoadingFileId] = useState(null);
-
-
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const navigate = useNavigate();
   const access_token = localStorage.getItem("access_token");
 
   useEffect(() => {
@@ -61,41 +62,50 @@ const SectionContent = ({ section }) => {
     }
   };
 
-  const handleDownload = async (fileId, fileName) => {
-    try {
-      setLoadingFileId(fileId);
-      const response = await fetch(`https://edutalks.ru/api/files/${fileId}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`${errorText}`);
-      }
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(link);
-        message.success(`Файл "${fileName}" скачивается`);
-      } else {
-        message.error("Ошибка при скачивании");
-      }
-    } catch (err) {
-      console.log(err.message);
-      message.error(err.message);
-    } finally {
-      setLoadingFileId(null);
-    }
+    const handleBuySubscription = () => {
+    setSubscriptionModalOpen(false);
+    navigate('/subscription'); // Переход на страницу подписки
   };
 
+
+  const handleDownload = async (fileId, fileName, allowFreeDownload) => {
+    // Если файл доступен для бесплатного скачивания, скачиваем сразу
+    if (allowFreeDownload) {
+      try {
+        setLoadingFileId(fileId);
+        const response = await fetch(`https://edutalks.ru/api/files/${fileId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${access_token}` },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`${errorText}`);
+        }
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(link);
+          message.success(`Файл "${fileName}" скачивается`);
+        }
+      } catch (err) {
+        console.log(err.message);
+        message.error(err.message);
+      } finally {
+        setLoadingFileId(null);
+      }
+    } else {
+      // Если требуется подписка, показываем модальное окно
+      setSubscriptionModalOpen(true);
+    }
+  };
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("ru-RU", {
       year: "numeric",
@@ -111,6 +121,7 @@ const SectionContent = ({ section }) => {
       <Card style={{ marginBottom: 20 }}>
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
           <Title level={3}>{section?.title}</Title>
+
           {section?.description && (
             <Paragraph style={{ fontSize: "16px", lineHeight: "1.6" }}>
               {section.description}
@@ -160,57 +171,98 @@ const SectionContent = ({ section }) => {
         )}
 
         {!loading && files.length > 0 && (
-          <List
-            itemLayout="horizontal"
-            dataSource={files}
-            renderItem={(file) => (
-              <List.Item
-                actions={[
-                  <Button
-                    key="download"
-                    type="primary"
-                    icon={<DownloadOutlined />}
-                    onClick={() => handleDownload(file.id, file.filename)}
-                    size="small"
-                    loading={loadingFileId === file.id}
-                  >
-                    Скачать
-                  </Button>,
-                ]}
-              >
-                <List.Item.Meta
-                  avatar={
-                     <img 
-                      src={fileIcon} 
-                      alt="File icon" 
-                      style={{ 
-                        width: "44px", 
-                        height: "44px" 
-                      }}
-                    />
-                  }
-                  title={
+        <List
+          itemLayout="horizontal"
+          dataSource={files}
+          renderItem={(file) => (
+            <List.Item
+              actions={[
+                <Button
+                  key="download"
+                  type={file.allow_free_download ? "primary" : "default"}
+                  icon={<DownloadOutlined />}
+                  onClick={() => handleDownload(file.id, file.filename, file.allow_free_download)}
+                  size="small"
+                  loading={loadingFileId === file.id}
+                  style={file.allow_free_download ? { 
+                    background: '#52c41a', 
+                    borderColor: '#52c41a' 
+                  } : {}}
+                >
+                  {file.allow_free_download ? 'Скачать' : 'Скачать'}
+                </Button>,
+              ]}
+            >
+              <List.Item.Meta
+                avatar={
+                  <img 
+                    src={fileIcon} 
+                    alt="File icon" 
+                    style={{ 
+                      width: "44px", 
+                      height: "44px" 
+                    }}
+                  />
+                }
+                title={
+                  <Space>
                     <Text strong style={{ fontSize: "16px" }}>
                       {file.title}
                     </Text>
-                  }
-                  description={
-                    <Space
-                      direction="vertical"
-                      size="small"
-                      style={{ fontSize: "14px" }}
-                    >
-                      {file.description && <Text>{file.description}</Text>}
-                      <Text type="secondary">
-                        Загружено: {formatDate(file.uploaded_at)}
-                      </Text>
-                    </Space>
-                  }
-                />
-              </List.Item>
-            )}
-          />
-        )}
+                    {file.allow_free_download && (
+                      <Tag color="green">Бесплатно</Tag>
+                    )}
+                  </Space>
+                }
+                description={
+                  <Space
+                    direction="vertical"
+                    size="small"
+                    style={{ fontSize: "14px" }}
+                  >
+                    {file.description && <Text>{file.description}</Text>}
+                    <Text type="secondary">
+                      Загружено: {formatDate(file.uploaded_at)}
+                    </Text>
+                  </Space>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      )}
+
+      {/* Модальное окно для подписки */}
+      <Modal
+        title="Требуется подписка"
+        open={subscriptionModalOpen}
+        onCancel={() => setSubscriptionModalOpen(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setSubscriptionModalOpen(false)}>
+            Отмена
+          </Button>,
+          <Button 
+            key="buy" 
+            type="primary" 
+            icon={<ShoppingCartOutlined />}
+            onClick={handleBuySubscription}
+          >
+            Купить подписку
+          </Button>,
+        ]}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Text>
+            У вас нет активной подписки для скачивания этого документа.
+          </Text>
+          <Text strong>
+            Приобретите базовую подписку всего за 1250 рублей в месяц!
+          </Text>
+          <Text type="secondary">
+            Подписка дает доступ ко всем материалам платформы
+          </Text>
+        </Space>
+      </Modal>
       </Card>
     </div>
   );

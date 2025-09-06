@@ -47,7 +47,7 @@ const FileUploadSection = () => {
   const [selectedFileDetails, setSelectedFileDetails] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
-
+const [allowFreeDownload, setAllowFreeDownload] = useState(false);
   const [sectionId, setSectionId] = useState(null);
   const [sections, setSections] = useState([]);
   const [sectionsLoading, setSectionsLoading] = useState(false);
@@ -200,7 +200,7 @@ const FileUploadSection = () => {
     formData.append("file", selectedFile);
     formData.append("description", description);
     formData.append("is_public", isPublic);
-
+formData.append("allow_free_download", allowFreeDownload);
     formData.append("title", title);
     // Добавляем section_id, если выбран
     if (sectionId) {
@@ -229,7 +229,7 @@ const FileUploadSection = () => {
       setSelectedFile(null);
       setDescription("");
       setSectionId(null);
-
+setAllowFreeDownload(false);
       setTitle("");
     } catch (err) {
       console.error("Ошибка загрузки:", err);
@@ -329,6 +329,16 @@ const FileUploadSection = () => {
           : "Не указана";
       },
     },
+    {
+  title: "Бесплатное",
+  dataIndex: "allow_free_download",
+  key: "freeDownload",
+  render: (allowFreeDownload) => (
+    <Tag color={allowFreeDownload ? "green" : "default"}>
+      {allowFreeDownload ? "Разрешено" : "Запрещено"}
+    </Tag>
+  ),
+},
     {
       title: "Действия",
       key: "actions",
@@ -470,6 +480,13 @@ const FileUploadSection = () => {
               />
             </div>
           )}
+          <Checkbox
+  checked={allowFreeDownload}
+  onChange={(e) => setAllowFreeDownload(e.target.checked)}
+  style={{ marginBottom: 16 }}
+>
+  Разрешить бесплатное скачивание
+</Checkbox>
 
           <Checkbox
             checked={isPublic}

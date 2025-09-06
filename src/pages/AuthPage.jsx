@@ -71,7 +71,7 @@ const AuthPage = () => {
   useEffect(() => {
     const token = searchParams.get("token");
     if (token) {
-      setResetPasswordData(prev => ({ ...prev, token }));
+      setResetPasswordData((prev) => ({ ...prev, token }));
       setResetPasswordOpen(true);
       // Очищаем параметр из URL
       const newSearchParams = new URLSearchParams(searchParams);
@@ -112,7 +112,7 @@ const AuthPage = () => {
     try {
       console.log("Отправка запроса на авторизацию:", {
         username: formData.username,
-        password: "***" // Не логируйте реальный пароль!
+        password: "***", // Не логируйте реальный пароль!
       });
 
       const response = await fetch("https://edutalks.ru/api/login", {
@@ -127,7 +127,10 @@ const AuthPage = () => {
       });
 
       console.log("Статус ответа:", response.status);
-      console.log("Заголовки ответа:", Object.fromEntries(response.headers.entries()));
+      console.log(
+        "Заголовки ответа:",
+        Object.fromEntries(response.headers.entries())
+      );
 
       // Читаем тело ответа безопасно
       let data;
@@ -165,7 +168,17 @@ const AuthPage = () => {
     e.preventDefault();
     setRegError("");
     setRegSuccess(false);
-
+    // Проверка что ФИО содержит три слова (Фамилия Имя Отчество)
+    const nameParts = formData.full_name.trim().split(/\s+/);
+    if (nameParts.length < 3) {
+      setRegError("Пожалуйста, введите полное ФИО (Фамилия Имя Отчество)");
+      return;
+    }
+    // Дополнительная проверка что каждая часть ФИО не слишком короткая
+    if (nameParts.some((part) => part.length < 2)) {
+      setRegError("Каждая часть ФИО должна содержать минимум 2 символа");
+      return;
+    }
     if (
       !formData.email ||
       !formData.username ||
@@ -234,37 +247,39 @@ const AuthPage = () => {
 
   // Функция для отправки запроса на восстановление пароля
   const handleForgotPassword = async () => {
-  if (!forgotPasswordEmail) {
-    setAuthError("Пожалуйста, введите email");
-    return;
-  }
+    if (!forgotPasswordEmail) {
+      setAuthError("Пожалуйста, введите email");
+      return;
+    }
 
-  setForgotPasswordLoading(true);
-  try {
-    const response = await fetch("https://edutalks.ru/api/password/forgot", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: forgotPasswordEmail,
-      }),
-    });
+    setForgotPasswordLoading(true);
+    try {
+      const response = await fetch("https://edutalks.ru/api/password/forgot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: forgotPasswordEmail,
+        }),
+      });
 
-    // Ответ всегда одинаковый, даже если email не найден
-    setForgotPasswordSuccess(true);
-    setForgotPasswordOpen(false);
-    setAuthError("");
-    
-    // Показываем сообщение об успехе
-    setSuccessMessage("Если email зарегистрирован в системе, письмо со ссылкой для сброса пароля будет отправлено.");
-  } catch (error) {
-    console.error("Ошибка при отправке запроса на восстановление:", error);
-    setAuthError("Произошла ошибка при отправке запроса");
-  } finally {
-    setForgotPasswordLoading(false);
-  }
-};
+      // Ответ всегда одинаковый, даже если email не найден
+      setForgotPasswordSuccess(true);
+      setForgotPasswordOpen(false);
+      setAuthError("");
+
+      // Показываем сообщение об успехе
+      setSuccessMessage(
+        "Если email зарегистрирован в системе, письмо со ссылкой для сброса пароля будет отправлено."
+      );
+    } catch (error) {
+      console.error("Ошибка при отправке запроса на восстановление:", error);
+      setAuthError("Произошла ошибка при отправке запроса");
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
 
   // Функция для установки нового пароля
   const handleResetPassword = async () => {
@@ -311,13 +326,17 @@ const AuthPage = () => {
         confirmPassword: "",
         token: "",
       });
-      
-      message.success("Пароль успешно изменен. Теперь вы можете войти с новым паролем.");
-      
+
+      message.success(
+        "Пароль успешно изменен. Теперь вы можете войти с новым паролем."
+      );
+
       // Переключаем на вкладку входа
       setTabValue(0);
     } catch (error) {
-      setResetPasswordError(error.message || "Произошла ошибка при сбросе пароля");
+      setResetPasswordError(
+        error.message || "Произошла ошибка при сбросе пароля"
+      );
     } finally {
       setResetPasswordLoading(false);
     }
@@ -437,7 +456,7 @@ const AuthPage = () => {
 
               <TextField
                 fullWidth
-                label="Полное имя"
+                label="ФИО"
                 name="full_name"
                 value={formData.full_name}
                 onChange={handleInputChange}
@@ -585,7 +604,10 @@ const AuthPage = () => {
       </Paper>
 
       {/* Модальное окно восстановления пароля */}
-      <Dialog open={forgotPasswordOpen} onClose={() => setForgotPasswordOpen(false)}>
+      <Dialog
+        open={forgotPasswordOpen}
+        onClose={() => setForgotPasswordOpen(false)}
+      >
         <DialogTitle>Восстановление пароля</DialogTitle>
         <DialogContent>
           <TextField
@@ -607,14 +629,15 @@ const AuthPage = () => {
           />
           {forgotPasswordSuccess && (
             <Alert severity="success" sx={{ mt: 2 }}>
-              Если email зарегистрирован, письмо со ссылкой для сброса будет отправлено.
+              Если email зарегистрирован, письмо со ссылкой для сброса будет
+              отправлено.
             </Alert>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setForgotPasswordOpen(false)}>Отмена</Button>
-          <Button 
-            onClick={handleForgotPassword} 
+          <Button
+            onClick={handleForgotPassword}
             disabled={forgotPasswordLoading}
             variant="contained"
           >
@@ -624,7 +647,10 @@ const AuthPage = () => {
       </Dialog>
 
       {/* Модальное окно установки нового пароля */}
-      <Dialog open={resetPasswordOpen} onClose={() => setResetPasswordOpen(false)}>
+      <Dialog
+        open={resetPasswordOpen}
+        onClose={() => setResetPasswordOpen(false)}
+      >
         <DialogTitle>Установка нового пароля</DialogTitle>
         <DialogContent>
           {resetPasswordError && (
@@ -632,7 +658,7 @@ const AuthPage = () => {
               {resetPasswordError}
             </Alert>
           )}
-          
+
           <TextField
             margin="dense"
             label="Новый пароль"
@@ -640,10 +666,12 @@ const AuthPage = () => {
             fullWidth
             variant="outlined"
             value={resetPasswordData.newPassword}
-            onChange={(e) => setResetPasswordData(prev => ({
-              ...prev,
-              newPassword: e.target.value
-            }))}
+            onChange={(e) =>
+              setResetPasswordData((prev) => ({
+                ...prev,
+                newPassword: e.target.value,
+              }))
+            }
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -653,7 +681,7 @@ const AuthPage = () => {
             }}
             helperText="Пароль должен содержать минимум 6 символов"
           />
-          
+
           <TextField
             margin="dense"
             label="Подтверждение пароля"
@@ -661,10 +689,12 @@ const AuthPage = () => {
             fullWidth
             variant="outlined"
             value={resetPasswordData.confirmPassword}
-            onChange={(e) => setResetPasswordData(prev => ({
-              ...prev,
-              confirmPassword: e.target.value
-            }))}
+            onChange={(e) =>
+              setResetPasswordData((prev) => ({
+                ...prev,
+                confirmPassword: e.target.value,
+              }))
+            }
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -676,8 +706,8 @@ const AuthPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setResetPasswordOpen(false)}>Отмена</Button>
-          <Button 
-            onClick={handleResetPassword} 
+          <Button
+            onClick={handleResetPassword}
             disabled={resetPasswordLoading}
             variant="contained"
           >

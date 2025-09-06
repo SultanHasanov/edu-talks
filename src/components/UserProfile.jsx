@@ -29,6 +29,7 @@ import {
   LockOutlined,
   EyeInvisibleOutlined,
   EyeTwoTone,
+  EditOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
@@ -55,7 +56,7 @@ const UserProfile = () => {
     useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [form] = Form.useForm();
-
+  const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
   const handleSubscribe = () => {
     if (!access_token) {
@@ -65,6 +66,17 @@ const UserProfile = () => {
     navigate("/subscription");
   };
   const { role } = useAuth();
+  const [editForm] = Form.useForm();
+  useEffect(() => {
+    if (isEditing) {
+      editForm.setFieldsValue({
+        full_name: userData.full_name,
+        phone: userData.phone,
+        address: userData.address,
+        email: userData.email,
+      });
+    }
+  }, [isEditing, editForm, userData]);
 
   // Получение данных профиля
   useEffect(() => {
@@ -165,6 +177,19 @@ const UserProfile = () => {
     }
   };
 
+  const handleSaveEdit = async (values) => {
+    try {
+      await axios.patch("https://edutalks.ru/api/profile", values, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+      setUserData((prev) => ({ ...prev, ...values }));
+      setIsEditing(false);
+      message.success("Данные успешно обновлены");
+    } catch (error) {
+      message.error("Ошибка при обновлении данных");
+    }
+  };
+
   const handleChangePassword = async (values) => {
     setChangingPassword(true);
     try {
@@ -241,15 +266,30 @@ const UserProfile = () => {
                 <Title level={3}>
                   {userData.full_name || userData.username}
                 </Title>
-
-                <Button
-                  type="primary"
-                  icon={<LockOutlined />}
-                  onClick={() => setChangePasswordModalVisible(true)}
-                  style={{ marginTop: 16 }}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    justifyContent: "center",
+                    marginTop: 16,
+                    flexWrap: "wrap",
+                  }}
                 >
-                  Сменить пароль
-                </Button>
+                  <Button
+                    type="primary"
+                    icon={<EditOutlined />}
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Редактировать
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<LockOutlined />}
+                    onClick={() => setChangePasswordModalVisible(true)}
+                  >
+                    Сменить пароль
+                  </Button>
+                </div>
               </div>
 
               {verificationSent && !userData.email_verified && (
@@ -281,45 +321,71 @@ const UserProfile = () => {
                   }
                 />
               )}
-
-              <Descriptions
-                title="Информация пользователя"
-                column={1}
-                bordered
-                labelStyle={{ fontWeight: 500 }}
-              >
-                <Descriptions.Item label="Имя">
-                  {userData.full_name || "Не указано"}
-                </Descriptions.Item>
-                <Descriptions.Item label="Email">
-                  <MailOutlined /> {userData.email || "Не указан"}
-                  {userData.email_verified ? (
-                    <Text type="success" style={{ marginLeft: 8 }}>
-                      <CheckCircleOutlined /> Подтвержден
-                    </Text>
-                  ) : (
-                    <>
-                      <Text type="danger" style={{ marginLeft: 8 }}>
-                        <CloseCircleOutlined /> Не подтвержден
+              {isEditing ? (
+                <Form
+                  form={editForm}
+                  layout="vertical"
+                  onFinish={handleSaveEdit}
+                >
+                  <Form.Item label="Полное имя" name="full_name">
+                    <Input prefix={<UserOutlined />} />
+                  </Form.Item>
+                  <Form.Item label="Телефон" name="phone">
+                    <Input prefix={<PhoneOutlined />} />
+                  </Form.Item>
+                  <Form.Item label="Email" name="email">
+                    <Input prefix={<MailOutlined />} />
+                  </Form.Item>
+                  <Form.Item label="Адрес" name="address">
+                    <Input prefix={<HomeOutlined />} />
+                  </Form.Item>
+                  <Space>
+                    <Button type="primary" htmlType="submit">
+                      Сохранить
+                    </Button>
+                    <Button onClick={() => setIsEditing(false)}>Отмена</Button>
+                  </Space>
+                </Form>
+              ) : (
+                <Descriptions
+                  title="Информация пользователя"
+                  column={1}
+                  bordered
+                  labelStyle={{ fontWeight: 500 }}
+                >
+                  <Descriptions.Item label="Имя">
+                    {userData.full_name || "Не указано"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Email">
+                    <MailOutlined /> {userData.email || "Не указан"}
+                    {userData.email_verified ? (
+                      <Text type="success" style={{ marginLeft: 8 }}>
+                        <CheckCircleOutlined /> Подтвержден
                       </Text>
-                      <Button
-                        type="link"
-                        size="small"
-                        onClick={handleResendVerification}
-                        style={{ marginLeft: 8 }}
-                      >
-                        Подтвердить почту
-                      </Button>
-                    </>
-                  )}
-                </Descriptions.Item>
-                <Descriptions.Item label="Телефон">
-                  <PhoneOutlined /> {userData.phone || "Не указан"}
-                </Descriptions.Item>
-                <Descriptions.Item label="Адрес">
-                  <HomeOutlined /> {userData.address || "Не указан"}
-                </Descriptions.Item>
-              </Descriptions>
+                    ) : (
+                      <>
+                        <Text type="danger" style={{ marginLeft: 8 }}>
+                          <CloseCircleOutlined /> Не подтвержден
+                        </Text>
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={handleResendVerification}
+                          style={{ marginLeft: 8 }}
+                        >
+                          Подтвердить почту
+                        </Button>
+                      </>
+                    )}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Телефон">
+                    <PhoneOutlined /> {userData.phone || "Не указан"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Адрес">
+                    <HomeOutlined /> {userData.address || "Не указан"}
+                  </Descriptions.Item>
+                </Descriptions>
+              )}
 
               <div style={{ marginTop: 24 }}>
                 <Checkbox
@@ -412,7 +478,6 @@ const UserProfile = () => {
               rules={[
                 { required: true, message: "Пожалуйста, введите новый пароль" },
               ]}
-             
             >
               <Input.Password
                 prefix={<LockOutlined />}
