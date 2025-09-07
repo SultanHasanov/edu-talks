@@ -14,6 +14,7 @@ import {
   Pagination,
   Select,
   Badge,
+  Input,
 } from "antd";
 import {
   MoreOutlined,
@@ -37,6 +38,7 @@ import { CheckCircle, XCircle } from 'lucide-react';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { Search } = Input;
 
 const UsersTable = ({
   users,
@@ -46,11 +48,10 @@ const UsersTable = ({
   pagination,
   onTableChange,
   showDeleteConfirm,
+  onRefresh,
+  filters, // новые пропсы для фильтров
+  onFiltersChange, // функция обновления фильтров
 }) => {
-  const [searchText, setSearchText] = useState("");
-  const [selectedRole, setSelectedRole] = useState(null);
-  const [selectedSubscription, setSelectedSubscription] = useState(null);
-
   const formatDate = (dateString) => {
     if (!dateString) return "Не указано";
     try {
@@ -66,19 +67,30 @@ const UsersTable = ({
     }
   };
 
-  // Фильтрация данных
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.full_name?.toLowerCase().includes(searchText.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchText.toLowerCase());
-    const matchesRole = selectedRole ? user.role === selectedRole : true;
-    const matchesSubscription =
-      selectedSubscription !== null
-        ? user.has_subscription === selectedSubscription
-        : true;
+  // Обработчики изменения фильтров
+  const handleSearchChange = (value) => {
+    onFiltersChange({ ...filters, q: value, page: 1 });
+  };
 
-    return matchesSearch && matchesRole && matchesSubscription;
-  });
+  const handleRoleChange = (value) => {
+    onFiltersChange({ ...filters, role: value, page: 1 });
+  };
+
+  const handleSubscriptionChange = (value) => {
+    onFiltersChange({ 
+      ...filters, 
+      has_subscription: value !== null ? value.toString() : null, 
+      page: 1 
+    });
+  };
+
+  const handlePageSizeChange = (value) => {
+    onFiltersChange({ ...filters, page_size: value, page: 1 });
+  };
+
+  const handlePageChange = (page) => {
+    onFiltersChange({ ...filters, page });
+  };
 
   // Статистика для заголовка
   const userStats = {
@@ -141,35 +153,35 @@ const UsersTable = ({
       ),
     },
     {
-  title: "Контакты",
-  key: "contacts",
-  width: 200,
-  render: (_, record) => (
-    <div>
-      <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center' }}>
-        <MailOutlined style={{ marginRight: 8, color: "#1890ff" }} />
-        <Text>{record.email || "Не указан"}</Text>
-        {record.email_verified ? (
-          <CheckCircle 
-            size={16} 
-            style={{ marginLeft: 8, color: "#52c41a" }} 
-          />
-        ) : (
-          <XCircle 
-            size={16} 
-            style={{ marginLeft: 8, color: "#ff4d4f" }} 
-          />
-        )}
-      </div>
-      {record.phone && (
+      title: "Контакты",
+      key: "contacts",
+      width: 200,
+      render: (_, record) => (
         <div>
-          <PhoneOutlined style={{ marginRight: 8, color: "#52c41a" }} />
-          <Text>{record.phone}</Text>
+          <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center' }}>
+            <MailOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+            <Text>{record.email || "Не указан"}</Text>
+            {record.email_verified ? (
+              <CheckCircle 
+                size={16} 
+                style={{ marginLeft: 8, color: "#52c41a" }} 
+              />
+            ) : (
+              <XCircle 
+                size={16} 
+                style={{ marginLeft: 8, color: "#ff4d4f" }} 
+              />
+            )}
+          </div>
+          {record.phone && (
+            <div>
+              <PhoneOutlined style={{ marginRight: 8, color: "#52c41a" }} />
+              <Text>{record.phone}</Text>
+            </div>
+          )}
         </div>
-      )}
-    </div>
-  ),
-},
+      ),
+    },
     {
       title: "Статус",
       key: "status",
@@ -258,21 +270,6 @@ const UsersTable = ({
     return "пользователей";
   };
 
-  // Данные для графиков
-  const roleData = [
-    { name: "Админы", value: userStats.admins, color: "#faad14" },
-    { name: "Пользователи", value: userStats.users, color: "#1890ff" },
-  ];
-
-  const subscriptionData = [
-    { name: "С подпиской", value: userStats.subscribed, color: "#52c41a" },
-    {
-      name: "Без подписки",
-      value: userStats.total - userStats.subscribed,
-      color: "#d9d9d9",
-    },
-  ];
-
   return (
     <div>
       <Card
@@ -294,22 +291,14 @@ const UsersTable = ({
         >
           <Row gutter={16} align="middle">
             <Col xs={24} sm={12} md={8} lg={6} style={{ marginBottom: 8 }}>
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <SearchOutlined style={{ color: "#8c8c8c", marginRight: 8 }} />
-                <input
-                  placeholder="Поиск по имени или email"
-                  style={{
-                    border: "1px solid #d9d9d9",
-                    borderRadius: "6px",
-                    padding: "6px 11px",
-                    width: "100%",
-                    outline: "none",
-                    transition: "all 0.3s",
-                  }}
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                />
-              </div>
+              <Search
+                placeholder="Поиск по имени или email"
+                allowClear
+                enterButton={<SearchOutlined />}
+                value={filters.q || ''}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onSearch={handleSearchChange}
+              />
             </Col>
             <Col xs={12} sm={6} md={4} lg={3} style={{ marginBottom: 8 }}>
               <Select
@@ -317,8 +306,8 @@ const UsersTable = ({
                 style={{ width: "100%" }}
                 suffixIcon={<FilterOutlined />}
                 allowClear
-                value={selectedRole}
-                onChange={setSelectedRole}
+                value={filters.role || null}
+                onChange={handleRoleChange}
               >
                 <Option value="admin">Администратор</Option>
                 <Option value="user">Пользователь</Option>
@@ -330,12 +319,21 @@ const UsersTable = ({
                 style={{ width: "100%" }}
                 suffixIcon={<FilterOutlined />}
                 allowClear
-                value={selectedSubscription}
-                onChange={setSelectedSubscription}
+                value={filters.has_subscription !== null ? filters.has_subscription === 'true' : null}
+                onChange={handleSubscriptionChange}
               >
                 <Option value={true}>Активна</Option>
                 <Option value={false}>Не активна</Option>
               </Select>
+            </Col>
+            <Col xs={24} sm={6} md={4} lg={3} style={{ marginBottom: 8 }}>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={onRefresh}
+                style={{ width: "100%" }}
+              >
+                Обновить
+              </Button>
             </Col>
           </Row>
         </div>
@@ -345,10 +343,9 @@ const UsersTable = ({
           <Spin spinning={loading} tip="Загрузка пользователей...">
             <Table
               columns={columns}
-              dataSource={filteredUsers}
+              dataSource={users}
               rowKey="id"
               pagination={false}
-              onChange={onTableChange}
               style={{
                 borderRadius: "8px",
               }}
@@ -400,13 +397,8 @@ const UsersTable = ({
             <Space align="center">
               <Text type="secondary">Показать:</Text>
               <Select
-                value={pagination?.pageSize || 10}
-                onChange={(value) => {
-                  onTableChange({
-                    current: 1,
-                    pageSize: value,
-                  });
-                }}
+                value={filters.page_size || 10}
+                onChange={handlePageSizeChange}
                 style={{ width: 80 }}
               >
                 {[5, 10, 15, 20, 50].map((size) => (
@@ -416,20 +408,15 @@ const UsersTable = ({
                 ))}
               </Select>
               <Text type="secondary">
-                {getUserWordForm(pagination?.pageSize || 10)}
+                {getUserWordForm(filters.page_size || 10)}
               </Text>
             </Space>
 
             <Pagination
-              current={pagination?.current}
-              pageSize={pagination?.pageSize}
-              total={pagination?.total}
-              onChange={(newPage) => {
-                onTableChange({
-                  current: newPage,
-                  pageSize: pagination?.pageSize,
-                });
-              }}
+              current={filters.page || 1}
+              pageSize={filters.page_size || 10}
+              total={pagination?.total || 0}
+              onChange={handlePageChange}
               showSizeChanger={false}
               showTotal={(total, range) => (
                 <Text type="secondary">

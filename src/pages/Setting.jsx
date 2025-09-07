@@ -46,7 +46,6 @@ const Setting = () => {
   );
   const [editMode, setEditMode] = useState(false);
   const [users, setUsers] = useState([]);
-  const [usersAll, setUsersAll] = useState([]);
   const [loading, setLoading] = useState(false);
   const [news, setNews] = useState(null);
   const access_token = localStorage.getItem("access_token");
@@ -54,7 +53,13 @@ const Setting = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoading, setUserLoading] = useState(false);
-
+const [filters, setFilters] = useState({
+  page: 1,
+  page_size: 10,
+  q: null,
+  role: null,
+  has_subscription: null,
+});
   const isAdmin = role === "admin";
 
   const [formData, setFormData] = useState({
@@ -65,13 +70,13 @@ const Setting = () => {
   });
 
   // Загрузка пользователей для админа
-useEffect(() => {
-  if (isAdmin && access_token) { // Добавлена проверка access_token
-    fetchUsers();
-    fetchNews();
-    fetchUsersAll();
-  }
-}, [isAdmin, activeTab, access_token]); 
+  useEffect(() => {
+    if (isAdmin && access_token) {
+      fetchUsers();
+      fetchNews();
+    
+    }
+  }, [isAdmin, activeTab, access_token]);
 
   const [pagination, setPagination] = useState({
     current: 1,
@@ -83,99 +88,72 @@ useEffect(() => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Общая функция загрузки данных
-  const fetchUsers = async (page = 1, pageSize = 10) => {
-     if (!access_token) {
+ const fetchUsers = async (filtersParams = filters) => {
+  if (!access_token) {
     message.error("Требуется авторизация");
     return;
   }
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `https://edutalks.ru/api/admin/users?page=${page}&page_size=${pageSize}`,
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Ошибка загрузки пользователей");
+  setLoading(true);
+  try {
+    // Создаем параметры запроса
+    const params = new URLSearchParams();
+    
+    Object.entries(filtersParams).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        params.append(key, value);
       }
+    });
 
-      const data = await response.json();
-      setUsers(data.data.data);
+    const response = await fetch(
+      `https://edutalks.ru/api/admin/users?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
 
-      // Обновляем пагинацию
-      const newPagination = {
-        current: data.data.page,
-        pageSize: data.data.page_size,
-        total: data.data.total,
-      };
-      setPagination(newPagination);
-
-      // Помечаем как инициализированное
-      if (!isInitialized) setIsInitialized(true);
-
-      return newPagination;
-    } catch (err) {
-      console.log(err);
-      message.error(err.message || "Ошибка загрузки пользователей");
-      return {
-        current: 1,
-        pageSize: 10,
-        total: 0,
-      };
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error("Ошибка загрузки пользователей");
     }
-  };
 
-  const fetchUsersAll = async () => {
-    setLoading(true);
-    try {
-      // Сначала получаем первую страницу, чтобы узнать общее количество пользователей
-      const firstPageResponse = await fetch(
-        `https://edutalks.ru/api/admin/users?page=1&page_size=10`,
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
+    const data = await response.json();
+    setUsers(data.data.data);
 
-      if (!firstPageResponse.ok) {
-        throw new Error("Ошибка загрузки пользователей");
-      }
+    // Обновляем пагинацию
+    const newPagination = {
+      current: data.data.page,
+      pageSize: data.data.page_size,
+      total: data.data.total,
+    };
+    setPagination(newPagination);
 
-      const firstPageData = await firstPageResponse.json();
-      const totalUsers = firstPageData.data.total;
+    if (!isInitialized) setIsInitialized(true);
 
-      // Затем делаем запрос с page_size равным общему количеству пользователей
-      const allUsersResponse = await fetch(
-        `https://edutalks.ru/api/admin/users?page=1&page_size=${totalUsers}`,
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
+    return newPagination;
+  } catch (err) {
+    console.log(err);
+    message.error(err.message || "Ошибка загрузки пользователей");
+    return {
+      current: 1,
+      pageSize: 10,
+      total: 0,
+    };
+  } finally {
+    setLoading(false);
+  }
+};
 
-      if (!allUsersResponse.ok) {
-        throw new Error("Ошибка загрузки всех пользователей");
-      }
+// Функция обновления фильтров
+const handleFiltersChange = (newFilters) => {
+  setFilters(newFilters);
+  fetchUsers(newFilters);
+};
 
-      const allUsersData = await allUsersResponse.json();
-      setUsersAll(allUsersData.data.data);
-
-      // Обновляем пагинацию (теперь у нас одна страница со всеми пользователями)
-    } catch (err) {
-      console.log(err);
-      message.error(err.message || "Ошибка загрузки пользователей");
-    } finally {
-      setLoading(false);
-    }
-  };
+// Функция обновления данных
+const handleRefresh = async () => {
+  await fetchUsers(filters);
+};
 
   // Первичная загрузка данных
   useEffect(() => {
@@ -185,9 +163,7 @@ useEffect(() => {
   }, [isInitialized]);
 
   // Обновленная функция обновления данных
-  const handleRefresh = async () => {
-    await fetchUsers(pagination.current, pagination.pageSize);
-  };
+ 
 
   // Функция обработки изменения страницы
   const handleTableChange = async (newPagination) => {
@@ -364,59 +340,87 @@ useEffect(() => {
     }
   };
 
-  // Компонент статистики
-  // Компонент статистики
   const StatisticsContent = () => {
-    const totalUsers = usersAll.length;
-    const adminCount = usersAll.filter((u) => u.role === "admin").length;
-    const userCount = usersAll.filter((u) => u.role === "user").length;
-    const subscribedCount = usersAll.filter(
-      (u) => u.has_subscription === true
-    ).length;
-    const notSubscribedCount = totalUsers - subscribedCount;
-    const subscribedPercentage =
-      totalUsers > 0 ? Math.round((subscribedCount / totalUsers) * 100) : 0;
+    const [stats, setStats] = useState({
+      admins: 0,
+      news_count: 0,
+      regular_users: 0,
+      total_users: 0,
+      with_subscription: 0,
+      with_subscription_pct: 0,
+      without_subscription: 0,
+      without_subscription_pct: 0,
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      fetchStatistics();
+    }, []);
+
+    const fetchStatistics = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("https://edutalks.ru/api/admin/stats", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`, // Добавьте токен авторизации
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Ошибка загрузки статистики");
+        }
+
+        const data = await response.json();
+        setStats(data.data);
+      } catch (error) {
+        console.error("Ошибка:", error);
+        // Можно добавить уведомление об ошибке
+      } finally {
+        setLoading(false);
+      }
+    };
 
     const dataSource = [
       {
         key: "1",
         metric: "Всего пользователей",
-        value: totalUsers,
+        value: stats.total_users,
         icon: <TeamOutlined />,
         color: "#3f8600",
       },
       {
         key: "2",
         metric: "Администраторов",
-        value: adminCount,
+        value: stats.admins,
         icon: <CrownOutlined />,
         color: "#cf1322",
       },
       {
         key: "3",
         metric: "Обычных пользователей",
-        value: userCount,
+        value: stats.regular_users,
         icon: <UserOutlined />,
         color: "#1890ff",
       },
       {
         key: "4",
         metric: "С подпиской",
-        value: `${subscribedCount} (${subscribedPercentage}%)`,
+        value: `${stats.with_subscription} (${stats.with_subscription_pct}%)`,
         icon: <SafetyOutlined />,
         color: "#52c41a",
       },
       {
         key: "5",
         metric: "Без подписки",
-        value: notSubscribedCount,
+        value: stats.without_subscription,
         icon: <StopOutlined />,
         color: "#fa8c16",
       },
       {
         key: "6",
         metric: "Новостей",
-        value: news || 0,
+        value: stats.news_count,
         icon: <NotificationOutlined />,
         color: "#faad14",
       },
@@ -454,6 +458,7 @@ useEffect(() => {
           title="Статистика системы"
           bordered={false}
           style={{ marginBottom: 24 }}
+          loading={loading}
         >
           <Table
             dataSource={dataSource}
@@ -461,17 +466,18 @@ useEffect(() => {
             pagination={false}
             showHeader={false}
             size="middle"
+            loading={loading}
           />
         </Card>
 
-        <Card title="Детализация подписок">
+        <Card title="Детализация подписок" loading={loading}>
           <Row gutter={16}>
             <Col span={12}>
               <Progress
                 type="dashboard"
-                percent={subscribedPercentage}
+                percent={stats.with_subscription_pct}
                 strokeColor="#52c41a"
-                format={() => `${subscribedCount}/${totalUsers}`}
+                format={() => `${stats.with_subscription}/${stats.total_users}`}
               />
               <div style={{ textAlign: "center", marginTop: 16 }}>
                 <Text strong>Пользователей с подпиской</Text>
@@ -480,9 +486,11 @@ useEffect(() => {
             <Col span={12}>
               <Progress
                 type="dashboard"
-                percent={100 - subscribedPercentage}
+                percent={stats.without_subscription_pct}
                 strokeColor="#fa8c16"
-                format={() => `${notSubscribedCount}/${totalUsers}`}
+                format={() =>
+                  `${stats.without_subscription}/${stats.total_users}`
+                }
               />
               <div style={{ textAlign: "center", marginTop: 16 }}>
                 <Text strong>Пользователей без подписки</Text>
@@ -592,16 +600,17 @@ useEffect(() => {
                 key="2"
               >
                 <div>
-                  <UsersTable
-                    users={users}
-                    loading={loading}
-                    onRefresh={handleRefresh}
-                    onEditUser={handleEditUser}
-                    showDeleteConfirm={showDeleteConfirm}
-                    onCreateUser={handleCreateUser}
-                    pagination={pagination}
-                    onTableChange={handleTableChange}
-                  />
+                 <UsersTable
+  users={users}
+  loading={loading}
+  onEditUser={handleEditUser}
+  showDeleteConfirm={showDeleteConfirm}
+  onCreateUser={handleCreateUser}
+  pagination={pagination}
+  onRefresh={handleRefresh}
+  filters={filters}
+  onFiltersChange={handleFiltersChange}
+/>
                 </div>
               </TabPane>
 
