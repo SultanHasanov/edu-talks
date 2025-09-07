@@ -113,7 +113,7 @@ const LandingPage = () => {
             Экономьте время на подготовке документов. Получите доступ к проверенным образцам 
             приказов, локальных актов, сценариев и рекомендаций для школьной администрации.
           </Paragraph>
-          <Space size="large">
+          <Space size="large" style={{display: "flex", flexDirection: "column"}}>
             <Button 
               type="primary" 
               size="large" 
@@ -452,7 +452,7 @@ const LandingPage = () => {
             Присоединяйтесь к сотням школьных администраторов, которые уже используют наш сайт 
             для эффективной работы с документами.
           </Paragraph>
-          <Space size="large">
+          <Space size="large" style={{display: "flex", flexDirection: "column"}}>
             <Button 
               type="primary" 
               size="large" 

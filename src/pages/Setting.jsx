@@ -5,29 +5,16 @@ import {
   Typography,
   Row,
   Col,
-  Statistic,
-  Button,
   Space,
   Spin,
   message,
   Modal,
-  Avatar,
-  Divider,
-  Tag,
-  Alert,
   Progress,
   Table,
 } from "antd";
 import {
   UserOutlined,
-  EditOutlined,
-  MailOutlined,
-  PhoneOutlined,
-  HomeOutlined,
   SafetyOutlined,
-  LockOutlined,
-  SaveOutlined,
-  DeleteOutlined,
   TeamOutlined,
   FileOutlined,
   NotificationOutlined,
@@ -35,7 +22,6 @@ import {
   SettingOutlined,
   EllipsisOutlined,
   CrownOutlined,
-  UserAddOutlined,
   BellOutlined,
   StopOutlined,
   ReadOutlined,
@@ -45,10 +31,8 @@ import UserEditDialog from "../components/UserEditDialog";
 import AddNewsForm from "../components/AddNewsForm";
 import FileUploadSection from "../components/FileUploadSection";
 import { useAuth } from "../context/AuthContext";
-import { fetchWithAuth } from "../utils/fetchWithAuth";
 import NotificationSender from "../components/NotificationSender";
 import ArticleEditor from "../components/ArticleEditor";
-import TabCreator from "../components/TabManager";
 import TabManager from "../components/TabManager";
 
 const { Title, Text } = Typography;
@@ -81,13 +65,13 @@ const Setting = () => {
   });
 
   // Загрузка пользователей для админа
-  useEffect(() => {
-    if (isAdmin) {
-      fetchUsers();
-      fetchNews();
-      fetchUsersAll();
-    }
-  }, [isAdmin, activeTab]);
+useEffect(() => {
+  if (isAdmin && access_token) { // Добавлена проверка access_token
+    fetchUsers();
+    fetchNews();
+    fetchUsersAll();
+  }
+}, [isAdmin, activeTab, access_token]); 
 
   const [pagination, setPagination] = useState({
     current: 1,
@@ -100,6 +84,10 @@ const Setting = () => {
 
   // Общая функция загрузки данных
   const fetchUsers = async (page = 1, pageSize = 10) => {
+     if (!access_token) {
+    message.error("Требуется авторизация");
+    return;
+  }
     setLoading(true);
     try {
       const response = await fetch(
@@ -683,7 +671,7 @@ const Setting = () => {
                   <ArticleEditor />
                 </div>
               </TabPane>
-               <TabPane
+              <TabPane
                 tab={
                   <Space>
                     <ReadOutlined />
