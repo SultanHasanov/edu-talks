@@ -1,54 +1,46 @@
 import React, { useState, useEffect } from "react";
 import {
-  Box,
-  Container,
-  Typography,
-  TextField,
+  Form,
+  Input,
   Button,
-  Paper,
   Tabs,
-  Tab,
-  Divider,
-  IconButton,
-  InputAdornment,
+  Card,
   Alert,
   Checkbox,
   Modal,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from "@mui/material";
+  message,
+  Divider,
+  Typography
+} from "antd";
 import {
-  Person as PersonIcon,
-  Lock as LockIcon,
-  Email as EmailIcon,
-  Visibility,
-  VisibilityOff,
-  Home as HomeIcon,
-  Phone as PhoneIcon,
-  Key as KeyIcon,
-} from "@mui/icons-material";
+  UserOutlined,
+  LockOutlined,
+  MailOutlined,
+  HomeOutlined,
+  PhoneOutlined,
+  KeyOutlined,
+  EyeInvisibleOutlined,
+  EyeTwoTone
+} from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+const { TabPane } = Tabs;
+const { Text } = Typography;
+
 const AuthPage = () => {
-  const [tabValue, setTabValue] = useState(0);
+  const [activeTab, setActiveTab] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-    full_name: "",
-    phone: "",
-    address: "",
-  });
+  const [loginForm] = Form.useForm();
+  const [registerForm] = Form.useForm();
+  const [forgotPasswordForm] = Form.useForm();
+  const [resetPasswordForm] = Form.useForm();
+  
   const [authError, setAuthError] = useState("");
   const [regError, setRegError] = useState("");
   const [regSuccess, setRegSuccess] = useState(false);
-  const [agreeWithTerms, setAgreeWithTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login, logout, isAuthenticated, username } = useAuth();
+  const { login } = useAuth();
   const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -56,63 +48,38 @@ const AuthPage = () => {
   // Состояния для восстановления пароля
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
-  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
-  const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState(false);
-  const [resetPasswordData, setResetPasswordData] = useState({
-    newPassword: "",
-    confirmPassword: "",
-    token: "",
-  });
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
-  const [resetPasswordError, setResetPasswordError] = useState("");
 
   // Проверяем наличие токена в URL при загрузке компонента
   useEffect(() => {
     const token = searchParams.get("token");
     if (token) {
-      setResetPasswordData((prev) => ({ ...prev, token }));
+      resetPasswordForm.setFieldsValue({ token });
       setResetPasswordOpen(true);
       // Очищаем параметр из URL
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.delete("token");
       setSearchParams(newSearchParams);
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, resetPasswordForm]);
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
+  const handleTabChange = (key) => {
+    setActiveTab(key);
     setAuthError("");
     setRegError("");
     setRegSuccess(false);
+    setSuccessMessage("");
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleTogglePassword = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (values) => {
     setAuthError("");
-
-    if (!formData.username || !formData.password) {
-      setAuthError("Пожалуйста, заполните все поля");
-      return;
-    }
-
     setIsLoading(true);
+
     try {
       console.log("Отправка запроса на авторизацию:", {
-        username: formData.username,
-        password: "***", // Не логируйте реальный пароль!
+        username: values.username,
+        password: "***",
       });
 
       const response = await fetch("https://edutalks.ru/api/login", {
@@ -121,18 +88,11 @@ const AuthPage = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
+          username: values.username,
+          password: values.password,
         }),
       });
 
-      console.log("Статус ответа:", response.status);
-      console.log(
-        "Заголовки ответа:",
-        Object.fromEntries(response.headers.entries())
-      );
-
-      // Читаем тело ответа безопасно
       let data;
       const contentType = response.headers.get("Content-Type");
       if (contentType && contentType.includes("application/json")) {
@@ -164,40 +124,23 @@ const AuthPage = () => {
     }
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  const handleRegister = async (values) => {
     setRegError("");
     setRegSuccess(false);
-    // Проверка что ФИО содержит три слова (Фамилия Имя Отчество)
-    const nameParts = formData.full_name.trim().split(/\s+/);
+
+    // Проверка что ФИО содержит три слова
+    const nameParts = values.full_name.trim().split(/\s+/);
     if (nameParts.length < 3) {
       setRegError("Пожалуйста, введите полное ФИО (Фамилия Имя Отчество)");
       return;
     }
-    // Дополнительная проверка что каждая часть ФИО не слишком короткая
     if (nameParts.some((part) => part.length < 2)) {
       setRegError("Каждая часть ФИО должна содержать минимум 2 символа");
       return;
     }
-    if (
-      !formData.email ||
-      !formData.username ||
-      !formData.password ||
-      !formData.full_name ||
-      !formData.phone ||
-      !formData.address
-    ) {
-      setRegError("Пожалуйста, заполните все поля");
-      return;
-    }
 
-    if (!agreeWithTerms) {
+    if (!values.agreeWithTerms) {
       setRegError("Необходимо согласиться с пользовательским соглашением");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setRegError("Пароль должен содержать минимум 6 символов");
       return;
     }
 
@@ -208,36 +151,24 @@ const AuthPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(values),
       });
 
-      // Сначала читаем ответ (вне зависимости от успешности)
       let data;
       const contentType = response.headers.get("Content-Type");
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
-
-        console.log("Текстовый ответ:", data);
       } else {
         data = await response.json();
       }
 
-      // Теперь безопасно проверяем статус
       if (!response.ok) {
         throw new Error(data.error || "Ошибка регистрации");
       }
 
-      // Успешная регистрация
       setRegSuccess(true);
       setSuccessMessage(data.data || "Регистрация прошла успешно");
-      setFormData({
-        username: "",
-        email: "",
-        password: "",
-        full_name: "",
-        phone: "",
-        address: "",
-      });
+      registerForm.resetFields();
     } catch (error) {
       setRegError(error.message || "Произошла ошибка при регистрации");
     } finally {
@@ -245,13 +176,7 @@ const AuthPage = () => {
     }
   };
 
-  // Функция для отправки запроса на восстановление пароля
-  const handleForgotPassword = async () => {
-    if (!forgotPasswordEmail) {
-      setAuthError("Пожалуйста, введите email");
-      return;
-    }
-
+  const handleForgotPassword = async (values) => {
     setForgotPasswordLoading(true);
     try {
       const response = await fetch("https://edutalks.ru/api/password/forgot", {
@@ -260,19 +185,16 @@ const AuthPage = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: forgotPasswordEmail,
+          email: values.email,
         }),
       });
 
-      // Ответ всегда одинаковый, даже если email не найден
-      setForgotPasswordSuccess(true);
       setForgotPasswordOpen(false);
       setAuthError("");
-
-      // Показываем сообщение об успехе
       setSuccessMessage(
         "Если email зарегистрирован в системе, письмо со ссылкой для сброса пароля будет отправлено."
       );
+      forgotPasswordForm.resetFields();
     } catch (error) {
       console.error("Ошибка при отправке запроса на восстановление:", error);
       setAuthError("Произошла ошибка при отправке запроса");
@@ -281,26 +203,8 @@ const AuthPage = () => {
     }
   };
 
-  // Функция для установки нового пароля
-  const handleResetPassword = async () => {
-    if (resetPasswordData.newPassword !== resetPasswordData.confirmPassword) {
-      setResetPasswordError("Пароли не совпадают");
-      return;
-    }
-
-    if (resetPasswordData.newPassword.length < 6) {
-      setResetPasswordError("Пароль должен содержать минимум 6 символов");
-      return;
-    }
-
-    if (!resetPasswordData.token) {
-      setResetPasswordError("Токен отсутствует");
-      return;
-    }
-
+  const handleResetPassword = async (values) => {
     setResetPasswordLoading(true);
-    setResetPasswordError("");
-
     try {
       const response = await fetch("https://edutalks.ru/api/password/reset", {
         method: "POST",
@@ -308,8 +212,8 @@ const AuthPage = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          new_password: resetPasswordData.newPassword,
-          token: resetPasswordData.token,
+          new_password: values.newPassword,
+          token: values.token,
         }),
       });
 
@@ -319,403 +223,345 @@ const AuthPage = () => {
         throw new Error(data.message || "Ошибка при сбросе пароля");
       }
 
-      // Успешный сброс пароля
       setResetPasswordOpen(false);
-      setResetPasswordData({
-        newPassword: "",
-        confirmPassword: "",
-        token: "",
-      });
-
+      resetPasswordForm.resetFields();
       message.success(
         "Пароль успешно изменен. Теперь вы можете войти с новым паролем."
       );
-
-      // Переключаем на вкладку входа
-      setTabValue(0);
+      setActiveTab("login");
     } catch (error) {
-      setResetPasswordError(
-        error.message || "Произошла ошибка при сбросе пароля"
-      );
+      message.error(error.message || "Произошла ошибка при сбросе пароля");
     } finally {
       setResetPasswordLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 3 }}>
-      <Paper elevation={3} sx={{ borderRadius: 2 }}>
-        <Tabs
-          value={tabValue}
-          onChange={handleTabChange}
-          variant="fullWidth"
-          sx={{
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontSize: "16px",
-              py: 2,
-            },
-          }}
-        >
-          <Tab label="Вход" />
-          <Tab label="Регистрация" />
-        </Tabs>
-
-        <Divider />
-
-        <Box sx={{ p: 4 }}>
-          {tabValue === 0 ? (
-            // Форма авторизации
-            <form onSubmit={handleLogin}>
+    <div style={{ maxWidth: 400, margin: "40px auto", padding: "0 16px" }}>
+      <Card>
+        <Tabs activeKey={activeTab} onChange={handleTabChange} centered>
+          <TabPane tab="Вход" key="login">
+            <Form
+              form={loginForm}
+              onFinish={handleLogin}
+              layout="vertical"
+              size="large"
+            >
               {authError && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                  {authError}
-                </Alert>
+                <Alert
+                  message={authError}
+                  type="error"
+                  style={{ marginBottom: 16 }}
+                />
               )}
 
-              <TextField
-                fullWidth
-                label="Логин"
+              <Form.Item
                 name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                margin="normal"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Пароль"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={handleInputChange}
-                margin="normal"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        edge="end"
-                        onClick={handleTogglePassword}
-                        size="small"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <Button
-                fullWidth
-                variant="contained"
-                color="primary"
-                size="large"
-                type="submit"
-                sx={{ mt: 3 }}
-                disabled={isLoading}
+                rules={[
+                  { required: true, message: "Пожалуйста, введите логин" },
+                ]}
               >
-                {isLoading ? "Вход..." : "Войти"}
-              </Button>
+                <Input
+                  prefix={<UserOutlined />}
+                  placeholder="Логин"
+                />
+              </Form.Item>
 
-              <Box sx={{ textAlign: "center", mt: 2 }}>
+              <Form.Item
+                name="password"
+                rules={[
+                  { required: true, message: "Пожалуйста, введите пароль" },
+                ]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Пароль"
+                  iconRender={(visible) =>
+                    visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+                  }
+                />
+              </Form.Item>
+
+              <Form.Item>
                 <Button
-                  color="primary"
+                  type="primary"
+                  htmlType="submit"
+                  loading={isLoading}
+                  style={{ width: "100%" }}
+                >
+                  {isLoading ? "Вход..." : "Войти"}
+                </Button>
+              </Form.Item>
+
+              <Divider />
+
+              <div style={{ textAlign: "center" }}>
+                <Button
+                  type="link"
                   onClick={() => setForgotPasswordOpen(true)}
-                  startIcon={<KeyIcon />}
+                  icon={<KeyOutlined />}
                 >
                   Забыли пароль?
                 </Button>
-              </Box>
-            </form>
-          ) : (
-            // Форма регистрации
-            <form onSubmit={handleRegister}>
+              </div>
+            </Form>
+          </TabPane>
+
+          <TabPane tab="Регистрация" key="register">
+            <Form
+              form={registerForm}
+              onFinish={handleRegister}
+              layout="vertical"
+              size="large"
+            >
               {regError && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                  {regError}
-                </Alert>
+                <Alert
+                  message={regError}
+                  type="error"
+                  style={{ marginBottom: 16 }}
+                />
               )}
 
               {successMessage && (
-                <Alert severity="success" sx={{ mb: 3 }}>
-                  {successMessage}
-                </Alert>
+                <Alert
+                  message={successMessage}
+                  type="success"
+                  style={{ marginBottom: 16 }}
+                />
               )}
 
-              <TextField
-                fullWidth
-                label="ФИО"
+              <Form.Item
                 name="full_name"
-                value={formData.full_name}
-                onChange={handleInputChange}
-                margin="normal"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                margin="normal"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Логин"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                margin="normal"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Телефон"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                margin="normal"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PhoneIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Адрес"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                margin="normal"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <HomeIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Пароль"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={handleInputChange}
-                margin="normal"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        edge="end"
-                        onClick={handleTogglePassword}
-                        size="small"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                helperText="Пароль должен содержать минимум 6 символов"
-              />
-
-              <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-                <Checkbox
-                  checked={agreeWithTerms}
-                  onChange={(e) => setAgreeWithTerms(e.target.checked)}
-                  name="terms"
-                  sx={{ mr: 1 }}
-                />
-                <Typography
-                  variant="body2"
-                  color="primary"
-                  component="a"
-                  href="/Пользовательское_соглашение.docx"
-                  download
-                  target="_blank"
-                  sx={{
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
-                >
-                  Я согласен с пользовательским соглашением
-                </Typography>
-              </Box>
-
-              <Button
-                fullWidth
-                variant="contained"
-                color="primary"
-                size="large"
-                type="submit"
-                sx={{ mt: 3 }}
-                disabled={isLoading}
+                label="ФИО"
+                rules={[
+                  { required: true, message: "Пожалуйста, введите ФИО" },
+                  {
+                    validator: (_, value) => {
+                      const nameParts = value?.trim().split(/\s+/) || [];
+                      if (nameParts.length < 3) {
+                        return Promise.reject(
+                          new Error("Введите полное ФИО (Фамилия Имя Отчество)")
+                        );
+                      }
+                      if (nameParts.some((part) => part.length < 2)) {
+                        return Promise.reject(
+                          new Error("Каждая часть ФИО должна содержать минимум 2 символа")
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
               >
-                {isLoading ? "Регистрация..." : "Зарегистрироваться"}
-              </Button>
-            </form>
-          )}
-        </Box>
-      </Paper>
+                <Input prefix={<UserOutlined />} placeholder="Фамилия Имя Отчество" />
+              </Form.Item>
+
+              <Form.Item
+                name="email"
+                label="Email"
+                rules={[
+                  { required: true, message: "Пожалуйста, введите email" },
+                  { type: "email", message: "Введите корректный email" },
+                ]}
+              >
+                <Input prefix={<MailOutlined />} placeholder="Email" />
+              </Form.Item>
+
+              <Form.Item
+                name="username"
+                label="Логин"
+                rules={[
+                  { required: true, message: "Пожалуйста, введите логин" },
+                ]}
+              >
+                <Input prefix={<UserOutlined />} placeholder="Логин" />
+              </Form.Item>
+
+              <Form.Item
+                name="phone"
+                label="Телефон"
+                rules={[
+                  { required: true, message: "Пожалуйста, введите телефон" },
+                ]}
+              >
+                <Input prefix={<PhoneOutlined />} placeholder="Телефон" />
+              </Form.Item>
+
+              <Form.Item
+                name="address"
+                label="Адрес"
+                rules={[
+                  { required: true, message: "Пожалуйста, введите адрес" },
+                ]}
+              >
+                <Input prefix={<HomeOutlined />} placeholder="Адрес" />
+              </Form.Item>
+
+              <Form.Item
+                name="password"
+                label="Пароль"
+                rules={[
+                  { required: true, message: "Пожалуйста, введите пароль" },
+                  { min: 6, message: "Пароль должен содержать минимум 6 символов" },
+                ]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Пароль"
+                  iconRender={(visible) =>
+                    visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+                  }
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="agreeWithTerms"
+                valuePropName="checked"
+                rules={[
+                  {
+                    validator: (_, value) =>
+                      value
+                        ? Promise.resolve()
+                        : Promise.reject(
+                            new Error("Необходимо согласиться с пользовательским соглашением")
+                          ),
+                  },
+                ]}
+              >
+                <Checkbox>
+                  Я согласен с{" "}
+                  <Text
+                    type="link"
+                    href="/Пользовательское_соглашение.docx"
+                    download
+                    target="_blank"
+                  >
+                    пользовательским соглашением
+                  </Text>
+                </Checkbox>
+              </Form.Item>
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={isLoading}
+                  style={{ width: "100%" }}
+                >
+                  {isLoading ? "Регистрация..." : "Зарегистрироваться"}
+                </Button>
+              </Form.Item>
+            </Form>
+          </TabPane>
+        </Tabs>
+      </Card>
 
       {/* Модальное окно восстановления пароля */}
-      <Dialog
+      <Modal
+        title="Восстановление пароля"
         open={forgotPasswordOpen}
-        onClose={() => setForgotPasswordOpen(false)}
+        onCancel={() => setForgotPasswordOpen(false)}
+        footer={null}
       >
-        <DialogTitle>Восстановление пароля</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Email"
-            type="email"
-            fullWidth
-            variant="outlined"
-            value={forgotPasswordEmail}
-            onChange={(e) => setForgotPasswordEmail(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          {forgotPasswordSuccess && (
-            <Alert severity="success" sx={{ mt: 2 }}>
-              Если email зарегистрирован, письмо со ссылкой для сброса будет
-              отправлено.
-            </Alert>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setForgotPasswordOpen(false)}>Отмена</Button>
-          <Button
-            onClick={handleForgotPassword}
-            disabled={forgotPasswordLoading}
-            variant="contained"
+        <Form
+          form={forgotPasswordForm}
+          onFinish={handleForgotPassword}
+          layout="vertical"
+        >
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: "Пожалуйста, введите email" },
+              { type: "email", message: "Введите корректный email" },
+            ]}
           >
-            {forgotPasswordLoading ? "Отправка..." : "Отправить"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Input
+              prefix={<MailOutlined />}
+              placeholder="Email"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={forgotPasswordLoading}
+              style={{ width: "100%" }}
+            >
+              {forgotPasswordLoading ? "Отправка..." : "Отправить"}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       {/* Модальное окно установки нового пароля */}
-      <Dialog
+      <Modal
+        title="Установка нового пароля"
         open={resetPasswordOpen}
-        onClose={() => setResetPasswordOpen(false)}
+        onCancel={() => setResetPasswordOpen(false)}
+        footer={null}
       >
-        <DialogTitle>Установка нового пароля</DialogTitle>
-        <DialogContent>
-          {resetPasswordError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {resetPasswordError}
-            </Alert>
-          )}
+        <Form
+          form={resetPasswordForm}
+          onFinish={handleResetPassword}
+          layout="vertical"
+        >
+          <Form.Item name="token" hidden>
+            <Input />
+          </Form.Item>
 
-          <TextField
-            margin="dense"
+          <Form.Item
+            name="newPassword"
             label="Новый пароль"
-            type="password"
-            fullWidth
-            variant="outlined"
-            value={resetPasswordData.newPassword}
-            onChange={(e) =>
-              setResetPasswordData((prev) => ({
-                ...prev,
-                newPassword: e.target.value,
-              }))
-            }
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-            helperText="Пароль должен содержать минимум 6 символов"
-          />
-
-          <TextField
-            margin="dense"
-            label="Подтверждение пароля"
-            type="password"
-            fullWidth
-            variant="outlined"
-            value={resetPasswordData.confirmPassword}
-            onChange={(e) =>
-              setResetPasswordData((prev) => ({
-                ...prev,
-                confirmPassword: e.target.value,
-              }))
-            }
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setResetPasswordOpen(false)}>Отмена</Button>
-          <Button
-            onClick={handleResetPassword}
-            disabled={resetPasswordLoading}
-            variant="contained"
+            rules={[
+              { required: true, message: "Пожалуйста, введите новый пароль" },
+              { min: 6, message: "Пароль должен содержать минимум 6 символов" },
+            ]}
           >
-            {resetPasswordLoading ? "Сохранение..." : "Сохранить"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Новый пароль"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="confirmPassword"
+            label="Подтверждение пароля"
+            dependencies={['newPassword']}
+            rules={[
+              { required: true, message: "Пожалуйста, подтвердите пароль" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('Пароли не совпадают'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Подтверждение пароля"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={resetPasswordLoading}
+              style={{ width: "100%" }}
+            >
+              {resetPasswordLoading ? "Сохранение..." : "Сохранить"}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
   );
 };
 
