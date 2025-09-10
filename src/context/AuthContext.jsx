@@ -1,5 +1,6 @@
 // src/context/AuthContext.js
-import { createContext, useContext, useState, useEffect} from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
@@ -11,6 +12,27 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: false,
     full_name: null,
   });
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (authState.access_token) {
+      const tokenPayload = JSON.parse(
+        atob(authState.access_token.split(".")[1])
+      );
+      const expiryTime = tokenPayload.exp * 1000; // в миллисекундах
+      const timeout = expiryTime - Date.now();
+
+      if (timeout > 0) {
+        const timer = setTimeout(() => {
+          logout();
+          navigate("/auth");
+        }, timeout);
+        return () => clearTimeout(timer); // очистка при размонтировании
+      } else {
+        logout(); // токен уже просрочен
+        navigate("/auth");
+      }
+    }
+  }, [authState.access_token]);
 
   // Загрузка токенов из localStorage при старте
   useEffect(() => {
@@ -29,9 +51,6 @@ export const AuthProvider = ({ children }) => {
       });
     }
   }, []);
-
-  
-
 
   // Логин: устанавливает access + refresh токены
   const login = (access_token, role, username, full_name) => {

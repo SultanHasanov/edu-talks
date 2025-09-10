@@ -35,6 +35,7 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
+import UpdatesList from "./Update/UpdatesList";
 const { Title, Text } = Typography;
 
 const UserProfile = () => {
@@ -401,30 +402,33 @@ const UserProfile = () => {
             </>
           )}
           {!loading && role !== "admin" && !userData.is_subscription_active && (
-            <Alert
-              message="У вас нет подписки"
-              description="Чтобы скачивать документы, необходимо оформить подписку"
-              type="warning"
-              showIcon
-              action={
-                <Button
-                  type="primary"
-                  size="middle"
-                  icon={<CrownOutlined />}
-                  onClick={handleSubscribe}
-                >
-                  Оформить подписку
-                </Button>
-              }
-              style={{
-                marginTop: 30,
-                width: "100%",
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            />
+            <>
+              <Alert
+                message="У вас нет подписки"
+                description="Чтобы скачивать документы, необходимо оформить подписку"
+                type="warning"
+                showIcon
+                style={{
+                  marginTop: 30,
+                  width: "100%",
+                }}
+              />
+
+              <Button
+                type="primary"
+                size="large"
+                icon={<CrownOutlined />}
+                onClick={handleSubscribe}
+                style={{
+                  width: "100%",
+                  marginTop: 16,
+                  height: 48,
+                  fontSize: 16,
+                }}
+              >
+                Оформить подписку
+              </Button>
+            </>
           )}
         </Card>
         {userData.is_subscription_active && (
@@ -435,6 +439,8 @@ const UserProfile = () => {
             </p>
           </Card>
         )}
+
+        {/* <UpdatesList /> */}
 
         {/* Модальное окно смены пароля */}
         <Modal
