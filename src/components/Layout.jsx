@@ -204,7 +204,7 @@ const Layout = ({ children }) => {
 
   return (
     <Box>
-       <GlobalAlert />
+       {/* <GlobalAlert /> */}
       <AppBar
         position="static"
         elevation={0}
