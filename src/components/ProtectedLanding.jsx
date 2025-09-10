@@ -1,30 +1,18 @@
-// components/ProtectedLanding.jsx
-import { useEffect, useState } from 'react';
 import LandingPage from '../pages/LandingPage';
 
+// Синхронная проверка localStorage
 const ProtectedLanding = () => {
-  const [showLanding, setShowLanding] = useState(true);
+  const hasSeenLanding = localStorage.getItem('hasSeenLanding');
 
-  useEffect(() => {
-    // Проверяем, видел ли пользователь лендинг ранее
-    const hasSeenLanding = localStorage.getItem('hasSeenLanding');
-    
-    if (hasSeenLanding) {
-      // Если видел - перенаправляем на главную страницу приложения
-      setShowLanding(false);
-      window.location.href = '/recomm'; // или другой путь по умолчанию
-    } else {
-      // Если не видел - помечаем, что теперь увидел
-      localStorage.setItem('hasSeenLanding', 'true');
-      setShowLanding(true);
-    }
-  }, []);
-
-  if (!showLanding) {
-    return null; // или можно показать loader
+  if (hasSeenLanding) {
+    // Если уже видел лендинг, сразу редиректим
+    window.location.href = '/recomm';
+    return null; // ничего не рендерим
+  } else {
+    // Если не видел — отмечаем и показываем лендинг
+    localStorage.setItem('hasSeenLanding', 'true');
+    return <LandingPage />;
   }
-
-  return <LandingPage />;
 };
 
 export default ProtectedLanding;
