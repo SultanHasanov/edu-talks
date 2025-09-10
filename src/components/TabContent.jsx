@@ -119,7 +119,7 @@ const TabContent = ({ tabSlug }) => {
         </Tabs>
       ) : (
         <Card>
-          <Empty description="В этом табе нет секций" />
+          <Empty description="В этой вкладке нет секций" />
         </Card>
       )}
 

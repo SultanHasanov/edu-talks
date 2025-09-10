@@ -40,6 +40,7 @@ import {
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AppFooter from "./Footer";
+import GlobalAlert from "./GlobalAlert";
 
 const Layout = ({ children }) => {
   const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
@@ -203,7 +204,7 @@ const Layout = ({ children }) => {
 
   return (
     <Box>
-      {/* Main Header */}
+       <GlobalAlert />
       <AppBar
         position="static"
         elevation={0}

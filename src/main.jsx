@@ -1,7 +1,6 @@
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import AuthPage from "./pages/AuthPage.jsx";
-import LandingPage from "./pages/LandingPage.jsx"; // Добавьте этот импорт
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import Profile from "./pages/Profile.jsx";
@@ -23,13 +22,14 @@ import ArticlesList from "./pages/ArticlesList.jsx";
 import ArticlePage from "./pages/ArticlePage.jsx";
 import DynamicRoutes from "./components/DynamicRoutes.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
+import ProtectedLanding from "./components/ProtectedLanding.jsx";
 const TabPage = ({ title }) => <h2>{title}</h2>;
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
       <AuthProvider>
         <Routes>
           {/* Лендинг-страница как главная */}
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<ProtectedLanding />} />
 
           {/* Основные страницы сайта с Layout */}
           <Route element={<Layout />}>
