@@ -34,7 +34,7 @@ import {
   CalendarOutlined,
   PhoneOutlined,
 } from "@ant-design/icons";
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle } from "lucide-react";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -52,6 +52,7 @@ const UsersTable = ({
   filters, // новые пропсы для фильтров
   onFiltersChange, // функция обновления фильтров
 }) => {
+  const safeUsers = users || [];
   const formatDate = (dateString) => {
     if (!dateString) return "Не указано";
     try {
@@ -77,10 +78,10 @@ const UsersTable = ({
   };
 
   const handleSubscriptionChange = (value) => {
-    onFiltersChange({ 
-      ...filters, 
-      has_subscription: value !== null ? value.toString() : null, 
-      page: 1 
+    onFiltersChange({
+      ...filters,
+      has_subscription: value !== null ? value.toString() : null,
+      page: 1,
     });
   };
 
@@ -94,10 +95,10 @@ const UsersTable = ({
 
   // Статистика для заголовка
   const userStats = {
-    total: users.length,
-    admins: users.filter((u) => u.role === "admin").length,
-    users: users.filter((u) => u.role === "user").length,
-    subscribed: users.filter((u) => u.has_subscription).length,
+    total: safeUsers.length,
+    admins: safeUsers.filter((u) => u.role === "admin").length,
+    users: safeUsers.filter((u) => u.role === "user").length,
+    subscribed: safeUsers.filter((u) => u.has_subscription).length,
   };
 
   const getActionItems = (user) => [
@@ -158,19 +159,18 @@ const UsersTable = ({
       width: 200,
       render: (_, record) => (
         <div>
-          <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center' }}>
+          <div
+            style={{ marginBottom: 4, display: "flex", alignItems: "center" }}
+          >
             <MailOutlined style={{ marginRight: 8, color: "#1890ff" }} />
             <Text>{record.email || "Не указан"}</Text>
             {record.email_verified ? (
-              <CheckCircle 
-                size={16} 
-                style={{ marginLeft: 8, color: "#52c41a" }} 
+              <CheckCircle
+                size={16}
+                style={{ marginLeft: 8, color: "#52c41a" }}
               />
             ) : (
-              <XCircle 
-                size={16} 
-                style={{ marginLeft: 8, color: "#ff4d4f" }} 
-              />
+              <XCircle size={16} style={{ marginLeft: 8, color: "#ff4d4f" }} />
             )}
           </div>
           {record.phone && (
@@ -280,7 +280,6 @@ const UsersTable = ({
         }}
         bodyStyle={{ padding: 0 }}
       >
-
         <div
           style={{
             padding: "16px 24px",
@@ -295,7 +294,7 @@ const UsersTable = ({
                 placeholder="Поиск по имени или email"
                 allowClear
                 enterButton={<SearchOutlined />}
-                value={filters.q || ''}
+                value={filters.q || ""}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onSearch={handleSearchChange}
               />
@@ -319,7 +318,11 @@ const UsersTable = ({
                 style={{ width: "100%" }}
                 suffixIcon={<FilterOutlined />}
                 allowClear
-                value={filters.has_subscription !== null ? filters.has_subscription === 'true' : null}
+                value={
+                  filters.has_subscription !== null
+                    ? filters.has_subscription === "true"
+                    : null
+                }
                 onChange={handleSubscriptionChange}
               >
                 <Option value={true}>Активна</Option>
@@ -343,7 +346,7 @@ const UsersTable = ({
           <Spin spinning={loading} tip="Загрузка пользователей...">
             <Table
               columns={columns}
-              dataSource={users}
+              dataSource={safeUsers}
               rowKey="id"
               pagination={false}
               style={{

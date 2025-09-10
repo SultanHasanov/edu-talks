@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
   Tabs,
@@ -53,13 +53,13 @@ const Setting = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoading, setUserLoading] = useState(false);
-const [filters, setFilters] = useState({
-  page: 1,
-  page_size: 10,
-  q: null,
-  role: null,
-  has_subscription: null,
-});
+  const [filters, setFilters] = useState({
+    page: 1,
+    page_size: 10,
+    q: null,
+    role: null,
+    has_subscription: null,
+  });
   const isAdmin = role === "admin";
 
   const [formData, setFormData] = useState({
@@ -68,16 +68,22 @@ const [filters, setFilters] = useState({
     phone: phone || "",
     address: address || "",
   });
-
+  const searchTimeoutRef = useRef(null);
   // Загрузка пользователей для админа
   useEffect(() => {
     if (isAdmin && access_token) {
       fetchUsers();
       fetchNews();
-    
     }
   }, [isAdmin, activeTab, access_token]);
-
+  // Добавьте useEffect для очистки таймера
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -88,72 +94,82 @@ const [filters, setFilters] = useState({
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Общая функция загрузки данных
- const fetchUsers = async (filtersParams = filters) => {
-  if (!access_token) {
-    message.error("Требуется авторизация");
-    return;
-  }
-  setLoading(true);
-  try {
-    // Создаем параметры запроса
-    const params = new URLSearchParams();
-    
-    Object.entries(filtersParams).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        params.append(key, value);
-      }
-    });
+  const fetchUsers = async (filtersParams = filters) => {
+    if (!access_token) {
+      message.error("Требуется авторизация");
+      return;
+    }
+    setLoading(true);
+    try {
+      // Создаем параметры запроса
+      const params = new URLSearchParams();
 
-    const response = await fetch(
-      `https://edutalks.ru/api/admin/users?${params.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      }
-    );
+      Object.entries(filtersParams).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+          params.append(key, value);
+        }
+      });
 
-    if (!response.ok) {
-      throw new Error("Ошибка загрузки пользователей");
+      const response = await fetch(
+        `https://edutalks.ru/api/admin/users?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Ошибка загрузки пользователей");
+      }
+
+      const data = await response.json();
+      setUsers(data.data.data);
+
+      // Обновляем пагинацию
+      const newPagination = {
+        current: data.data.page,
+        pageSize: data.data.page_size,
+        total: data.data.total,
+      };
+      setPagination(newPagination);
+
+      if (!isInitialized) setIsInitialized(true);
+
+      return newPagination;
+    } catch (err) {
+      console.log(err);
+      message.error(err.message || "Ошибка загрузки пользователей");
+      return {
+        current: 1,
+        pageSize: 10,
+        total: 0,
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Функция обновления фильтров
+  // Функция обновления фильтров с debounce
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters);
+
+    // Очищаем предыдущий таймер
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
 
-    const data = await response.json();
-    setUsers(data.data.data);
+    // Устанавливаем новый таймер с задержкой 500ms
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchUsers(newFilters);
+    }, 500);
+  };
 
-    // Обновляем пагинацию
-    const newPagination = {
-      current: data.data.page,
-      pageSize: data.data.page_size,
-      total: data.data.total,
-    };
-    setPagination(newPagination);
-
-    if (!isInitialized) setIsInitialized(true);
-
-    return newPagination;
-  } catch (err) {
-    console.log(err);
-    message.error(err.message || "Ошибка загрузки пользователей");
-    return {
-      current: 1,
-      pageSize: 10,
-      total: 0,
-    };
-  } finally {
-    setLoading(false);
-  }
-};
-
-// Функция обновления фильтров
-const handleFiltersChange = (newFilters) => {
-  setFilters(newFilters);
-  fetchUsers(newFilters);
-};
-
-// Функция обновления данных
-const handleRefresh = async () => {
-  await fetchUsers(filters);
-};
+  // Функция обновления данных
+  const handleRefresh = async () => {
+    await fetchUsers(filters);
+  };
 
   // Первичная загрузка данных
   useEffect(() => {
@@ -163,7 +179,6 @@ const handleRefresh = async () => {
   }, [isInitialized]);
 
   // Обновленная функция обновления данных
- 
 
   // Функция обработки изменения страницы
   const handleTableChange = async (newPagination) => {
@@ -600,17 +615,17 @@ const handleRefresh = async () => {
                 key="2"
               >
                 <div>
-                 <UsersTable
-  users={users}
-  loading={loading}
-  onEditUser={handleEditUser}
-  showDeleteConfirm={showDeleteConfirm}
-  onCreateUser={handleCreateUser}
-  pagination={pagination}
-  onRefresh={handleRefresh}
-  filters={filters}
-  onFiltersChange={handleFiltersChange}
-/>
+                  <UsersTable
+                    users={users}
+                    loading={loading}
+                    onEditUser={handleEditUser}
+                    showDeleteConfirm={showDeleteConfirm}
+                    onCreateUser={handleCreateUser}
+                    pagination={pagination}
+                    onRefresh={handleRefresh}
+                    filters={filters}
+                    onFiltersChange={handleFiltersChange}
+                  />
                 </div>
               </TabPane>
 
