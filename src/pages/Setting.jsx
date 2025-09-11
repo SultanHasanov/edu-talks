@@ -25,6 +25,7 @@ import {
   BellOutlined,
   StopOutlined,
   ReadOutlined,
+  ProfileOutlined,
 } from "@ant-design/icons";
 import UsersTable from "../components/UsersTable";
 import UserEditDialog from "../components/UserEditDialog";
@@ -34,6 +35,7 @@ import { useAuth } from "../context/AuthContext";
 import NotificationSender from "../components/NotificationSender";
 import ArticleEditor from "../components/ArticleEditor";
 import TabManager from "../components/TabManager";
+import LogViewer from "../components/LogViewer";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -706,6 +708,19 @@ const Setting = () => {
               >
                 <div>
                   <TabManager />
+                </div>
+              </TabPane>
+              <TabPane
+                tab={
+                  <Space>
+                    <ProfileOutlined />
+                    Логи
+                  </Space>
+                }
+                key="8"
+              >
+                <div>
+                  <LogViewer />
                 </div>
               </TabPane>
             </>
