@@ -51,63 +51,94 @@ const LogViewer = () => {
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
   // Получение доступных дней
-  const fetchAvailableDays = async () => {
-    try {
-      const response = await fetch('https://edutalks.ru/admin/logs/days', {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
-      
-      if (!response.ok) throw new Error('Ошибка получения дней');
-      
-      const days = await response.json();
-      setAvailableDays(days);
-    } catch (err) {
-      setError('Не удалось загрузить список дней');
-    }
-  };
-
-  // Получение логов
-  const fetchLogs = async () => {
-    setLoading(true);
-    setError('');
+// В функции fetchAvailableDays
+const fetchAvailableDays = async () => {
+  try {
+    const response = await fetch('https://edutalks.ru/admin/logs/days', {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
+    });
     
+    if (!response.ok) throw new Error('Ошибка получения дней');
+    
+    // Пробуем сначала как JSON, если не получается - как текст
+    let days;
     try {
-      const params = new URLSearchParams({
-        day: selectedDay,
-        limit: limit.toString(),
-        cursor: cursor.toString(),
-      });
-
-      if (selectedLevels.length > 0) {
-        params.append('level', selectedLevels.join(','));
+      days = await response.json();
+    } catch (jsonError) {
+      const text = await response.text();
+      // Пробуем распарсить текст как JSON
+      try {
+        days = JSON.parse(text);
+      } catch (parseError) {
+        // Если это HTML, пытаемся извлечь данные другим способом
+        console.error('Ответ не является JSON:', text.substring(0, 100));
+        throw new Error('Неверный формат ответа');
       }
-
-      if (selectedHour !== null) {
-        params.append('hour', selectedHour.toString());
-      }
-
-      if (searchQuery) {
-        params.append('q', searchQuery);
-      }
-
-      const response = await fetch(`https://edutalks.ru/admin/logs?${params}`, {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Ошибка получения логов');
-
-      const logsData = await response.json();
-      setLogs(logsData);
-    } catch (err) {
-      setError('Не удалось загрузить логи');
-    } finally {
-      setLoading(false);
     }
-  };
+    
+    setAvailableDays(days);
+  } catch (err) {
+    setError('Не удалось загрузить список дней: ' + err.message);
+  }
+};
+
+// Аналогично для других функций нужно добавить обработку
+const fetchLogs = async () => {
+  setLoading(true);
+  setError('');
+  
+  try {
+    const params = new URLSearchParams({
+      day: selectedDay,
+      limit: limit.toString(),
+      cursor: cursor.toString(),
+    });
+
+    if (selectedLevels.length > 0) {
+      params.append('level', selectedLevels.join(','));
+    }
+
+    if (selectedHour !== null) {
+      params.append('hour', selectedHour.toString());
+    }
+
+    if (searchQuery) {
+      params.append('q', searchQuery);
+    }
+
+    const response = await fetch(`https://edutalks.ru/admin/logs?${params}`, {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
+    });
+
+    if (!response.ok) throw new Error('Ошибка получения логов');
+
+    // Обработка разных content-type
+    let logsData;
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      logsData = await response.json();
+    } else {
+      const text = await response.text();
+      try {
+        logsData = JSON.parse(text);
+      } catch (parseError) {
+        console.error('Не удалось распарсить ответ:', text.substring(0, 200));
+        throw new Error('Неверный формат логов');
+      }
+    }
+
+    setLogs(logsData);
+  } catch (err) {
+    setError('Не удалось загрузить логи: ' + err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Получение статистики
   const fetchStats = async () => {
