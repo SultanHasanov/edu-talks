@@ -13,12 +13,16 @@ import {
   Space,
   Badge,
   Divider,
+  Dropdown,
+  Checkbox,
+  Menu,
 } from "antd";
 import {
   DownloadOutlined,
   ReloadOutlined,
   FilterOutlined,
   BarChartOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -41,6 +45,20 @@ const LogViewer = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [limit, setLimit] = useState(10);
   const [cursor, setCursor] = useState(0);
+
+  // Управление видимостью колонок
+  const [columnVisibility, setColumnVisibility] = useState({
+    time: true,
+    level: true,
+    msg: true,
+    method: true,
+    path: true,
+    status: true,
+    duration: true,
+    caller: false,
+    fields: false,
+    doc_id: false, // 👈 добавляем новое поле
+  });
 
   // Уровни логов
   const logLevels = ["debug", "info", "warn", "error", "panic", "fatal"];
@@ -178,56 +196,174 @@ const LogViewer = () => {
     }
   };
 
+  // Обработчик изменения видимости колонок
+  const handleColumnVisibilityChange = (key, checked) => {
+    setColumnVisibility({
+      ...columnVisibility,
+      [key]: checked,
+    });
+  };
+
   // Колонки таблицы
-  // Колонки
-  const columns = [
-    {
-      title: "Сообщение",
-      dataIndex: "message",
-      key: "message",
-      ellipsis: true,
-      render: (msg) => {
-        if (msg == null) return "-";
-        if (typeof msg === "string" || typeof msg === "number") return msg;
-        try {
-          return JSON.stringify(msg);
-        } catch {
-          return String(msg);
-        }
+  const getColumns = () => {
+    const allColumns = [
+      {
+        title: "Время",
+        dataIndex: "time",
+        key: "time",
+        width: 180,
+        render: (time) => dayjs(time).format("YYYY-MM-DD HH:mm:ss"),
+        hidden: !columnVisibility.time,
       },
-    },
-    {
-      title: "Путь",
-      dataIndex: "path",
-      key: "path",
-      width: 120,
-      render: (path) => {
-        if (path == null) return "-";
-        if (typeof path === "string" || typeof path === "number") return path;
-        try {
-          return JSON.stringify(path);
-        } catch {
-          return String(path);
-        }
+      {
+        title: "Уровень",
+        dataIndex: "level",
+        key: "level",
+        width: 100,
+        render: (level) => {
+          let status = "default";
+          if (level === "ERROR") status = "error";
+          if (level === "WARN") status = "warning";
+          if (level === "INFO") status = "processing";
+          if (level === "DEBUG") status = "default";
+          return <Badge status={status} text={level} />;
+        },
+        hidden: !columnVisibility.level,
       },
-    },
-    {
-      title: "Статус",
-      dataIndex: "status",
-      key: "status",
-      width: 80,
-      render: (status) => {
-        if (status == null) return "-";
-        if (typeof status === "string" || typeof status === "number")
-          return status;
-        try {
-          return JSON.stringify(status);
-        } catch {
-          return String(status);
-        }
+      {
+        title: "Сообщение",
+        dataIndex: "msg",
+        key: "msg",
+        ellipsis: true,
+        hidden: !columnVisibility.msg,
       },
-    },
-  ];
+      {
+        title: "Метод",
+        dataIndex: ["fields", "method"],
+        key: "method",
+        width: 100,
+        hidden: !columnVisibility.method,
+      },
+      {
+        title: "Путь",
+        dataIndex: ["fields", "path"],
+        key: "path",
+        width: 200,
+        ellipsis: true,
+        hidden: !columnVisibility.path,
+      },
+      {
+        title: "Статус",
+        dataIndex: ["fields", "status"],
+        key: "status",
+        width: 80,
+        hidden: !columnVisibility.status,
+      },
+      {
+        title: "Длительность",
+        dataIndex: ["fields", "duration"],
+        key: "duration",
+        width: 120,
+        render: (duration) =>
+          duration ? `${(duration / 1000000).toFixed(2)} ms` : "-",
+        hidden: !columnVisibility.duration,
+      },
+      {
+        title: "Источник",
+        dataIndex: ["fields", "caller"],
+        key: "caller",
+        width: 200,
+        ellipsis: true,
+        hidden: !columnVisibility.caller,
+      },
+      {
+        title: "Doc_id",
+        dataIndex: ["fields", "doc_id"],
+        key: "doc_id",
+        width: 200,
+        ellipsis: true,
+        hidden: !columnVisibility.doc_id,
+      },
+      {
+        title: "Доп. поля",
+        dataIndex: "fields",
+        key: "fields",
+        width: 200,
+        render: (fields) => {
+          if (!fields) return "-";
+          const filteredFields = Object.entries(fields)
+            .filter(
+              ([key]) =>
+                !["caller", "duration", "method", "path", "status"].includes(
+                  key
+                )
+            )
+            .reduce((obj, [key, value]) => {
+              obj[key] = value;
+              return obj;
+            }, {});
+          return Object.keys(filteredFields).length > 0
+            ? JSON.stringify(filteredFields)
+            : "-";
+        },
+        hidden: !columnVisibility.fields,
+      },
+      // ⬇️ Новая колонка с иконкой "настройки"
+      {
+        title: (
+          <Dropdown overlay={columnMenu} trigger={["click"]}>
+            <Button type="text" size="small" icon={<SettingOutlined />} />
+          </Dropdown>
+        ),
+        key: "settings",
+        width: 50,
+        fixed: "right", // можно убрать, если не хочешь фиксировать справа
+        render: () => null, // в ячейках ничего не рисуем
+      },
+    ];
+
+    return allColumns.filter((column) => !column.hidden);
+  };
+
+  // Меню для выбора колонок
+  const columnMenu = (
+    <Card
+      size="small"
+      style={{
+        borderRadius: 4,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.15)", // как у dropdown
+      }}
+      bodyStyle={{ padding: 8 }}
+    >
+      {Object.entries(columnVisibility).map(([key, visible]) => (
+        <div key={key} style={{ marginBottom: 4 }}>
+          <Checkbox
+            checked={visible}
+            onChange={(e) =>
+              handleColumnVisibilityChange(key, e.target.checked)
+            }
+          >
+            {key === "time" && "Время"}
+            {key === "level" && "Уровень"}
+            {key === "msg" && "Сообщение"}
+            {key === "method" && "Метод"}
+            {key === "path" && "Путь"}
+            {key === "status" && "Статус"}
+            {key === "duration" && "Длительность"}
+            {key === "caller" && "Источник"}
+            {key === "fields" && "Доп. поля"}
+            {key === "doc_id" && "Doc_id"}
+          </Checkbox>
+        </div>
+      ))}
+    </Card>
+  );
+
+  const columnDropdown = (
+    <Dropdown trigger={["click"]} dropdownRender={() => columnMenu}>
+      <Button type="text" size="small" icon={<SettingOutlined />} />
+    </Dropdown>
+  );
 
   // Эффекты
   useEffect(() => {
@@ -371,6 +507,10 @@ const LogViewer = () => {
             >
               Статистика за 30 дней
             </Button>
+
+            <Dropdown overlay={columnMenu} trigger={["click"]}>
+              <Button icon={<SettingOutlined />}>Колонки</Button>
+            </Dropdown>
           </Space>
         </Card>
 
@@ -382,21 +522,23 @@ const LogViewer = () => {
         >
           <Row gutter={16}>
             {Object.entries(stats).map(([hour, data]) => (
-              <Col xs={12} sm={8} md={4} key={hour}>
-                <Card size="small">
-                  <Text strong>Час {hour}:</Text>
-                  {data && typeof data === "object" && (
-                    <>
-                      {Object.entries(data).map(([level, count]) => (
-                        <div key={level}>
-                          <Text type="secondary">{level}: </Text>
-                          {typeof count === "number"
-                            ? count
-                            : JSON.stringify(count)}
-                        </div>
-                      ))}
-                    </>
-                  )}
+              <Col xs={24} key={hour}>
+                <Card size="small" title={`Час ${hour}`}>
+                  <Row gutter={[8, 8]}>
+                    {Object.entries(data).map(([level, count]) => (
+                      <Col span={4} key={level}>
+                        <Card size="small" style={{ textAlign: "center" }}>
+                          <Text strong>{level}</Text>
+                          <br />
+                          <Text>
+                            {typeof count === "number"
+                              ? count
+                              : JSON.stringify(count)}
+                          </Text>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
                 </Card>
               </Col>
             ))}
@@ -407,12 +549,14 @@ const LogViewer = () => {
         <Card style={{ marginTop: 16 }}>
           <Spin spinning={loading}>
             <Table
-              columns={columns}
+              columns={getColumns()}
               dataSource={logs.map((log, index) => ({ ...log, key: index }))}
               pagination={{
                 pageSize: limit,
                 current: Math.floor(cursor / limit) + 1,
-                total: logs.length + cursor,
+                total:
+                  logs.length +
+                  (logs.length >= limit ? cursor + limit : cursor),
                 onChange: (page, pageSize) => {
                   setCursor((page - 1) * pageSize);
                   setLimit(pageSize);
