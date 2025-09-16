@@ -293,7 +293,7 @@ const TabManager = () => {
               onClick={() => handleOpenTabModal(tab)}
               size="small"
             >
-              Редактировать
+              
             </Button>
 
             <Popconfirm
@@ -304,7 +304,6 @@ const TabManager = () => {
               cancelText="Нет"
             >
               <Button icon={<DeleteOutlined />} danger size="small">
-                Удалить
               </Button>
             </Popconfirm>
 
@@ -314,7 +313,6 @@ const TabManager = () => {
               size="small"
               onClick={() => handleOpenSectionModal(tab.id)}
             >
-              Добавить секцию
             </Button>
           </Space>
         );
@@ -377,7 +375,6 @@ const TabManager = () => {
                         handleOpenSectionModal(record.tab.id, section)
                       }
                     >
-                      Редактировать
                     </Button>
                     <Popconfirm
                       title="Удалить секцию?"
@@ -386,7 +383,6 @@ const TabManager = () => {
                       cancelText="Нет"
                     >
                       <Button size="small" icon={<DeleteOutlined />} danger>
-                        Удалить
                       </Button>
                     </Popconfirm>
                   </Space>

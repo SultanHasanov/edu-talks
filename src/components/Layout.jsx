@@ -60,7 +60,7 @@ const Layout = ({ children }) => {
     (route) =>
       location.pathname === route || location.pathname.startsWith(route + "/")
   );
-  // Теперь может быть -1, но это не помешает переключению
+
   const handleTabChange = (event, newValue) => {
     navigate(tabRoutes[newValue]);
   };
@@ -69,77 +69,70 @@ const Layout = ({ children }) => {
     fetchDynamicTabs();
   }, []);
 
- const fetchDynamicTabs = async () => {
-  try {
-    const response = await fetch("https://edutalks.ru/api/taxonomy/tree");
-    
-    // Постоянные табы по умолчанию
-    const defaultTabs = [
-      {
-        id: -1, // Уникальный отрицательный ID чтобы не конфликтовать с серверными
-        slug: "/recomm",
-        title: "Рекомендации",
-        position: 0, // Первая позиция
-        is_active: true
-      },
-      {
-        id: -2,
-        slug: "/zavuch", 
-        title: "Методичка",
-        position: 1, // Вторая позиция
-        is_active: true
-      }
-    ];
+  const fetchDynamicTabs = async () => {
+    try {
+      const response = await fetch("https://edutalks.ru/api/taxonomy/tree");
 
-    if (response.ok) {
-      const data = await response.json();
-      const items = data.data?.data || [];
-      
-      // Извлекаем объекты tab из каждого элемента и фильтруем активные
-      const serverTabs = items
-        .map((item) => item.tab)
-        .filter((tab) => tab && tab.is_active);
-      
-      // Объединяем постоянные табы с серверными
-      // Серверные табы идут после постоянных (position + 2)
-      const allTabs = [
-        ...defaultTabs,
-        ...serverTabs.map(tab => ({
-          ...tab,
-          position: tab.position + 2 // Сдвигаем позиции серверных табов
-        }))
+      const defaultTabs = [
+        {
+          id: -1,
+          slug: "/recomm",
+          title: "Рекомендации",
+          position: 0,
+          is_active: true,
+        },
+        {
+          id: -2,
+          slug: "/zavuch",
+          title: "Методичка",
+          position: 1,
+          is_active: true,
+        },
       ];
-      
-      // Сортируем по position для правильного порядка
-      allTabs.sort((a, b) => a.position - b.position);
-      
-      setDynamicTabs(allTabs);
-    } else {
-      // Если сервер не отвечает, используем только постоянные табы
-      setDynamicTabs(defaultTabs);
-      console.error("Ошибка загрузки табов:", response.status);
-    }
-  } catch (error) {
-    // При ошибке сети используем постоянные табы
-    setDynamicTabs([
-      {
-        id: -1,
-        slug: "/recomm",
-        title: "Рекомендации",
-        position: 0,
-        is_active: true
-      },
-      {
-        id: -2,
-        slug: "/zavuch",
-        title: "Методичка", 
-        position: 1,
-        is_active: true
+
+      if (response.ok) {
+        const data = await response.json();
+        const items = data.data?.data || [];
+
+        const serverTabs = items
+          .map((item) => item.tab)
+          .filter((tab) => tab && tab.is_active);
+
+        const allTabs = [
+          ...defaultTabs,
+          ...serverTabs.map((tab) => ({
+            ...tab,
+            position: tab.position + 2,
+          })),
+        ];
+
+        allTabs.sort((a, b) => a.position - b.position);
+
+        setDynamicTabs(allTabs);
+      } else {
+        setDynamicTabs(defaultTabs);
+        console.error("Ошибка загрузки табов:", response.status);
       }
-    ]);
-    console.error("Ошибка загрузки табов:", error);
-  }
-};
+    } catch (error) {
+      setDynamicTabs([
+        {
+          id: -1,
+          slug: "/recomm",
+          title: "Рекомендации",
+          position: 0,
+          is_active: true,
+        },
+        {
+          id: -2,
+          slug: "/zavuch",
+          title: "Методичка",
+          position: 1,
+          is_active: true,
+        },
+      ]);
+      console.error("Ошибка загрузки табов:", error);
+    }
+  };
 
   const handleSearchKeyPress = async (event) => {
     if (event.key === "Enter" && searchQuery.trim() !== "") {
@@ -204,7 +197,7 @@ const Layout = ({ children }) => {
 
   return (
     <Box>
-       {/* <GlobalAlert /> */}
+      {/* <GlobalAlert /> */}
       <AppBar
         position="static"
         elevation={0}
@@ -423,7 +416,6 @@ const Layout = ({ children }) => {
         <Box
           sx={{
             backgroundColor: "#fff",
-            // borderBottom: '1px solid #f0f0f0'
           }}
         >
           <Container maxWidth="xl">
@@ -433,25 +425,48 @@ const Layout = ({ children }) => {
                 alignItems: "center",
                 justifyContent: "space-between",
                 px: 3,
+                overflowX: "auto", // Включаем горизонтальный скролл
+                "&::-webkit-scrollbar": {
+                  height: "6px",
+                },
+                "&::-webkit-scrollbar-track": {
+                  backgroundColor: "#f1f1f1",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  backgroundColor: "#c1c1c1",
+                  borderRadius: "3px",
+                },
+                "&::-webkit-scrollbar-thumb:hover": {
+                  backgroundColor: "#a8a8a8",
+                },
               }}
             >
               <Tabs
                 value={currentTabIndex >= 0 ? currentTabIndex : false}
                 onChange={handleTabChange}
+                variant="scrollable" // Важно: включаем прокручиваемые табы
+                scrollButtons="auto" // Автоматическое отображение кнопок прокрутки
                 sx={{
-                  margin: "0 auto",
+                  minHeight: "48px", // Минимальная высота для контейнера табов
                   "& .MuiTab-root": {
                     fontSize: "15px",
                     textTransform: "none",
                     minWidth: "auto",
                     px: 2,
                     color: "#6b7280",
+                    minHeight: "48px", // Минимальная высота для каждой вкладки
                   },
                   "& .MuiTabs-indicator": {
                     backgroundColor: "#7c3aed",
                   },
                   "& .Mui-selected": {
                     color: "#7c3aed !important",
+                  },
+                  "& .MuiTabs-scrollButtons": {
+                    color: "#6b7280",
+                    "&.Mui-disabled": {
+                      opacity: 0.3,
+                    },
                   },
                 }}
               >
